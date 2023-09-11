@@ -1,12 +1,19 @@
 {
   "name": "starfield-mod-loader",
   "version": "0.0.0",
+  "main": "electron.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
     "build": "ng build",
+    "build:release": "ng build --configuration production",
+    "postbuild": "node ./scripts/copy-package-info.js",
+    "serve": "node ./scripts/serve.js",
+    "serve:release": "npm run serve --release",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start": "npm run serve",
+    "electron:start": "electron ./dist",
+    "electron-wsl-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^26.2.0 && unset npm_config_platform"
   },
   "private": true,
   "dependencies": {
@@ -27,6 +34,9 @@
     "@angular/cli": "~16.2.1",
     "@angular/compiler-cli": "^16.2.0",
     "@types/jasmine": "~4.3.0",
+    "@types/node": "^18.17.15",
+    "chokidar": "^3.5.3",
+    "electron": "^26.2.0",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -34,5 +44,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.1.3"
+  },
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false
   }
 }
