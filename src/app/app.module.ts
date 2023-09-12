@@ -1,12 +1,24 @@
-import { APP_INITIALIZER, NgModule, Provider } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { environment } from "../environments/environment";
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgxMaterialThemingModule } from "@lithiumjs/ngx-material-theming";
+import { NgxsModule } from "@ngxs/store";
 
-const STARTUP_SERVICES: Provider[] = [];
+import { NgxsReduxDevtoolsPluginModule } from "@ngxs/devtools-plugin";
+
+import { appStates } from "./state";
+
+import { ProfileManager } from './services/profile-manager';
+import { AppMessageHandler } from './services/app-message-handler';
+
+const STARTUP_SERVICES = [
+  AppMessageHandler,
+  ProfileManager
+];
 
 @NgModule({
   declarations: [
@@ -17,6 +29,11 @@ const STARTUP_SERVICES: Provider[] = [];
     AppRoutingModule,
     BrowserAnimationsModule,
     NgxMaterialThemingModule,
+
+    NgxsModule.forRoot(appStates, { developmentMode: !environment.production }),
+
+    // Must be last
+    NgxsReduxDevtoolsPluginModule.forRoot({ disabled: environment.production })
   ],
   providers: [
     // Startup services:

@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { BaseComponent } from './core/base-component';
 
 @Component({
     selector: 'app-root',
@@ -6,4 +7,9 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
     styleUrls: ['./app.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent {}
+export class AppComponent extends BaseComponent {
+
+    constructor (cdRef: ChangeDetectorRef) {
+        super({ cdRef });
+    }
+}

@@ -5,6 +5,7 @@ const url = require("url");
 const path = require("path");
 const fs = require("fs");
 const os = require('os');
+const _ = require("lodash");
 
 class ElectronLoader {
     
@@ -47,6 +48,27 @@ class ElectronLoader {
         });
 
         ipcMain.handle("app:reload", () => this.loadApp());
+
+        ipcMain.handle("app:loadSettings", async (_event, _data) => {
+            try {
+                return this.loadSettings();
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        });
+
+        ipcMain.handle("app:saveSettings", async (_event, data) => {
+           this.saveSettings(data.settings);
+        });
+
+        ipcMain.handle("app:loadProfile", async (_event, data) => {
+            return this.loadProfile(data.name);
+        });
+
+        ipcMain.handle("app:saveProfile", async (_event, data) => {
+            this.saveProfile(data.name, data.profile);
+        });
     }
 
     initWindow() {
@@ -96,6 +118,40 @@ class ElectronLoader {
                 ]
             },
         ]);
+    }
+
+    loadSettings() {
+        const settingsSrc = fs.readFileSync("settings.json"); // TODO
+
+        return JSON.parse(settingsSrc.toString("utf8"));
+    }
+
+    saveSettings(settings) {
+        return fs.writeFileSync(
+            path.join("settings.json"),
+            JSON.stringify(settings)
+        );
+    }
+
+    loadProfile(/** @type string */ name) {
+        const profileDir = path.join("profiles", name);
+        const profileSettingsName = "profile.json";
+        const profileSrc = fs.readFileSync(path.join(profileDir, profileSettingsName));
+
+        return { name, ...JSON.parse(profileSrc.toString("utf8")) };
+    }
+
+    saveProfile(/** @type string */ name, profile, options) {
+        const profileDir = path.join("profiles", name);
+        const profileSettingsName = "profile.json";
+
+        fs.mkdirSync(profileDir, { recursive: true });
+
+        return fs.writeFileSync(
+            path.join(profileDir, profileSettingsName),
+            JSON.stringify(_.omit(profile, ["name"])),
+            options
+        );
     }
 }
 
