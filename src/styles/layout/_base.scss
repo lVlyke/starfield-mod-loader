@@ -1,0 +1,14 @@
+@mixin declare() {
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+    }
+    
+    [line-break] {
+        display: block;
+    }
+    
+    body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+}

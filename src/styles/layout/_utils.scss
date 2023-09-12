@@ -1,0 +1,11 @@
+@mixin declare() {
+
+    [appScrollContainer], .app-scroll-container {
+        overflow: auto;
+        height: 100%;
+    }
+
+    [appHidden]:not([appHidden="false"]) {
+        display: none !important;
+    }
+}

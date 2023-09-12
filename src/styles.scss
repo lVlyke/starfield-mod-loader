@@ -1,1 +1,13 @@
-/* You can add global styles to this file, and also import other style files */
+@use "@angular/material" as mat;
+@use "styles/layout";
+
+@include mat.all-component-typographies();
+@include mat.core();
+@include layout.declare();
+
+// Use normalize.css
+@import "normalize.css/normalize";
+
+// Bundle the default and dark themes with the app itself
+@import "styles/themes/default";
+@import "styles/themes/dark";

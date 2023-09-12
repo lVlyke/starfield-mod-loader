@@ -1,0 +1,28 @@
+@use "@lithiumjs/ngx-material-theming" as mat-theming;
+@use "./theme_exts" as theme-exts;
+@use "./vars" as vars;
+
+@mixin declare-theme(
+    $theme-name,
+    $theme-primary,
+    $theme-accent,
+    $theme-warn,
+    $is-dark
+) {
+    @include mat-theming.declare-theme(
+        $theme-name,
+        $theme-primary,
+        $theme-accent,
+        $theme-warn,
+        $is-dark
+    ) {
+        @include vars.declare();
+
+        @include theme-exts.declare(
+            $theme-primary,
+            $theme-accent,
+            $theme-warn,
+            $is-dark
+        );
+    }
+}

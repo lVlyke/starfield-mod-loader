@@ -1,0 +1,7 @@
+@use "./base";
+@use "./utils";
+
+@mixin declare() {
+    @include base.declare();
+    @include utils.declare();
+}

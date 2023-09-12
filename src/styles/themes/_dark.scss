@@ -1,0 +1,9 @@
+@use "@angular/material" as mat;
+@use "../app_theme" as theme;
+
+@include theme.declare-theme("dark",
+    mat.define-palette(mat.$green-palette),
+    mat.define-palette(mat.$blue-palette),
+    mat.define-palette(mat.$red-palette),
+    true
+);
