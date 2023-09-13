@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+
+@mixin declare($primary, $accent, $warn, $is-dark) {
+
+    [matPrimary], [matColor="primary"] {
+        color: mat.get-color-from-palette($primary, 500);
+    }
+
+    [matAccent], [matColor="accent"] {
+        color: mat.get-color-from-palette($accent, 500);
+    }
+
+    [matWarn], [matColor="warn"] {
+        color: mat.get-color-from-palette($warn, 500);
+    }
+}

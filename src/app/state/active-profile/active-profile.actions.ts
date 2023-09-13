@@ -25,6 +25,14 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
+    export class DeleteMod {
+        public static readonly type = `[activeProfile] delete mod`;
+
+        constructor(
+            public name: string
+        ) {}
+    }
+
     export class ReorderMods {
         public static readonly type = `[activeProfile] reorder mods`;
 

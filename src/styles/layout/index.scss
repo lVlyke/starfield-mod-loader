@@ -1,7 +1,9 @@
 @use "./base";
+@use "./mat-overrides";
 @use "./utils";
 
 @mixin declare() {
     @include base.declare();
+    @include mat-overrides.declare();
     @include utils.declare();
 }

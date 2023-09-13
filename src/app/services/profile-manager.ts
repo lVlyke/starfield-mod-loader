@@ -2,8 +2,8 @@ import * as _ from "lodash";
 import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
-import { delay, distinctUntilChanged, filter, map, switchMap, take, tap } from "rxjs/operators";
-import { Observable, combineLatest, of } from "rxjs";
+import { delay, distinctUntilChanged, filter, map, switchMap, take, tap, toArray } from "rxjs/operators";
+import { NEVER, Observable, combineLatest, concat, of } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -97,6 +97,15 @@ export class ProfileManager {
         return this.store.dispatch(new AppActions.activateMods(activate));
     }
 
+    public reactivateMods(): Observable<any> {
+        return concat([
+            this.activateMods(false),
+            this.activateMods(true),
+        ]).pipe(
+            toArray()
+        );
+    }
+
     public loadProfile(profileName: string, setActive: boolean = true): Observable<AppProfile> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile>("app:loadProfile", { name: profileName }).pipe(
             switchMap((profile) => {
@@ -154,8 +163,51 @@ export class ProfileManager {
         return this.store.dispatch(new ActiveProfileActions.AddMod(name, modRef));
     }
 
+    public deleteMod(name: string): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.DeleteMod(name));
+    }
+
     public reorderMods(modOrder: string[]): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.ReorderMods(modOrder));
+    }
+
+    public showModInFileExplorer(modRef: ModProfileRef): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showModInFileExplorer", { profile, modRef })
+        )));
+    }
+
+    public showProfileBaseDirInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileBaseDirInFileExplorer", { profile })
+        )));
+    }
+
+    public showProfileModsDirInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileModsDirInFileExplorer", { profile })
+        )));
+    }
+
+    public showModBaseDirInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showModBaseDirInFileExplorer", { profile })
+        )));
+    }
+
+    public showGameBaseDirInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showGameBaseDirInFileExplorer", { profile })
+        )));
+    }
+
+    public launchGame(): Observable<void> {
+        return NEVER; // TODO
     }
 
     private deployActiveMods(): Observable<any> {

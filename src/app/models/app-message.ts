@@ -1,5 +1,6 @@
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
+import { ModProfileRef } from "./mod-profile-ref";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -89,9 +90,50 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowModInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showModInFileExplorer`;
+        data: {
+            profile: AppProfile;
+            modRef: ModProfileRef;
+        };
+    }
+
+    export interface ShowModBaseDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showModBaseDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ShowProfileBaseDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileBaseDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ShowProfileModsDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileModsDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ShowGameBaseDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showGameBaseDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export type ProfileMessage = AddProfileMod
                                | DeployProfile
-                               | UndeployProfile;
+                               | UndeployProfile
+                               | ShowModInFileExplorer
+                               | ShowModBaseDirInFileExplorer
+                               | ShowProfileBaseDirInFileExplorer
+                               | ShowGameBaseDirInFileExplorer
+                               | ShowProfileModsDirInFileExplorer;
 
     // Message record:
 
@@ -105,5 +147,10 @@ export namespace AppMessage {
         "profile:addMod",
         "profile:deploy",
         "profile:undeploy",
+        "profile:showModInFileExplorer",
+        "profile:showModBaseDirInFileExplorer",
+        "profile:showProfileBaseDirInFileExplorer",
+        "profile:showProfileModsDirInFileExplorer",
+        "profile:showGameBaseDirInFileExplorer",
     ];
 }

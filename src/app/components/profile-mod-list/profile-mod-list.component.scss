@@ -1,0 +1,18 @@
+:host {
+
+    mat-list-item {
+        cursor: pointer;
+
+        &:not(.cdk-drag-placeholder) {
+            transition: transform 250ms ease-in;
+        }
+    }
+
+    .cdk-drag-placeholder {
+        opacity: 0;
+    }
+
+    @at-root .cdk-drag-animating {
+        transition: transform 100ms ease-out;
+    }
+}

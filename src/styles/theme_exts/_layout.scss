@@ -1,0 +1,8 @@
+@use "@angular/material" as mat;
+
+@mixin declare($primary, $accent, $warn, $is-dark) {
+
+    [hidden]:not([hidden="false"]), .hidden {
+        display: none;
+    }
+}

@@ -1,0 +1,13 @@
+@use "@angular/material" as mat;
+@use "../mixins";
+
+@mixin declare($selector, $primary, $accent, $warn, $is-dark) {
+
+    #{$selector} {
+
+        @at-root .cdk-drag-preview {
+            color: mixins.theme-foreground-color(text, $is-dark);
+            background-color: mixins.theme-background-color(card, $is-dark) !important;
+        }
+    }
+}

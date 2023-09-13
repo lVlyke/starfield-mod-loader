@@ -1,0 +1,17 @@
+@use "@angular/material" as mat;
+
+@function theme-background-color($key, $is-dark) {
+    @if ($is-dark) {
+        @return map-get(mat.$dark-theme-background-palette, $key);
+    } @else {
+        @return map-get(mat.$light-theme-background-palette, $key);
+    }
+}
+
+@function theme-foreground-color($key, $is-dark) {
+    @if ($is-dark) {
+        @return map-get(mat.$dark-theme-foreground-palette, $key);
+    } @else {
+        @return map-get(mat.$light-theme-foreground-palette, $key);
+    }
+}

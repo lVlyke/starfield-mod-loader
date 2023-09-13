@@ -1,6 +1,6 @@
 // @ts-check
 
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
 const log = require('electron-log');
 const url = require("url");
 const path = require("path");
@@ -169,6 +169,32 @@ class ElectronLoader {
 
         ipcMain.handle("profile:undeploy", async (_event, { profile }) => {
             this.undeployProfile(profile);
+        });
+
+        ipcMain.handle("profile:showModInFileExplorer", async (_event, { profile, modRef }) => {
+            const modDirPath = path.join("profiles", profile.name, "mods", modRef.path);
+
+            shell.openPath(path.resolve(modDirPath));
+        });
+
+        ipcMain.handle("profile:showModBaseDirInFileExplorer", async (_event, { profile }) => {
+            shell.openPath(path.resolve(profile.modBaseDir));
+        });
+
+        ipcMain.handle("profile:showGameBaseDirInFileExplorer", async (_event, { profile }) => {
+            shell.openPath(path.resolve(profile.gameBaseDir));
+        });
+
+        ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (_event, { profile }) => {
+            const profileDir = path.join("profiles", profile.name);
+
+            shell.openPath(path.resolve(profileDir));
+        });
+
+        ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (_event, { profile }) => {
+            const profileModsDir = path.join("profiles", profile.name, "mods");
+
+            shell.openPath(path.resolve(profileModsDir));
         });
     }
 

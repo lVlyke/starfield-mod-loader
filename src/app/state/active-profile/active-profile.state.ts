@@ -20,6 +20,14 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
+    @Action(ActiveProfileActions.DeleteMod)
+    public deleteMod(context: ActiveProfileState.Context, { name }: ActiveProfileActions.DeleteMod): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        state.mods.delete(name);
+        context.setState(state);
+    }
+
     @Action(ActiveProfileActions.ReorderMods)
     public reorderMods(context: ActiveProfileState.Context, { modOrder }: ActiveProfileActions.ReorderMods): void {
         const state = _.cloneDeep(context.getState()!);

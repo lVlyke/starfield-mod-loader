@@ -2,21 +2,107 @@
     {{ activeProfile.name }}
 </div>
 
-<div id="profile-controls">
-    <mat-card id="profile-mod-list">
+<div id="profile-controls" *ngIf="!!activeProfile">
+    <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
+        <mat-card-header>
+            <mat-card-title>Mod List</mat-card-title>
+
+            <span id="mod-list-actions">
+                <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="profileManager.addModFromUser()">
+                    <mat-icon>add</mat-icon>
+                </button>
+
+                <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="profileManager.showProfileModsDirInFileExplorer()">
+                    <mat-icon>folder_open</mat-icon>
+                </button>
+            </span>
+        </mat-card-header>
+
         <mat-card-content>
-            <app-profile-mod-list *ngIf="!!activeProfile"
+            <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
                                 [profile]="activeProfile"
                                 (modChange)="registerModUpdate($event.name, $event.modRef)"
                                 (modOrderChange)="reorderMods($event)" />
+            
+            <ng-template #emptyModListHint>
+                <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
+            </ng-template>
         </mat-card-content>
     </mat-card>
 
-    <mat-card id="profile-actions">
+    <mat-card id="profile-actions" class="control-card mat-elevation-z3">
+        <mat-card-header>
+            <mat-card-title>Actions</mat-card-title>
+        </mat-card-header>
+
         <mat-card-content>
-            <button mat-button (click)="profileManager.activateMods(!isModsActivated)">
-                {{ isModsActivated ? "Deactivate Mods" : "Activate Mods" }}
-            </button>
+            <div id="primary-actions" class="actions">
+                <button id="mod-activate-button"
+                        class="mat-elevation-z3"
+                        mat-stroked-button
+                        (click)="profileManager.activateMods(!isModsActivated)">
+                    <mat-icon [color]="isModsActivated ? 'warn' : 'primary'">
+                        {{ isModsActivated ? "pause_circle" : "play_circle" }}
+                    </mat-icon>
+
+                    {{ isModsActivated ? "Deactivate Mods" : "Activate Mods" }}&nbsp;({{ activeProfile | appProfileActiveModCount }})
+                </button>
+
+                <button id="mod-refresh-button"
+                        class="mat-elevation-z3"
+                        mat-stroked-button
+                        [disabled]="!isModsActivated"
+                        (click)="profileManager.reactivateMods()">
+                    <mat-icon [color]="isModsActivated ? 'accent' : null">refresh</mat-icon>
+                    
+                    Refresh Files
+                </button>
+            </div>
+
+            <div id="secondary-actions" class="actions">
+                <button id="profile-dir-view-button"
+                        mat-stroked-button
+                        (click)="profileManager.showProfileBaseDirInFileExplorer()">
+                    <mat-icon>folder_shared</mat-icon>
+                    
+                    Profile Folder
+                </button>
+
+                <button id="mod-dir-view-button"
+                        mat-stroked-button
+                        (click)="profileManager.showModBaseDirInFileExplorer()">
+                    <mat-icon>drive_file_move</mat-icon>
+                    
+                    Mod Folder
+                </button>
+
+                <button id="game-dir-view-button"
+                        mat-stroked-button
+                        (click)="profileManager.showGameBaseDirInFileExplorer()">
+                    <mat-icon>source</mat-icon>
+                    
+                    Game Folder
+                </button>
+            </div>
+
+            <div class="spacer"></div>
+
+            <div id="game-info">
+                <div id="mod-status" [attr.mods-activated]="isModsActivated">
+                    Mods are {{ isModsActivated ? "enabled" : "disabled"}}
+                </div>
+            </div>
+
+            <div id="game-actions" class="actions">
+                <button id="launch-game-button"
+                        class="mat-elevation-z3"
+                        mat-stroked-button
+                        (click)="profileManager.launchGame()">
+                    <mat-icon color="accent">play_circle</mat-icon>
+
+                    Start Game
+                </button>
+            </div>
         </mat-card-content>
     </mat-card>
 </div>

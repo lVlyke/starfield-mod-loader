@@ -1,0 +1,15 @@
+@mixin declare() {
+
+    mat-action-list {
+        
+        .mat-mdc-list-item-unscoped-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+
+            > mat-icon {
+                margin-right: 8px;
+            }
+        }
+    }
+}

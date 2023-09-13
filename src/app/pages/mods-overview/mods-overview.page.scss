@@ -1,0 +1,105 @@
+:host {
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+
+    #profile-controls {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+        padding: 1.5rem;
+
+        > * {
+            flex: 0 0 auto;
+            height: 100%;
+        }
+
+        .control-card {
+            width: 100%;
+            height: 100%;
+        }
+
+        #profile-mod-list {
+            flex-basis: 60%;
+
+            > mat-card-header {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .empty-mod-list-hint {
+                display: flex;
+                align-items: center;
+            }
+        }
+
+        #profile-actions {
+            flex-basis: 35%;
+
+            > mat-card-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: space-between;
+                height: 100%;
+
+                > .actions {
+                    margin-bottom: 1.25rem;
+
+                    > button {
+                        margin-right: 1rem;
+                    }
+                }
+
+                .spacer {
+                    flex: 1 1 auto;
+                }
+            }
+        }
+
+        #primary-actions > button {
+            height: 3.25rem;
+            font-size: 1rem;
+
+            > mat-icon {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 1.75rem;
+            }
+        }
+
+        #secondary-actions > button {
+            font-size: 0.8rem;
+        }
+
+        #game-info {
+            margin-bottom: 0.5rem;
+
+            #mod-status {
+                opacity: 0.8;
+
+                &[mods-activated=false] {
+                    font-style: italic;
+                }
+            }
+        }
+
+        #game-actions {
+            margin-bottom: 3rem !important;
+
+            #launch-game-button {
+                height: 5rem;
+                font-size: 1.5rem;
+    
+                > mat-icon {
+                    width: 3rem;
+                    height: 3rem;
+                    font-size: 3rem;
+                }
+            }
+        }
+    }
+}
