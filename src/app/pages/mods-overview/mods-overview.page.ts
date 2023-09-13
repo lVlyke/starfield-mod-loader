@@ -20,17 +20,27 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
 
+    @Select(AppState.isModsActivated)
+    public readonly isModsActivated$!: Observable<boolean>;
+
     @AsyncState()
     public readonly activeProfile?: AppProfile;
 
+    @AsyncState()
+    public readonly isModsActivated!: boolean;
+
     constructor(
         cdRef: ChangeDetectorRef,
-        private readonly profileManager: ProfileManager
+        protected readonly profileManager: ProfileManager
     ) {
         super({ cdRef });
     }
 
     protected registerModUpdate(name: string, mod: ModProfileRef): Observable<void> {
         return this.profileManager.updateMod(name, mod);
+    }
+
+    protected reorderMods(modOrder: string[]): Observable<void> {
+        return this.profileManager.reorderMods(modOrder);
     }
 }

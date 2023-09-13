@@ -16,6 +16,8 @@ export namespace AppActions {
     }
 
     export type ActiveProfileAction = BasicAction<AppData, "activeProfile">;
+    export type ModsActivatedAction = BasicAction<AppData, "modsActivated">;
 
     export const updateActiveProfile = createUpdateAction("activeProfile");
+    export const activateMods = createUpdateAction("modsActivated");
 }

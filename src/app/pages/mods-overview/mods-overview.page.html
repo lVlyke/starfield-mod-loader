@@ -2,10 +2,21 @@
     {{ activeProfile.name }}
 </div>
 
-<mat-card id="profile-mod-list">
-    <mat-card-content>
-        <app-profile-mod-list *ngIf="!!activeProfile"
-                              [profile]="activeProfile"
-                              (modChange)="registerModUpdate($event.name, $event.modRef)" />
-    </mat-card-content>
-</mat-card>
+<div id="profile-controls">
+    <mat-card id="profile-mod-list">
+        <mat-card-content>
+            <app-profile-mod-list *ngIf="!!activeProfile"
+                                [profile]="activeProfile"
+                                (modChange)="registerModUpdate($event.name, $event.modRef)"
+                                (modOrderChange)="reorderMods($event)" />
+        </mat-card-content>
+    </mat-card>
+
+    <mat-card id="profile-actions">
+        <mat-card-content>
+            <button mat-button (click)="profileManager.activateMods(!isModsActivated)">
+                {{ isModsActivated ? "Deactivate Mods" : "Activate Mods" }}
+            </button>
+        </mat-card-content>
+    </mat-card>
+</div>

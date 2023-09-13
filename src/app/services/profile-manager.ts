@@ -3,7 +3,7 @@ import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
 import { delay, distinctUntilChanged, filter, map, switchMap, take, tap } from "rxjs/operators";
-import { Observable, of } from "rxjs";
+import { Observable, combineLatest, of } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -23,6 +23,9 @@ export class ProfileManager {
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
 
+    @Select(AppState.isModsActivated)
+    public readonly isModsActivated$!: Observable<boolean>;
+
     constructor(
         messageHandler: AppMessageHandler,
         @Inject(forwardRef(() => Store)) private readonly store: Store
@@ -34,22 +37,52 @@ export class ProfileManager {
         
         // Wait for NGXS to load
         of(true).pipe(delay(0)).subscribe(() => {
-            ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").subscribe((settings) => {
+            // Load app settings from disk
+            this.loadSettings();
+
+            // Save app settings to disk on changes
+            this.appState$.pipe(
+                filterDefined(),
+                switchMap(() => this.saveSettings())
+            ).subscribe();
+
+            // Save profile settings to disk on changes
+            this.activeProfile$.pipe(
+                filterDefined(),
+                switchMap(profile => this.saveProfile(profile))
+            ).subscribe();
+
+            combineLatest([
+                this.activeProfile$,
+                this.isModsActivated$,
+            ]).pipe(
+                filter(([activeProfile]) => !!activeProfile),
+                distinctUntilChanged((a, b) => _.isEqual(a, b)),
+                switchMap(([, activated]) => {
+                    if (activated) {
+                        return this.deployActiveMods();
+                    } else {
+                        return this.undeployMods();
+                    }
+                })
+            ).subscribe();
+        });
+    }
+
+    public loadSettings(): Observable<AppData> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
+            tap((settings) => {
                 if (settings?.activeProfile) {
                     this.loadProfile(settings.activeProfile, true);
                 } else {
                     this.createProfile("Default", true);
                     this.saveSettings();
                 }
-            });
 
-            // Save profile settings to disk on changes
-            this.activeProfile$.pipe(
-                filterDefined(),
-                distinctUntilChanged(_.isEqual),
-                switchMap(profile => this.saveProfile(profile))
-            ).subscribe();
-        });
+                this.activateMods(settings?.modsActivated);
+            }),
+            switchMap(() => this.appState$.pipe(take(1)))
+        ));
     }
 
     public saveSettings(): Observable<void> {
@@ -58,6 +91,10 @@ export class ProfileManager {
             map(appState => this.appDataToUserCfg(appState)),
             switchMap(settings => ElectronUtils.invoke("app:saveSettings", { settings }))
         ));
+    }
+
+    public activateMods(activate: boolean = true): Observable<void> {
+        return this.store.dispatch(new AppActions.activateMods(activate));
     }
 
     public loadProfile(profileName: string, setActive: boolean = true): Observable<AppProfile> {
@@ -117,9 +154,28 @@ export class ProfileManager {
         return this.store.dispatch(new ActiveProfileActions.AddMod(name, modRef));
     }
 
+    public reorderMods(modOrder: string[]): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.ReorderMods(modOrder));
+    }
+
+    private deployActiveMods(): Observable<any> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => ElectronUtils.invoke("profile:deploy", { profile: activeProfile }))
+        ));
+    }
+
+    private undeployMods(): Observable<any> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile }))
+        ));
+    }
+
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
-            activeProfile: appData.activeProfile?.name
+            activeProfile: appData.activeProfile?.name,
+            modsActivated: appData.modsActivated
         };
     }
 }

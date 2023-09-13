@@ -1,8 +1,8 @@
-<mat-list>
-    <mat-list-item *ngFor="let modEntry of profile.mods | keyvalue">
-        <mat-checkbox [checked]="modEntry.value.enabled"
-                      (change)="modChange$.emit({ name: modEntry.key, modRef: assign({}, modEntry.value, { enabled: $event.checked }) })" />
+<mat-list cdkDropList (cdkDropListDropped)="dropReorder($event)">
+    <mat-list-item *ngFor="let modEntry of modList" cdkDrag>
+        <mat-checkbox [checked]="modEntry.modRef.enabled"
+                      (change)="modChange$.emit({ name: modEntry.name, modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) })" />
 
-        {{ modEntry.key }}
+        {{ modEntry.name }}
     </mat-list-item>
 </mat-list>

@@ -4,7 +4,7 @@ export interface AppProfile {
     name: string;
     gameBaseDir: string;
     modBaseDir: string;
-    mods: Record<string, ModProfileRef>;
+    mods: Map<string, ModProfileRef>;
 }
 
 export namespace AppProfile {
@@ -14,7 +14,7 @@ export namespace AppProfile {
             name,
             gameBaseDir: "TODO",
             modBaseDir: "TODO",
-            mods: {}
+            mods: new Map()
         };
     }
 }

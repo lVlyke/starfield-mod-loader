@@ -8,7 +8,9 @@ import { ActiveProfileState } from "./active-profile/active-profile.state";
 
 @State<AppData>({
     name: "app",
-    defaults: {},
+    defaults: {
+        modsActivated: false
+    },
     children: [ActiveProfileState]
 })
 @Injectable()
@@ -19,8 +21,18 @@ export class AppState {
         return state.activeProfile;
     }
 
+    @Selector()
+    public static isModsActivated(state: AppData): boolean {
+        return state.modsActivated;
+    }
+
     @Action(AppActions.updateActiveProfile)
     public updateActiveProfile(context: AppState.Context, state: AppActions.ActiveProfileAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.activateMods)
+    public activateMods(context: AppState.Context, state: AppActions.ModsActivatedAction): void {
         context.patchState(_.cloneDeep(state));
     }
 }

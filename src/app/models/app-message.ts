@@ -75,7 +75,23 @@ export namespace AppMessage {
         };
     }
 
-    export type ProfileMessage = AddProfileMod;
+    export interface DeployProfile extends Base {
+        id: `${ProfileMessage.Prefix}:deploy`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface UndeployProfile extends Base {
+        id: `${ProfileMessage.Prefix}:undeploy`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export type ProfileMessage = AddProfileMod
+                               | DeployProfile
+                               | UndeployProfile;
 
     // Message record:
 
@@ -86,6 +102,8 @@ export namespace AppMessage {
         "app:saveProfile",
         "app:verifyProfile",
 
-        "profile:addMod"
+        "profile:addMod",
+        "profile:deploy",
+        "profile:undeploy",
     ];
 }

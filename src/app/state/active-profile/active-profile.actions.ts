@@ -24,4 +24,12 @@ export namespace ActiveProfileActions {
             public mod: ModProfileRef
         ) {}
     }
+
+    export class ReorderMods {
+        public static readonly type = `[activeProfile] reorder mods`;
+
+        constructor(
+            public modOrder: string[]
+        ) {}
+    }
 }

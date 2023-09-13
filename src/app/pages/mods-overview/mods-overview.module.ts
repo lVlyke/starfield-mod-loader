@@ -5,6 +5,7 @@ import { RouterModule, Routes } from "@angular/router";
 import { MatCardModule } from "@angular/material/card";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
+import { MatButtonModule } from "@angular/material/button";
 
 const routes: Routes = [
     {
@@ -26,6 +27,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
 
         MatCardModule,
+        MatButtonModule,
 
         AppProfileModListComponentModule
     ],

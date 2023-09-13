@@ -1,5 +1,5 @@
 import { NgModule } from "@angular/core";
-import { OverlayModule } from "@angular/cdk/overlay";
+import { DragDropModule } from "@angular/cdk/drag-drop"
 import { MatButtonModule } from "@angular/material/button";
 import { MatListModule } from "@angular/material/list";
 import { MatCheckboxModule } from "@angular/material/checkbox";
@@ -12,7 +12,9 @@ import { CommonModule } from "@angular/common";
     ],
     imports: [
         CommonModule,
-        OverlayModule,
+
+        DragDropModule,
+
         MatButtonModule,
         MatListModule,
         MatCheckboxModule,

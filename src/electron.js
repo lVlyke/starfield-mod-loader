@@ -4,7 +4,7 @@ const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const log = require('electron-log');
 const url = require("url");
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs-extra");
 const os = require('os');
 const _ = require("lodash");
 const Seven = require("node-7z");
@@ -103,6 +103,7 @@ class ElectronLoader {
             const fileType = path.extname(filePath);
             const modName = path.basename(filePath, fileType);
             const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
+            const modDirStagingPath = path.join("profiles", data.profile.name, "_tmp", modName);
 
             if (!!filePath) {
                 /** @type Promise */ let decompressOperation;
@@ -113,8 +114,8 @@ class ElectronLoader {
                     case ".zip":
                     case ".rar": {
                         decompressOperation = new Promise((resolve, _reject) => {
-                            const decompressStream = Seven.extractFull(filePath, modDirPath, {
-                                $bin: sevenBin.path7za
+                            const decompressStream = Seven.extractFull(filePath, modDirStagingPath, {
+                                $bin: sevenBin.path7za // TODO
                             });
 
                             decompressStream.on("end", () => resolve(true));
@@ -131,6 +132,24 @@ class ElectronLoader {
                 }
 
                 if (await decompressOperation) {
+                    const modStagingDirDataDirs = [
+                        path.join(modDirStagingPath, "Data"),
+                        path.join(modDirStagingPath, "data"),
+                    ];
+
+                    let modDataDir = modStagingDirDataDirs.find(dataDir => fs.existsSync(dataDir));
+                    if (!modDataDir) {
+                        modDataDir = modDirStagingPath;
+                    }
+
+                    // TODO - Notify user of Data dir change if modDataDir exists
+
+                    // Copy the data dir to the mod directory
+                    fs.copySync(modDataDir, modDirPath, { overwrite: true });
+
+                    // Erase the staging data
+                    fs.removeSync(modDirStagingPath);
+
                     return {
                         name: modName,
                         modRef: {
@@ -142,6 +161,14 @@ class ElectronLoader {
             }
 
             return null;
+        });
+
+        ipcMain.handle("profile:deploy", async (_event, { profile }) => {
+            this.deployProfile(profile);
+        });
+
+        ipcMain.handle("profile:undeploy", async (_event, { profile }) => {
+            this.undeployProfile(profile);
         });
     }
 
@@ -237,13 +264,20 @@ class ElectronLoader {
         }
 
         const profileSrc = fs.readFileSync(profileSettingsPath);
+        const profile = JSON.parse(profileSrc.toString("utf8"));
 
-        return { name, ...JSON.parse(profileSrc.toString("utf8")) };
+        // Deserialize mods entries to Map
+        profile.mods = new Map(profile.mods);
+
+        return { name, ...profile };
     }
 
     saveProfile(/** @type string */ name, profile, options) {
         const profileDir = path.join("profiles", name);
         const profileSettingsName = "profile.json";
+
+        // Serialize mods Map as entries
+        profile.mods = Array.from(profile.mods.entries());
 
         fs.mkdirSync(profileDir, { recursive: true });
 
@@ -257,7 +291,7 @@ class ElectronLoader {
     verifyProfileModsExist(profile) {
         const profileDir = path.join("profiles", profile.name);
 
-        return _.reduce(profile.mods, (result, mod, modName) => {
+        return profile.mods.entries().reduce((result, [modName, mod]) => {
             const modExists = fs.existsSync(path.join(profileDir, mod.path));
 
             result = Object.assign(result, {
@@ -285,6 +319,46 @@ class ElectronLoader {
             error: !gameDirExists,
             found: gameDirExists
         };
+    }
+
+    deployProfile(profile) {
+        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        const metaFileExists = fs.existsSync(metaFilePath);
+
+        if (metaFileExists) {
+            this.undeployProfile(profile);
+        }
+
+        const existingFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
+        fs.writeFileSync(metaFilePath, JSON.stringify(existingFiles));
+
+        // Copy all mods to the modBaseDir for this profile
+        // (Copy mods in reverse with `overwrite: false` to allow existing manual mods in the folder to be preserved)
+        Array.from(profile.mods.entries()).reverse().forEach(([_modName, mod]) => {
+            if (mod.enabled) {
+                const modDirPath = path.join("profiles", profile.name, "mods", mod.path);
+
+                fs.copySync(modDirPath, profile.modBaseDir, { overwrite: false });
+            }
+        });
+    }
+
+    undeployProfile(profile) {
+        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        const metaFileExists = fs.existsSync(metaFilePath);
+
+        if (!metaFileExists) {
+            return;
+        }
+
+        const overwriteFiles = JSON.parse(fs.readFileSync(metaFilePath).toString("utf-8"));
+        const existingFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
+
+        existingFiles.forEach((existingFile) => {
+            if (!overwriteFiles.includes(existingFile)) {
+                fs.removeSync(path.join(profile.modBaseDir, existingFile));
+            }
+        });
     }
 }
 
