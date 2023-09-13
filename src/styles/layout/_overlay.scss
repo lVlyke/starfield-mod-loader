@@ -1,0 +1,26 @@
+@mixin declare() {
+
+    .backdrop-clear {
+        background: transparent;
+    }
+
+    .backdrop-dark {
+        background: rgba(black, 0.7);
+    }
+
+    .backdrop-scrollable + * {
+
+        .cdk-overlay-pane {
+            bottom: 0;
+            overflow-y: auto;
+        }
+    }
+
+    .backdrop-auto-size + * {
+
+        .cdk-overlay-pane > * {
+            width: 100%;
+            height: auto;
+        }
+    }
+}

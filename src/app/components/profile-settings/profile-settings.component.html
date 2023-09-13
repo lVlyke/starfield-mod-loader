@@ -1,0 +1,62 @@
+<form #profileForm="ngForm" id="profile-form" (ngSubmit)="onFormSubmit$.next(profileForm)">
+    <ng-container *ngIf="!!formModel">
+        <mat-form-field appearance="fill">
+            <mat-label>Profile Name</mat-label>
+            <input matInput disabled required readonly name="name" type="text" [(ngModel)]="formModel.name">
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+            <mat-label>Mod Base Directory</mat-label>
+            <input #modBaseDirModel="ngModel"
+                matInput
+                required
+                type="text"
+                name="modBaseDir"
+                [(ngModel)]="formModel.modBaseDir">
+
+            <button mat-icon-button 
+                    matSuffix
+                    type="button"
+                    color="accent"
+                    (click)="chooseDirectory(modBaseDirModel)">
+                <mat-icon>folder</mat-icon>
+            </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+            <mat-label>Game Base Directory</mat-label>
+            <input #gameBaseDirModel="ngModel"
+                matInput
+                required 
+                type="text" 
+                name="gameBaseDir"
+                [(ngModel)]="formModel.gameBaseDir">
+
+            <button mat-icon-button 
+                    matSuffix
+                    type="button"
+                    color="accent"
+                    (click)="chooseDirectory(gameBaseDirModel)">
+                <mat-icon>folder</mat-icon>
+            </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+            <mat-label>Game Executable</mat-label>
+            <input #gameBinaryPathModel="ngModel"
+                matInput
+                required 
+                type="text" 
+                name="gameBinaryPath"
+                [(ngModel)]="formModel.gameBinaryPath">
+
+            <button mat-icon-button 
+                    matSuffix
+                    type="button"
+                    color="accent"
+                    (click)="chooseFile(gameBinaryPathModel)">
+                <mat-icon>folder</mat-icon>
+            </button>
+        </mat-form-field>
+    </ng-container>
+</form>

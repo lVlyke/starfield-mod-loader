@@ -21,6 +21,21 @@ export namespace AppMessage {
 
     // App messages:
 
+    export interface ChooseDirectory extends Base {
+        id: `${Prefix}:chooseDirectory`;
+        data: {
+            baseDir?: string;
+        }
+    }
+
+    export interface ChooseFilePath extends Base {
+        id: `${Prefix}:chooseFilePath`;
+        data: {
+            baseDir?: string;
+            fileTypes?: string[];
+        }
+    }
+
     export interface LoadSettings extends Base {
         id: `${Prefix}:loadSettings`;
     }
@@ -54,7 +69,9 @@ export namespace AppMessage {
         };
     }
 
-    export type AppMessage = LoadSettings
+    export type AppMessage = ChooseDirectory
+                           | ChooseFilePath
+                           | LoadSettings
                            | SaveSettings
                            | LoadProfile
                            | SaveProfile
@@ -67,6 +84,13 @@ export namespace AppMessage {
         export type Prefix = typeof PREFIX;
 
         export const PREFIX = "profile";
+    }
+
+    export interface ProfileSettings extends Base {
+        id: `${ProfileMessage.Prefix}:settings`;
+        data: {
+            profile: AppProfile;
+        };
     }
 
     export interface AddProfileMod extends Base {
@@ -126,24 +150,36 @@ export namespace AppMessage {
         };
     }
 
-    export type ProfileMessage = AddProfileMod
+    export interface LaunchGame extends Base {
+        id: `${ProfileMessage.Prefix}:launchGame`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export type ProfileMessage = ProfileSettings
+                               | AddProfileMod
                                | DeployProfile
                                | UndeployProfile
                                | ShowModInFileExplorer
                                | ShowModBaseDirInFileExplorer
                                | ShowProfileBaseDirInFileExplorer
                                | ShowGameBaseDirInFileExplorer
-                               | ShowProfileModsDirInFileExplorer;
+                               | ShowProfileModsDirInFileExplorer
+                               | LaunchGame;
 
     // Message record:
 
     export const record: Array<_AppMessage["id"]> = [
+        "app:chooseDirectory",
+        "app:chooseFilePath",
         "app:loadSettings",
         "app:saveSettings",
         "app:loadProfile",
         "app:saveProfile",
         "app:verifyProfile",
 
+        "profile:settings",
         "profile:addMod",
         "profile:deploy",
         "profile:undeploy",
@@ -152,5 +188,6 @@ export namespace AppMessage {
         "profile:showProfileBaseDirInFileExplorer",
         "profile:showProfileModsDirInFileExplorer",
         "profile:showGameBaseDirInFileExplorer",
+        "profile:launchGame",
     ];
 }

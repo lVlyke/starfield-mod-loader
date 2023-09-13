@@ -4,11 +4,11 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron')
 const log = require('electron-log');
 const url = require("url");
 const path = require("path");
+const { exec } = require("child_process");
 const fs = require("fs-extra");
-const os = require('os');
 const _ = require("lodash");
 const Seven = require("node-7z");
-const sevenBin = require("7zip-bin"); //  TODO - License?
+const sevenBin = require("7zip-bin");
 
 class ElectronLoader {
     
@@ -51,6 +51,29 @@ class ElectronLoader {
         });
 
         ipcMain.handle("app:reload", () => this.loadApp());
+
+        ipcMain.handle("app:chooseDirectory", async (_event, { baseDir }) => {
+            const result = await dialog.showOpenDialog({
+                properties: ["openDirectory"],
+                defaultPath: baseDir
+            });
+            
+            return result?.filePaths?.[0];
+        });
+
+        ipcMain.handle("app:chooseFilePath", async (_event, { baseDir, fileTypes }) => {
+            const result = await dialog.showOpenDialog({
+                filters: fileTypes ? [
+                    {
+                        name: "Files",
+                        extensions: fileTypes
+                    }
+                ] : [],
+                defaultPath: baseDir
+            });
+            
+            return result?.filePaths?.[0];
+        });
 
         ipcMain.handle("app:loadSettings", async (_event, _data) => {
             try {
@@ -195,6 +218,10 @@ class ElectronLoader {
             const profileModsDir = path.join("profiles", profile.name, "mods");
 
             shell.openPath(path.resolve(profileModsDir));
+        });
+
+        ipcMain.handle("profile:launchGame", async (_event, { profile }) => {
+            exec(path.resolve(profile.gameBinaryPath));
         });
     }
 

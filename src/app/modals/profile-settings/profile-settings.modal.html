@@ -1,0 +1,25 @@
+<mat-card *ngIf="!!profile">
+    <mat-card-header>
+        <mat-card-title>
+            Profile Settings&nbsp;-&nbsp;{{profile.name}}
+        </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+        <app-profile-settings [profile]="profile" />
+    </mat-card-content>
+
+    <mat-card-actions *ngIf="!!profileSettingsComponent">
+        <button mat-raised-button
+                type="submit"
+                form="profile-form"
+                color="primary"
+                [disabled]="(profileSettingsComponent.form.statusChanges | async) !== 'VALID'">
+                Save
+        </button>
+
+        <button mat-raised-button (click)="overlayRef.close()">
+            Close
+        </button>
+    </mat-card-actions>
+</mat-card>

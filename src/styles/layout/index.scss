@@ -1,9 +1,11 @@
 @use "./base";
+@use "./overlay";
 @use "./mat-overrides";
 @use "./utils";
 
 @mixin declare() {
     @include base.declare();
+    @include overlay.declare();
     @include mat-overrides.declare();
     @include utils.declare();
 }

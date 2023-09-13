@@ -3,7 +3,7 @@ import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
 import { delay, distinctUntilChanged, filter, map, switchMap, take, tap, toArray } from "rxjs/operators";
-import { NEVER, Observable, combineLatest, concat, of } from "rxjs";
+import { Observable, combineLatest, concat, of } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -13,6 +13,8 @@ import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
 import { ModProfileRef } from "../models/mod-profile-ref";
+import { OverlayHelpers, OverlayHelpersRef } from "./overlay-helpers";
+import { AppProfileSettingsModal } from "../modals/profile-settings";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -28,11 +30,17 @@ export class ProfileManager {
 
     constructor(
         messageHandler: AppMessageHandler,
-        @Inject(forwardRef(() => Store)) private readonly store: Store
+        @Inject(forwardRef(() => Store)) private readonly store: Store,
+        private readonly overlayHelpers: OverlayHelpers
     ) {
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:addMod"),
             switchMap(() => this.addModFromUser())
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "profile:settings"),
+            switchMap(() => this.showProfileSettings())
         ).subscribe();
         
         // Wait for NGXS to load
@@ -143,10 +151,31 @@ export class ProfileManager {
         return this.store.dispatch(new AppActions.updateActiveProfile(profile));
     }
 
-    public addModFromUser(): Observable<ModProfileRef> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
+    public showProfileSettings(): Observable<OverlayHelpersRef> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            switchMap(({ activeProfile }) => ElectronUtils.invoke("profile:addMod", { profile: activeProfile })),
+            filterDefined(),
+            map((activeProfile) => {
+                const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
+                    center: true,
+                    hasBackdrop: true,
+                    disposeOnBackdropClick: false,
+                    minWidth: "24rem",
+                    width: "40%",
+                    height: "75%",
+                    panelClass: "mat-app-background"
+                });
+
+                modContextMenuRef.component.instance.profile = activeProfile;
+                return modContextMenuRef;
+            })
+        ));
+    }
+
+    public addModFromUser(): Observable<ModProfileRef> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => ElectronUtils.invoke("profile:addMod", { profile: activeProfile })),
             tap((result) => {
                 if (!result) {
                     alert("Failed to add mod.");
@@ -207,7 +236,10 @@ export class ProfileManager {
     }
 
     public launchGame(): Observable<void> {
-        return NEVER; // TODO
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:launchGame", { profile })
+        )));
     }
 
     private deployActiveMods(): Observable<any> {
