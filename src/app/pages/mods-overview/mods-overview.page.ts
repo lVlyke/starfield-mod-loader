@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from "@angular/core";
-import { ComponentState, AsyncState, AfterViewInit } from "@lithiumjs/angular";
+import { ComponentState, AsyncState } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable } from "rxjs";
-import { AppProfile } from "src/app/models/app-profile";
+import { AppProfile } from "../../models/app-profile";
+import { ModProfileRef } from "src/app/models/mod-profile-ref";
+import { ProfileManager } from "src/app/services/profile-manager";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -21,10 +23,14 @@ export class AppModsOverviewPage extends BasePage {
     @AsyncState()
     public readonly activeProfile?: AppProfile;
 
-    @AfterViewInit()
-    private afterViewInit$!: Observable<void>;
-
-    constructor(cdRef: ChangeDetectorRef) {
+    constructor(
+        cdRef: ChangeDetectorRef,
+        private readonly profileManager: ProfileManager
+    ) {
         super({ cdRef });
+    }
+
+    protected registerModUpdate(name: string, mod: ModProfileRef): Observable<void> {
+        return this.profileManager.updateMod(name, mod);
     }
 }

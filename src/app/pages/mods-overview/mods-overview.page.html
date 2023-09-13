@@ -1,3 +1,11 @@
 <div *ngIf="!!activeProfile">
     {{ activeProfile.name }}
 </div>
+
+<mat-card id="profile-mod-list">
+    <mat-card-content>
+        <app-profile-mod-list *ngIf="!!activeProfile"
+                              [profile]="activeProfile"
+                              (modChange)="registerModUpdate($event.name, $event.modRef)" />
+    </mat-card-content>
+</mat-card>

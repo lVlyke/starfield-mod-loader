@@ -1,11 +1,14 @@
 // @ts-check
 
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const log = require('electron-log');
 const url = require("url");
 const path = require("path");
 const fs = require("fs");
 const os = require('os');
 const _ = require("lodash");
+const Seven = require("node-7z");
+const sevenBin = require("7zip-bin"); //  TODO - License?
 
 class ElectronLoader {
     
@@ -53,7 +56,7 @@ class ElectronLoader {
             try {
                 return this.loadSettings();
             } catch (e) {
-                console.error(e);
+                log.error(e);
                 return null;
             }
         });
@@ -67,7 +70,78 @@ class ElectronLoader {
         });
 
         ipcMain.handle("app:saveProfile", async (_event, data) => {
-            this.saveProfile(data.name, data.profile);
+            this.saveProfile(data.profile.name, data.profile);
+        });
+
+        ipcMain.handle("app:verifyProfile", async (_event, data) => {
+            const modVerifyResult = this.verifyProfileModsExist(data.profile);
+            const modDirVerifyResult = this.verifyProfileModDirExists(data.profile);
+            const gameDirVerifyResult = this.verifyProfileGameDirExists(data.profile);
+
+            return {
+                mods: modVerifyResult,
+                modBaseDir: modDirVerifyResult,
+                gameBaseDir: gameDirVerifyResult
+            };
+        });
+
+        ipcMain.handle("profile:addMod", async (_event, data) => {
+            const pickedFile = (await dialog.showOpenDialog({
+                filters: [
+                    { 
+                        name: "Mod", extensions: [
+                            "zip",
+                            "rar",
+                            "7z",
+                            "7zip",
+                        ]
+                    }
+                ]
+            }));
+            
+            const filePath = pickedFile.filePaths[0];
+            const fileType = path.extname(filePath);
+            const modName = path.basename(filePath, fileType);
+            const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
+
+            if (!!filePath) {
+                /** @type Promise */ let decompressOperation;
+
+                switch (fileType.toLowerCase()) {
+                    case ".7z":
+                    case ".7zip":
+                    case ".zip":
+                    case ".rar": {
+                        decompressOperation = new Promise((resolve, _reject) => {
+                            const decompressStream = Seven.extractFull(filePath, modDirPath, {
+                                $bin: sevenBin.path7za
+                            });
+
+                            decompressStream.on("end", () => resolve(true));
+                            decompressStream.on("error", (e) => {
+                                log.error(e);
+                                resolve(false);
+                            });
+                        });
+                    } break;
+                    default: {
+                        log.error("Unrecognized mod format", fileType);
+                        decompressOperation = Promise.resolve(false);
+                    } break;
+                }
+
+                if (await decompressOperation) {
+                    return {
+                        name: modName,
+                        modRef: {
+                            path: modName,
+                            enabled: true
+                        }
+                    };
+                }
+            }
+
+            return null;
         });
     }
 
@@ -103,9 +177,29 @@ class ElectronLoader {
                 label: 'File',
                 submenu: [
                     {
-                        label: "New Project...",
-                        click: () => this.mainWindow.webContents.send("editor:newProject")
+                        role: 'quit'
                     }
+                ]
+            },
+
+            {
+                label: 'Profile',
+                submenu: [
+                    {
+                        label: "Change Profile...",
+                        click: () => this.mainWindow.webContents.send("app:changeProfile")
+                    },
+                    {
+                        type: 'separator'
+                    },
+                    {
+                        label: "Add Mod...",
+                        click: () => this.mainWindow.webContents.send("profile:addMod")
+                    },
+                    {
+                        label: "Settings",
+                        click: () => this.mainWindow.webContents.send("profile:settings")
+                    },
                 ]
             },
 
@@ -136,7 +230,13 @@ class ElectronLoader {
     loadProfile(/** @type string */ name) {
         const profileDir = path.join("profiles", name);
         const profileSettingsName = "profile.json";
-        const profileSrc = fs.readFileSync(path.join(profileDir, profileSettingsName));
+        const profileSettingsPath = path.join(profileDir, profileSettingsName);
+
+        if (!fs.existsSync(profileSettingsPath)) {
+            return null;
+        }
+
+        const profileSrc = fs.readFileSync(profileSettingsPath);
 
         return { name, ...JSON.parse(profileSrc.toString("utf8")) };
     }
@@ -152,6 +252,39 @@ class ElectronLoader {
             JSON.stringify(_.omit(profile, ["name"])),
             options
         );
+    }
+
+    verifyProfileModsExist(profile) {
+        const profileDir = path.join("profiles", profile.name);
+
+        return _.reduce(profile.mods, (result, mod, modName) => {
+            const modExists = fs.existsSync(path.join(profileDir, mod.path));
+
+            result = Object.assign(result, {
+                [modName]: {
+                    error: !modExists,
+                    found: modExists
+                }
+            });
+
+            return result;
+        }, {});
+    }
+
+    verifyProfileModDirExists(profile) {
+        const modDirExists = fs.existsSync(profile.modBaseDir);
+        return {
+            error: !modDirExists,
+            found: modDirExists
+        };
+    }
+
+    verifyProfileGameDirExists(profile) {
+        const gameDirExists = fs.existsSync(profile.gameBaseDir);
+        return {
+            error: !gameDirExists,
+            found: gameDirExists
+        };
     }
 }
 

@@ -1,3 +1,4 @@
 export interface ModProfileRef {
-    name: string;
+    path: string;
+    enabled: boolean;
 }

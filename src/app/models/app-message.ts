@@ -2,7 +2,10 @@ import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 
 export type AppMessage
-    = AppMessage.AppMessage;
+    = AppMessage.AppMessage
+    | AppMessage.ProfileMessage;
+
+type _AppMessage = AppMessage;
 
 export namespace AppMessage {
 
@@ -43,15 +46,46 @@ export namespace AppMessage {
         };
     }
 
+    export interface VerifyProfile extends Base {
+        id: `${Prefix}:verifyProfile`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export type AppMessage = LoadSettings
                            | SaveSettings
                            | LoadProfile
-                           | SaveProfile;
+                           | SaveProfile
+                           | VerifyProfile;
 
-    export const record: Array<AppMessage["id"]> = [
+    // Profile messages:
+
+    export namespace ProfileMessage {
+       
+        export type Prefix = typeof PREFIX;
+
+        export const PREFIX = "profile";
+    }
+
+    export interface AddProfileMod extends Base {
+        id: `${ProfileMessage.Prefix}:addMod`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export type ProfileMessage = AddProfileMod;
+
+    // Message record:
+
+    export const record: Array<_AppMessage["id"]> = [
         "app:loadSettings",
         "app:saveSettings",
         "app:loadProfile",
         "app:saveProfile",
+        "app:verifyProfile",
+
+        "profile:addMod"
     ];
 }

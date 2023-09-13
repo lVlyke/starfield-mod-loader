@@ -1,0 +1,8 @@
+<mat-list>
+    <mat-list-item *ngFor="let modEntry of profile.mods | keyvalue">
+        <mat-checkbox [checked]="modEntry.value.enabled"
+                      (change)="modChange$.emit({ name: modEntry.key, modRef: assign({}, modEntry.value, { enabled: $event.checked }) })" />
+
+        {{ modEntry.key }}
+    </mat-list-item>
+</mat-list>

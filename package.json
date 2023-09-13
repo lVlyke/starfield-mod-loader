@@ -1,6 +1,6 @@
 {
   "name": "starfield-mod-loader",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "electron.js",
   "scripts": {
     "ng": "ng",
@@ -30,7 +30,11 @@
     "@lithiumjs/angular": "^7.3.0",
     "@lithiumjs/ngx-material-theming": "^0.10.0",
     "@ngxs/store": "^3.8.1",
+    "7zip-bin": "^5.2.0",
+    "electron-log": "^4.4.8",
+    "fs-extra": "^11.1.1",
     "lodash": "^4.17.21",
+    "node-7z": "^3.0.0",
     "normalize.css": "^8.0.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -44,6 +48,7 @@
     "@types/jasmine": "~4.3.0",
     "@types/lodash": "^4.14.198",
     "@types/node": "^18.17.15",
+    "@types/node-7z": "^2.1.5",
     "chokidar": "^3.5.3",
     "electron": "^26.2.0",
     "jasmine-core": "~4.6.0",
