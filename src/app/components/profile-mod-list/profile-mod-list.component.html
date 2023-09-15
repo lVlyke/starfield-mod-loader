@@ -3,10 +3,12 @@
         <mat-list-item cdkDrag
                        [attr.li-theme]="themeContainer.theme"
                        (contextmenu)="showModContextMenu$.next([$event, modEntry])">
-            <mat-checkbox [checked]="modEntry.modRef.enabled"
-                        (change)="modChange$.emit({ name: modEntry.name, modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) })" />
-
-            {{ modEntry.name }}
+            <span matLine class="item-line-info">
+                <mat-checkbox [checked]="modEntry.modRef.enabled"
+                              (change)="modChange$.emit(assign({}, modEntry, { modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) }))" />
+                <span>{{ modEntry.name }}</span>
+                <span class="mod-load-order">{{ modEntry.order ?? "--" }}</span>
+            </span>
         </mat-list-item>
 
         <mat-divider></mat-divider>

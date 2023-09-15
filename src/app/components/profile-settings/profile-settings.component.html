@@ -2,7 +2,13 @@
     <ng-container *ngIf="!!formModel">
         <mat-form-field appearance="fill">
             <mat-label>Profile Name</mat-label>
-            <input matInput disabled required readonly name="name" type="text" [(ngModel)]="formModel.name">
+            <input matInput
+                   required
+                   name="name"
+                   type="text"
+                   [disabled]="!createMode"
+                   [readonly]="!createMode"
+                   [(ngModel)]="formModel.name">
         </mat-form-field>
 
         <mat-form-field appearance="fill">

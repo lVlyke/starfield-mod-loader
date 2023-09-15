@@ -6,7 +6,8 @@
     </mat-card-header>
 
     <mat-card-content>
-        <app-profile-settings [profile]="profile" />
+        <app-profile-settings [profile]="profile"
+                              [createMode]="createMode" />
     </mat-card-content>
 
     <mat-card-actions *ngIf="!!profileSettingsComponent">

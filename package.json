@@ -1,6 +1,6 @@
 {
   "name": "starfield-mod-loader",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "main": "electron.js",
   "scripts": {
     "preapp:package:all": "node ./scripts/copy-electron-deps.js",

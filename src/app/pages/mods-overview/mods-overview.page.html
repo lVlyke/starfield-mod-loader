@@ -1,38 +1,56 @@
-<div *ngIf="!!activeProfile">
-    {{ activeProfile.name }}
-</div>
+
 
 <div id="profile-controls" *ngIf="!!activeProfile">
-    <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
-        <mat-card-header>
-            <mat-card-title>Mod List</mat-card-title>
+    <div id="profile-mod-list">
+        <mat-form-field [attr.subscript]="false">
+            <mat-label>Active Profile</mat-label>
+            <mat-select [ngModel]="activeProfile.name" (ngModelChange)="profileManager.setActiveProfile($event)">
+                <mat-select-trigger id="profile-select-trigger">
+                    <span matColor="primary">{{ activeProfile.name }}</span>
 
-            <span id="mod-list-actions">
-                <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="profileManager.addModFromUser()">
-                    <mat-icon>add</mat-icon>
-                </button>
+                    <button mat-icon-button color="primary"
+                            matTooltip="Add Profile"
+                            (click)="profileManager.createProfileFromUser(); $event.stopPropagation()">
+                        <mat-icon>person_add</mat-icon>
+                    </button>
+                </mat-select-trigger>
+                <mat-option *ngFor="let profileName of profileNames" [value]="profileName">
+                    {{ profileName }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
 
-                <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="profileManager.showProfileModsDirInFileExplorer()">
-                    <mat-icon>folder_open</mat-icon>
-                </button>
+        <mat-card class="control-card mat-elevation-z3">
+            <mat-card-header>
+                <mat-card-title>Mod List</mat-card-title>
 
-                <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileSettings()">
-                    <mat-icon>settings</mat-icon>
-                </button>
-            </span>
-        </mat-card-header>
+                <span id="mod-list-actions">
+                    <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="profileManager.addModFromUser()">
+                        <mat-icon>add</mat-icon>
+                    </button>
 
-        <mat-card-content>
-            <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
-                                [profile]="activeProfile"
-                                (modChange)="registerModUpdate($event.name, $event.modRef)"
-                                (modOrderChange)="reorderMods($event)" />
-            
-            <ng-template #emptyModListHint>
-                <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
-            </ng-template>
-        </mat-card-content>
-    </mat-card>
+                    <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="profileManager.showProfileModsDirInFileExplorer()">
+                        <mat-icon>folder_open</mat-icon>
+                    </button>
+
+                    <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileSettings()">
+                        <mat-icon>settings</mat-icon>
+                    </button>
+                </span>
+            </mat-card-header>
+
+            <mat-card-content>
+                <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
+                                    [profile]="activeProfile"
+                                    (modChange)="registerModUpdate($event.name, $event.modRef)"
+                                    (modOrderChange)="reorderMods($event)" />
+                
+                <ng-template #emptyModListHint>
+                    <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
+                </ng-template>
+            </mat-card-content>
+        </mat-card>
+    </div>
 
     <mat-card id="profile-actions" class="control-card mat-elevation-z3">
         <mat-card-header>

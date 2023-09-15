@@ -13,9 +13,9 @@ export namespace AppProfile {
     export function create(name: string): AppProfile {
         return {
             name,
-            gameBaseDir: "TODO",
-            modBaseDir: "TODO",
-            gameBinaryPath: "TODO",
+            gameBaseDir: "",
+            modBaseDir: "",
+            gameBinaryPath: "",
             mods: new Map()
         };
     }

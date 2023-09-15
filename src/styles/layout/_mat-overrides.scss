@@ -12,4 +12,11 @@
             }
         }
     }
+
+    mat-form-field[subscript=false] {
+
+        .mat-mdc-form-field-subscript-wrapper {
+            display: none !important;
+        }
+    }
 }

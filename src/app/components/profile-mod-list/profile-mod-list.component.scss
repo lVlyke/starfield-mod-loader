@@ -3,6 +3,25 @@
     mat-list-item {
         cursor: pointer;
 
+        .item-line-info {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+
+            > :not(mat-checkbox):first-of-type {
+                flex: 1 1 100%;
+            }
+
+            > .mod-load-order {
+                font-family: monospace;
+                font-size: 1rem;
+                opacity: 0.6;
+                min-width: 1rem;
+            }
+        }
+
         &:not(.cdk-drag-placeholder) {
             transition: transform 250ms ease-in;
         }

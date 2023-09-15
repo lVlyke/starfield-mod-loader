@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject, ViewChild } from "@angular/core";
-import { AfterViewInit, ComponentState, DeclareState } from "@lithiumjs/angular";
+import { AfterViewInit, ComponentState, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, NgForm } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { Observable } from "rxjs";
@@ -31,14 +31,19 @@ import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-help
 })
 export class AppProfileSettingsModal extends BaseComponent {
 
+    public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
+
     @DeclareState()
-    public profile!: AppProfile;
+    public profile?: AppProfile;
+
+    @DeclareState()
+    public createMode = false;
 
     @ViewChild(AppProfileSettingsComponent)
-    protected readonly profileSettingsComponent!: AppProfileSettingsComponent;
+    public readonly profileSettingsComponent!: AppProfileSettingsComponent;
 
     @AfterViewInit()
-    private readonly afterViewInit$!: Observable<void>;
+    public readonly afterViewInit$!: Observable<void>;
 
     constructor(
         @Inject(OverlayRefSymbol) public readonly overlayRef: OverlayHelpersRef,
@@ -49,6 +54,9 @@ export class AppProfileSettingsModal extends BaseComponent {
         this.afterViewInit$.pipe(
             switchMap(() => this.profileSettingsComponent.onFormSubmit$),
             filter(form => !!form.valid),
-        ).subscribe(() => overlayRef.close());
+        ).subscribe((form) => {
+            this.onFormSubmit$.next(form);
+            overlayRef.close();
+        });
     }
 }

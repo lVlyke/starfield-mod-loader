@@ -1,5 +1,6 @@
-import { BasicAction } from './basic-action';
-import { AppData } from '../models/app-data';
+import { BasicAction } from "./basic-action";
+import { AppData } from "../models/app-data";
+import { AppProfile } from "../models/app-profile";
 
 export namespace AppActions {
 
@@ -20,4 +21,20 @@ export namespace AppActions {
 
     export const updateActiveProfile = createUpdateAction("activeProfile");
     export const activateMods = createUpdateAction("modsActivated");
+
+    export class SetProfiles {
+        public static readonly type = `[app] set profiles`;
+
+        constructor(
+            public profileNames?: string[]
+        ) {}
+    }
+
+    export class AddProfile {
+        public static readonly type = `[app] add profile`;
+
+        constructor(
+            public profile: AppProfile
+        ) {}
+    }
 }

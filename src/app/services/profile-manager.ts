@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
-import { delay, distinctUntilChanged, filter, map, switchMap, take, tap, toArray } from "rxjs/operators";
+import { delay, distinctUntilChanged, filter, finalize, map, switchMap, take, takeLast, tap, toArray } from "rxjs/operators";
 import { Observable, combineLatest, concat, of } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
@@ -13,7 +13,7 @@ import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
 import { ModProfileRef } from "../models/mod-profile-ref";
-import { OverlayHelpers, OverlayHelpersRef } from "./overlay-helpers";
+import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from "./overlay-helpers";
 import { AppProfileSettingsModal } from "../modals/profile-settings";
 
 @Injectable({ providedIn: "root" })
@@ -80,10 +80,12 @@ export class ProfileManager {
     public loadSettings(): Observable<AppData> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             tap((settings) => {
+                this.store.dispatch(new AppActions.SetProfiles(settings?.profiles));
+
                 if (settings?.activeProfile) {
                     this.loadProfile(settings.activeProfile, true);
                 } else {
-                    this.createProfile("Default", true);
+                    this.createProfileFromUser();
                     this.saveSettings();
                 }
 
@@ -119,7 +121,7 @@ export class ProfileManager {
             switchMap((profile) => {
                 if (!profile) {
                     // TODO - Show error
-                    return this.createProfile(profileName);
+                    return this.createProfileFromUser();
                 }
 
                 if (setActive) {
@@ -137,6 +139,10 @@ export class ProfileManager {
         );
     }
 
+    public addProfile(profile: AppProfile): Observable<any> {
+        return this.store.dispatch(new AppActions.AddProfile(profile));
+    }
+
     public createProfile(profileName: string, setActive: boolean = true): Observable<AppProfile> {
         const profile = AppProfile.create(profileName);
 
@@ -144,14 +150,37 @@ export class ProfileManager {
             this.setActiveProfile(profile);
         }
 
+        this.addProfile(profile);
+
         return this.saveProfile(profile);
     }
 
-    public setActiveProfile(profile: AppProfile): Observable<any> {
-        return this.store.dispatch(new AppActions.updateActiveProfile(profile));
+    public createProfileFromUser(): Observable<AppProfile> {
+        return this.showNewProfileWizard();
     }
 
-    public showProfileSettings(): Observable<OverlayHelpersRef> {
+    public setActiveProfile(profile: AppProfile | string): Observable<any> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                // Undeploy the mods of the previous profile before switching
+                return !!activeProfile ? this.undeployMods() : of(true);
+            }),
+            switchMap(() => {
+                if (typeof profile === "string") {
+                    return this.loadProfile(profile, true);
+                } else {
+                    return this.store.dispatch(new AppActions.updateActiveProfile(profile));
+                }
+            })
+        ));
+    }
+
+    public updateActiveProfile(profileChanges: AppProfile): Observable<any> {
+        return this.store.dispatch(new AppActions.updateActiveProfile(profileChanges));
+    }
+
+    public showProfileSettings(): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             filterDefined(),
@@ -168,6 +197,21 @@ export class ProfileManager {
 
                 modContextMenuRef.component.instance.profile = activeProfile;
                 return modContextMenuRef;
+            })
+        ));
+    }
+
+    public showNewProfileWizard(setActive: boolean = true): Observable<AppProfile> {
+        return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
+            switchMap((overlayRef) => {
+                overlayRef.component.instance.profile = AppProfile.create("New Profile");
+                overlayRef.component.instance.createMode = true;
+                overlayRef.component.changeDetectorRef.detectChanges();
+
+                return overlayRef.component.instance.onFormSubmit$.pipe(
+                    map(() => overlayRef.component.instance.profileSettingsComponent.formModel),
+                    switchMap(() => this.setActiveProfile(overlayRef.component.instance.profileSettingsComponent.formModel)),
+                );
             })
         ));
     }
@@ -258,6 +302,7 @@ export class ProfileManager {
 
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
+            profiles: appData.profileNames,
             activeProfile: appData.activeProfile?.name,
             modsActivated: appData.modsActivated
         };

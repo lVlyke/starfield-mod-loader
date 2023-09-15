@@ -9,7 +9,11 @@ import { ModProfileRef } from "../../models/mod-profile-ref";
 import { OverlayHelpers } from "../../services/overlay-helpers";
 import { AppModContextMenuModal } from "../../modals/mod-context-menu";
 
-type ModListEntry = { name: string, modRef: ModProfileRef };
+type ModListEntry = {
+    name: string,
+    modRef: ModProfileRef,
+    order: number | undefined
+};
 
 @Component({
     selector: "app-profile-mod-list",
@@ -45,9 +49,20 @@ export class AppProfileModListComponent extends BaseComponent {
     ) {
         super({ cdRef });
 
-        stateRef.get("profile").subscribe(profile => this.modList = Array.from(profile.mods.entries()).map(([name, modRef]) => {
-            return { name, modRef };
-        }));
+        stateRef.get("profile").subscribe((profile) => {
+            let modIndex = 0;
+            this.modList = Array.from(profile.mods.entries()).map(([name, modRef]) => {
+                if (modRef.enabled) {
+                    modIndex++;
+                }
+                
+                return {
+                    name,
+                    modRef,
+                    order: modRef.enabled ? modIndex : undefined
+                };
+            });
+        });
 
         this.showModContextMenu$.subscribe(([event, { name, modRef }]) => {
             const modContextMenuRef = overlayHelpers.createAttached(AppModContextMenuModal, {

@@ -17,11 +17,17 @@ import { ProfileManager } from "src/app/services/profile-manager";
 })
 export class AppModsOverviewPage extends BasePage {
 
+    @Select(AppState.getProfileNames)
+    public readonly profileNames$!: Observable<AppProfile[]>;
+
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
 
     @Select(AppState.isModsActivated)
     public readonly isModsActivated$!: Observable<boolean>;
+
+    @AsyncState()
+    public readonly profileNames!: AppProfile[];
 
     @AsyncState()
     public readonly activeProfile?: AppProfile;
