@@ -1,11 +1,12 @@
-//@ts-check
+// @ts-check
 const { exit } = require("process");
 const execSync = require("child_process").execSync;
 const spawn = require("child_process").spawn;
 
 const RELEASE_MODE = process.argv.includes("--release");
 
-const buildTask = spawn("ng", [
+const buildTask = spawn("npx", [
+    "ng",
     "build",
     ...RELEASE_MODE ? ["--configuration", "production"] : [],
     "--watch",
@@ -19,7 +20,10 @@ buildTask.stdout.on("data", (data) => {
     console.log(data.toString());
 
     if (data.toString().includes("Build at:")) {
-        execSync("npm run postbuild", { stdio: "inherit" });
+        execSync(
+            "node ./scripts/copy-assets.js",
+            { stdio: "inherit" }
+        );        
 
         if (!electronProcess) {
             console.log("Starting Electron app");

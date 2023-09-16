@@ -27,6 +27,9 @@ class ElectronLoader {
     /** @type Record<string, boolean> */ ignorePathChanges = {};
 
     constructor() {
+        log.transports.file.level = "info";
+        log.transports.file.resolvePath = () => path.join(__dirname, "app.log");
+
         Menu.setApplicationMenu(this.createMenu());
 
         // This method will be called when Electron has finished
@@ -319,13 +322,15 @@ class ElectronLoader {
     }
 
     initWindow() {
-        // Create the browser window.
+        // Create the browser window
         this.mainWindow = new BrowserWindow({
             width: 1280,
             height: 720,
             webPreferences: {
                 nodeIntegration: true,
-                contextIsolation: false
+                contextIsolation: false, // TODO
+                // Enable HMR in debug mode
+                preload: DEBUG_MODE ? path.join(__dirname, "electron-watcher.js") : undefined
             }
         });
     
@@ -333,7 +338,7 @@ class ElectronLoader {
     }
 
     loadApp() {
-        // and load the index.html of the app.
+        // load the index.html of the app.
         this.mainWindow.loadURL(
             url.format({
                 pathname: path.join(__dirname, `index.html`),
@@ -392,14 +397,14 @@ class ElectronLoader {
                 ]
             },
 
-            {
+            ...this.createDebugMenuOption({
                 label: 'View',
                 submenu: [
-                    /*...this.createDebugMenuOption(*/{
+                    {
                        role: "toggleDevTools"
-                    }//)
+                    }
                 ]
-            }
+            })
         ]);
     }
 
