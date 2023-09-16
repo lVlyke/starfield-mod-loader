@@ -1,5 +1,6 @@
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
+import { GameDetails } from "./game-details";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -76,6 +77,17 @@ export namespace AppMessage {
         id: `${Prefix}:showPreferences`;
     }
 
+    export interface LoadGameDatabase extends Base {
+        id: `${Prefix}:loadGameDatabase`;
+    }
+
+    export interface FindBestProfileDefaults extends Base {
+        id: `${Prefix}:findBestProfileDefaults`;
+        data: {
+            gameDetails: GameDetails;
+        };
+    }
+
     export type AppMessage = ChooseDirectory
                            | ChooseFilePath
                            | LoadSettings
@@ -84,7 +96,9 @@ export namespace AppMessage {
                            | LoadProfile
                            | SaveProfile
                            | VerifyProfile
-                           | ShowPreferences;
+                           | ShowPreferences
+                           | LoadGameDatabase
+                           | FindBestProfileDefaults;
 
     // Profile messages:
 
@@ -224,6 +238,8 @@ export namespace AppMessage {
         "app:saveProfile",
         "app:verifyProfile",
         "app:showPreferences",
+        "app:loadGameDatabase",
+        "app:findBestProfileDefaults",
 
         "profile:settings",
         "profile:addMod",

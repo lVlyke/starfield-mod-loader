@@ -1,15 +1,18 @@
 import * as _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { NgForm, NgModel } from "@angular/forms";
-import { ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
-import { Observable, combineLatest } from "rxjs";
-import { filter, switchMap, tap } from "rxjs/operators";
+import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
+import { Select } from "@ngxs/store";
+import { Observable } from "rxjs";
+import { filter, map, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ObservableUtils } from "../../util/observable-utils";
 import { ElectronUtils } from "../../util/electron-utils";
-import { filterDefined } from "../../core/operators";
+import { filterDefined, filterTrue } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
+import { AppState } from "../../state";
+import { GameDatabase } from "../../models/game-database";
 
 @Component({
     selector: "app-profile-settings",
@@ -24,8 +27,14 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
 
+    @Select(AppState.getGameDb)
+    public readonly gameDb$!: Observable<GameDatabase>;
+
+    @AsyncState()
+    public readonly gameDb!: GameDatabase;
+
     @Input()
-    public profile?: AppProfile;
+    public profile!: AppProfile;
 
     @Input()
     public createMode = false;
@@ -43,14 +52,28 @@ export class AppProfileSettingsComponent extends BaseComponent {
     ) {
         super({ cdRef });
 
-        combineLatest(stateRef.getAll("profile", "createMode")).subscribe(([profile, createMode]) => {
-            if (!!profile) {
-                this._formModel = _.cloneDeep(profile);
-            } else if (!this.formModel && createMode) {
-                this._formModel = AppProfile.create("New Profile");
-            }
+        // Clone the input profile so we don't mutate it during editing
+        stateRef.get("profile").subscribe((profile) => {
+            this._formModel = _.cloneDeep(profile);
         });
 
+        // If `createMode` is set, try to find relevant defaults for the current game title
+        stateRef.get("createMode").pipe(
+            filterTrue(),
+            switchMap(() => stateRef.get("profile")),
+            take(1),
+            map(profile => this.gameDb[profile.gameId]),
+            filterDefined(),
+            switchMap(gameDetails => ElectronUtils.invoke("app:findBestProfileDefaults", { gameDetails }))
+        ).subscribe((profileDefaults: Partial<AppProfile>) => {
+            Object.entries(profileDefaults).forEach(([profileProp, profileDefaultVal]) => {
+                if (!_.isNil(profileDefaultVal)) {
+                    this._formModel = { ...this._formModel, [profileProp]: profileDefaultVal };
+                }
+            });
+        });
+
+        // Update/create the profile on form submit
         this.onFormSubmit$.pipe(
             filter(form => !!form.valid),
             switchMap(() => {

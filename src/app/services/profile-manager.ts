@@ -20,6 +20,8 @@ import { AppDialogs } from "../services/app-dialogs";
 import { filterTrue } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
 import { AppPreferencesModal } from "../modals/app-preferences";
+import { GameId } from "../models/game-id";
+import { GameDatabase } from "../models/game-database";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -112,6 +114,7 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             switchMap((settings) => {
                 return this.store.dispatch(new AppActions.SetProfiles(settings?.profiles)).pipe(
+                    switchMap(() => this.updateGameDatabase()),
                     switchMap(() => {
                         if (settings?.activeProfile) {
                             return this.loadProfile(settings.activeProfile, true);
@@ -138,6 +141,20 @@ export class ProfileManager {
     public updateSettings(settings: Partial<AppData>): Observable<void> {
         return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
             switchMap(() => this.saveSettings())
+        ));
+    }
+
+    public updateGameDatabase(): Observable<GameDatabase> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
+            switchMap((gameDb) => {
+                console.log(gameDb);
+                if (!!gameDb) {
+                    return this.store.dispatch(new AppActions.updateGameDb(gameDb))
+                } else {
+                    // TODO
+                    return throwError(() => "Unable to open game database.");
+                }
+            })
         ));
     }
 
@@ -277,8 +294,12 @@ export class ProfileManager {
         return this.store.dispatch(new AppActions.AddProfile(profile));
     }
 
-    public createProfile(profileName: string, setActive: boolean = true): Observable<AppProfile> {
-        const profile = AppProfile.create(profileName);
+    public createProfile(
+        profileName: string,
+        gameId: GameId,
+        setActive: boolean = true
+    ): Observable<AppProfile> {
+        const profile = AppProfile.create(profileName, gameId);
 
         if (setActive) {
             this.setActiveProfile(profile);
@@ -362,7 +383,7 @@ export class ProfileManager {
     public showNewProfileWizard(): Observable<AppProfile> {
         return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
             switchMap((overlayRef) => {
-                overlayRef.component.instance.profile = AppProfile.create("New Profile");
+                overlayRef.component.instance.profile = AppProfile.create("New Profile", GameId.STARFIELD); // TODO
                 overlayRef.component.instance.createMode = true;
                 overlayRef.component.changeDetectorRef.detectChanges();
 

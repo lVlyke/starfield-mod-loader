@@ -1,9 +1,11 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { AppProfileActiveModCountPipe } from "./profile-active-mod-count.pipe";
+import { AppGameTitlePipe } from "./game-title.pipe";
 
 const PIPES = [
-    AppProfileActiveModCountPipe
+    AppProfileActiveModCountPipe,
+    AppGameTitlePipe
 ];
 
 @NgModule({

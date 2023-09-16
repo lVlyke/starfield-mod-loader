@@ -16,6 +16,7 @@ class ElectronLoader {
 
     static /** @type string */ APP_SETTINGS_FILE = "settings.json";
     static /** @type string */ APP_PROFILES_DIR = "profiles";
+    static /** @type string */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
     static /** @type string */ PROFILE_SETTINGS_FILE = "profile.json";
     static /** @type string */ PROFILE_METADATA_FILE = ".sml.json";
     static /** @type string */ PROFILE_MODS_DIR = "mods";
@@ -90,6 +91,15 @@ class ElectronLoader {
            return this.saveSettings(settings);
         });
 
+        ipcMain.handle("app:loadGameDatabase", async (_event, _data) => {
+            try {
+                return this.loadGameDatabase();
+            } catch (e) {
+                log.error(e);
+                return null;
+            }
+        });
+
         ipcMain.handle("app:loadProfile", async (_event, { name }) => {
             return this.loadProfile(name);
         });
@@ -108,6 +118,30 @@ class ElectronLoader {
                 modBaseDir: modDirVerifyResult,
                 gameBaseDir: gameDirVerifyResult
             };
+        });
+
+        ipcMain.handle("app:findBestProfileDefaults", async (_event, { gameDetails }) => {
+            const result = {};
+
+            if (gameDetails.modBaseDirs) {
+                result.modBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.modBaseDirs.find((modBaseDir) => {
+                    return fs.existsSync(modBaseDir) || fs.existsSync(path.dirname(modBaseDir));
+                }));
+            }
+
+            if (gameDetails.gameBaseDirs) {
+                result.gameBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBaseDirs.find((gameBaseDir) => {
+                    return fs.existsSync(gameBaseDir);
+                }));
+            }
+
+            if (gameDetails.gameBinaryPaths) {
+                result.gameBinaryPath = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBinaryPaths.find((gameBinaryPath) => {
+                    return fs.existsSync(gameBinaryPath);
+                }));
+            }
+
+            return result;
         });
 
         ipcMain.handle("profile:findManualMods", async (_event, { profile }) => {
@@ -361,9 +395,9 @@ class ElectronLoader {
             {
                 label: 'View',
                 submenu: [
-                    ...this.createDebugMenuOption({
+                    /*...this.createDebugMenuOption(*/{
                        role: "toggleDevTools"
-                    })
+                    }//)
                 ]
             }
         ]);
@@ -384,6 +418,16 @@ class ElectronLoader {
             path.join(ElectronLoader.APP_SETTINGS_FILE),
             JSON.stringify(settings)
         );
+    }
+
+    loadGameDatabase() {
+        if (!fs.existsSync(ElectronLoader.GAME_DB_FILE)) {
+            return {};
+        }
+
+        const dbSrc = fs.readFileSync(ElectronLoader.GAME_DB_FILE);
+
+        return JSON.parse(dbSrc.toString("utf8"));
     }
 
     getProfileDir(profileName) {
@@ -564,6 +608,30 @@ class ElectronLoader {
 
         // Wait for all files to be removed
         await Promise.all(undeployJobs);
+    }
+
+    // Credit: https://stackoverflow.com/a/57253723
+    /**
+    * Replaces all environment variables with their actual value.
+    * Keeps intact non-environment variables using '%'.
+    * @param  {string} filePath The input file path with percents
+    * @return {string}          The resolved file path
+    */
+    #resolveWindowsEnvironmentVariables(filePath) {
+        if (!filePath || typeof (filePath) !== "string") {
+            return "";
+        }
+
+        /**
+         * @param  {string} withPercents    "%USERNAME%"
+         * @param  {string} withoutPercents "USERNAME"
+         * @return {string}
+         */
+        filePath = filePath.replace(/%([^%]+)%/g, (withPercents, withoutPercents) => {
+            return process.env[withoutPercents] || withPercents;
+        });
+
+        return filePath;
     }
 }
 

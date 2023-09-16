@@ -1,0 +1,18 @@
+{
+    "starfield": {
+        "title": "Starfield",
+        "modBaseDirs": [
+            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data"
+        ],
+        "gameBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
+            "C:\\XboxGames\\Starfield\\Content"
+        ],
+        "gameBinaryPaths": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
+            "C:\\XboxGames\\Starfield\\Content\\Starfield.exe"
+        ]
+    }
+}

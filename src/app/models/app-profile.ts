@@ -1,7 +1,9 @@
 import { ModProfileRef } from "./mod-profile-ref";
+import { GameId } from "./game-id";
 
 export interface AppProfile {
     name: string;
+    gameId: GameId;
     gameBaseDir: string;
     modBaseDir: string;
     gameBinaryPath: string;
@@ -22,9 +24,10 @@ export namespace AppProfile {
 
     export type ModVerificationResult = VerificationResults["mods"];
 
-    export function create(name: string): AppProfile {
+    export function create(name: string, gameId: GameId): AppProfile {
         return {
             name,
+            gameId,
             gameBaseDir: "",
             modBaseDir: "",
             gameBinaryPath: "",

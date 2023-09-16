@@ -19,10 +19,12 @@ export namespace AppActions {
     export type ActiveProfileAction = BasicAction<AppData, "activeProfile">;
     export type ModsActivatedAction = BasicAction<AppData, "modsActivated">;
     export type DeployInProgressAction = BasicAction<AppData, "deployInProgress">;
+    export type GameDbAction = BasicAction<AppData, "gameDb">;
 
     export const updateActiveProfile = createUpdateAction("activeProfile");
     export const activateMods = createUpdateAction("modsActivated");
     export const setDeployInProgress = createUpdateAction("deployInProgress");
+    export const updateGameDb = createUpdateAction("gameDb");
 
     export class UpdateSettings {
         public static readonly type = `[app] update settings`;

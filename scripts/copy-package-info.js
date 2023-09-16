@@ -6,6 +6,7 @@ const BUILD_DIR = "./dist";
 
 const ASSETS = {
     "package.json": "package.json",
+    "game-db.json": "game-db.json",
     "src/electron.js": "electron.js",
     "src/electron-watcher.js": "electron-watcher.js"
 };

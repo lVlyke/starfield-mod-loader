@@ -7,12 +7,14 @@ import { AppActions } from "./app.actions";
 import { AppProfile } from "../models/app-profile";
 import { ActiveProfileState } from "./active-profile/active-profile.state";
 import { AppTheme } from "../models/app-theme";
+import { GameDatabase } from "../models/game-database";
 
 @State<AppData>({
     name: "app",
     defaults: {
         profileNames: [],
         theme: AppTheme.Dark,
+        gameDb: {},
         modsActivated: false,
     },
     children: [ActiveProfileState]
@@ -43,6 +45,11 @@ export class AppState {
     @Selector()
     public static isDeployInProgress(state: AppData): boolean {
         return !!state.deployInProgress;
+    }
+
+    @Selector()
+    public static getGameDb(state: AppData): GameDatabase {
+        return state.gameDb;
     }
 
     @Action(AppActions.UpdateSettings)
@@ -76,6 +83,11 @@ export class AppState {
 
     @Action(AppActions.setDeployInProgress)
     public setDeployInProgress(context: AppState.Context, state: AppActions.DeployInProgressAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.updateGameDb)
+    public updateGameDb(context: AppState.Context, state: AppActions.GameDbAction): void {
         context.patchState(_.cloneDeep(state));
     }
 }
