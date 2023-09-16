@@ -176,7 +176,6 @@ class ElectronLoader {
                     return {
                         name: modName,
                         modRef: {
-                            path: modName,
                             enabled: true
                         }
                     };
@@ -184,6 +183,19 @@ class ElectronLoader {
             }
 
             return null;
+        });
+
+        ipcMain.handle("profile:deleteMod", async (_event, { profile, modName }) => {
+            const modDirPath = path.join("profiles", profile.name, "mods", modName);
+
+            fs.removeSync(modDirPath);
+        });
+
+        ipcMain.handle("profile:renameMod", async (_event, { profile, modCurName, modNewName }) => {
+            const modCurDir = path.join("profiles", profile.name, "mods", modCurName);
+            const modNewDir = path.join("profiles", profile.name, "mods", modNewName);
+
+            fs.moveSync(modCurDir, modNewDir);
         });
 
         ipcMain.handle("profile:deploy", async (_event, { profile }) => {
@@ -194,8 +206,8 @@ class ElectronLoader {
             this.undeployProfile(profile);
         });
 
-        ipcMain.handle("profile:showModInFileExplorer", async (_event, { profile, modRef }) => {
-            const modDirPath = path.join("profiles", profile.name, "mods", modRef.path);
+        ipcMain.handle("profile:showModInFileExplorer", async (_event, { profile, modName }) => {
+            const modDirPath = path.join("profiles", profile.name, "mods", modName);
 
             shell.openPath(path.resolve(modDirPath));
         });
@@ -228,8 +240,8 @@ class ElectronLoader {
     initWindow() {
         // Create the browser window.
         this.mainWindow = new BrowserWindow({
-            width: 1920,
-            height: 1080,
+            width: 1280,
+            height: 720,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false
@@ -342,10 +354,10 @@ class ElectronLoader {
     }
 
     verifyProfileModsExist(profile) {
-        const profileDir = path.join("profiles", profile.name);
+        const modsDir = path.join("profiles", profile.name, "mods");
 
-        return profile.mods.entries().reduce((result, [modName, mod]) => {
-            const modExists = fs.existsSync(path.join(profileDir, mod.path));
+        return Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
+            const modExists = fs.existsSync(path.join(modsDir, modName));
 
             result = Object.assign(result, {
                 [modName]: {
@@ -387,9 +399,9 @@ class ElectronLoader {
 
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to allow existing manual mods in the folder to be preserved)
-        Array.from(profile.mods.entries()).reverse().forEach(([_modName, mod]) => {
+        Array.from(profile.mods.entries()).reverse().forEach(([modName, mod]) => {
             if (mod.enabled) {
-                const modDirPath = path.join("profiles", profile.name, "mods", mod.path);
+                const modDirPath = path.join("profiles", profile.name, "mods", modName);
 
                 fs.copySync(modDirPath, profile.modBaseDir, { overwrite: false });
             }

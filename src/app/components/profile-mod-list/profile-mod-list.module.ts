@@ -4,6 +4,8 @@ import { DragDropModule } from "@angular/cdk/drag-drop"
 import { MatButtonModule } from "@angular/material/button";
 import { MatListModule } from "@angular/material/list";
 import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatIconModule } from "@angular/material/icon";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { AppProfileModListComponent } from "./profile-mod-list.component";
 
 @NgModule({
@@ -18,6 +20,8 @@ import { AppProfileModListComponent } from "./profile-mod-list.component";
         MatButtonModule,
         MatListModule,
         MatCheckboxModule,
+        MatIconModule,
+        MatTooltipModule,
     ],
     exports: [
         AppProfileModListComponent

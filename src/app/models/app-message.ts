@@ -1,6 +1,5 @@
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
-import { ModProfileRef } from "./mod-profile-ref";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -100,6 +99,23 @@ export namespace AppMessage {
         };
     }
 
+    export interface DeleteProfileMod extends Base {
+        id: `${ProfileMessage.Prefix}:deleteMod`;
+        data: {
+            profile: AppProfile;
+            modName: string;
+        };
+    }
+
+    export interface RenameProfileMod extends Base {
+        id: `${ProfileMessage.Prefix}:renameMod`;
+        data: {
+            profile: AppProfile;
+            modCurName: string;
+            modNewName: string;
+        };
+    }
+
     export interface DeployProfile extends Base {
         id: `${ProfileMessage.Prefix}:deploy`;
         data: {
@@ -118,7 +134,7 @@ export namespace AppMessage {
         id: `${ProfileMessage.Prefix}:showModInFileExplorer`;
         data: {
             profile: AppProfile;
-            modRef: ModProfileRef;
+            modName: string;
         };
     }
 
@@ -159,6 +175,8 @@ export namespace AppMessage {
 
     export type ProfileMessage = ProfileSettings
                                | AddProfileMod
+                               | DeleteProfileMod
+                               | RenameProfileMod
                                | DeployProfile
                                | UndeployProfile
                                | ShowModInFileExplorer
@@ -181,6 +199,8 @@ export namespace AppMessage {
 
         "profile:settings",
         "profile:addMod",
+        "profile:deleteMod",
+        "profile:renameMod",
         "profile:deploy",
         "profile:undeploy",
         "profile:showModInFileExplorer",

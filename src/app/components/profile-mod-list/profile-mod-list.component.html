@@ -2,11 +2,21 @@
     <ng-container *ngFor="let modEntry of modList">
         <mat-list-item cdkDrag
                        [attr.li-theme]="themeContainer.theme"
+                       [class.mod-unverified]="!!modEntry.modRef.verificationError"
                        (contextmenu)="showModContextMenu$.next([$event, modEntry])">
             <span matLine class="item-line-info">
                 <mat-checkbox [checked]="modEntry.modRef.enabled"
+                              [disabled]="!!modEntry.modRef.verificationError"
                               (change)="modChange$.emit(assign({}, modEntry, { modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) }))" />
-                <span>{{ modEntry.name }}</span>
+                <span class="mod-title">
+                    <span>{{ modEntry.name }}</span>
+                    
+                    <mat-icon *ngIf="!!modEntry.modRef.verificationError"
+                              class="mod-verification-error-icon"
+                              matTooltip="This mod has a verification error">
+                        error
+                    </mat-icon>
+                </span>
                 <span class="mod-load-order">{{ modEntry.order ?? "--" }}</span>
             </span>
         </mat-list-item>

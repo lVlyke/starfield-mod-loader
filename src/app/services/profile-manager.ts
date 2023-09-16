@@ -1,9 +1,10 @@
 import * as _ from "lodash";
 import { Inject, Injectable, forwardRef } from "@angular/core";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
-import { delay, distinctUntilChanged, filter, finalize, map, switchMap, take, takeLast, tap, toArray } from "rxjs/operators";
-import { Observable, combineLatest, concat, of } from "rxjs";
+import { delay, distinctUntilChanged, filter, map, mergeMap, mergeScan, skip, switchMap, take, tap, toArray } from "rxjs/operators";
+import { Observable, combineLatest, concat, forkJoin, from, of } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -13,8 +14,10 @@ import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
 import { ModProfileRef } from "../models/mod-profile-ref";
-import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from "./overlay-helpers";
+import { OverlayHelpers, OverlayHelpersComponentRef } from "./overlay-helpers";
 import { AppProfileSettingsModal } from "../modals/profile-settings";
+import { AppDialogs } from "../services/app-dialogs";
+import { filterTrue } from "../core/operators";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -31,7 +34,9 @@ export class ProfileManager {
     constructor(
         messageHandler: AppMessageHandler,
         @Inject(forwardRef(() => Store)) private readonly store: Store,
-        private readonly overlayHelpers: OverlayHelpers
+        private readonly overlayHelpers: OverlayHelpers,
+        private readonly dialogs: AppDialogs,
+        private readonly snackbar: MatSnackBar
     ) {
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:addMod"),
@@ -60,11 +65,13 @@ export class ProfileManager {
                 switchMap(profile => this.saveProfile(profile))
             ).subscribe();
 
+            // Deploy/undeploy mods when activated/deactivated
             combineLatest([
                 this.activeProfile$,
                 this.isModsActivated$,
             ]).pipe(
                 filter(([activeProfile]) => !!activeProfile),
+                skip(1),
                 distinctUntilChanged((a, b) => _.isEqual(a, b)),
                 switchMap(([, activated]) => {
                     if (activated) {
@@ -79,17 +86,18 @@ export class ProfileManager {
 
     public loadSettings(): Observable<AppData> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
-            tap((settings) => {
-                this.store.dispatch(new AppActions.SetProfiles(settings?.profiles));
-
-                if (settings?.activeProfile) {
-                    this.loadProfile(settings.activeProfile, true);
-                } else {
-                    this.createProfileFromUser();
-                    this.saveSettings();
-                }
-
-                this.activateMods(settings?.modsActivated);
+            switchMap((settings) => {
+                return this.store.dispatch(new AppActions.SetProfiles(settings?.profiles)).pipe(
+                    switchMap(() => {
+                        if (settings?.activeProfile) {
+                            return this.loadProfile(settings.activeProfile, true);
+                        } else {
+                            this.saveSettings();
+                            return this.createProfileFromUser();
+                        }
+                    }),
+                    switchMap(() => this.activateMods(settings?.modsActivated))
+                )
             }),
             switchMap(() => this.appState$.pipe(take(1)))
         ));
@@ -104,7 +112,10 @@ export class ProfileManager {
     }
 
     public activateMods(activate: boolean = true): Observable<void> {
-        return this.store.dispatch(new AppActions.activateMods(activate));
+        return ObservableUtils.hotResult$(this.verifyActiveProfile({ showSuccessMessage: false }).pipe(
+            filterTrue(),
+            switchMap(() => this.store.dispatch(new AppActions.activateMods(activate)))
+        ));
     }
 
     public reactivateMods(): Observable<any> {
@@ -135,8 +146,55 @@ export class ProfileManager {
 
     public saveProfile(profile: AppProfile): Observable<any> {
         return ObservableUtils.hotResult$(
-            ElectronUtils.invoke<AppProfile>("app:saveProfile", { profile })
+            ElectronUtils.invoke("app:saveProfile", { profile })
         );
+    }
+
+    public verifyActiveProfile(options: {
+        showSuccessMessage?: boolean;
+        showErrorMessage?: boolean;
+    } = { showErrorMessage: true, showSuccessMessage: true }): Observable<boolean> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            filterDefined(),
+            switchMap((profile) => ElectronUtils.invoke<AppProfile.VerificationResults>("app:verifyProfile", { profile })),
+            switchMap((verificationResults) => from(Object.entries(verificationResults))),
+            mergeScan((lastResult, [profileCategory, verificationResults]) => {
+                switch (profileCategory) {
+                    // Update the error status of each mod (i.e. mod files not found)
+                    case "mods": return forkJoin(Object.entries(verificationResults).map(([modName, verificationResult]) => {
+                        return this.updateModVerification(modName, verificationResult).pipe(
+                            mergeMap(() => this.verifyProfileVerificationResult(verificationResult))
+                        )
+                    })).pipe(map(results => results.every(Boolean) && lastResult));
+
+                    // TODO - Track error status of other profile state
+
+                    default: return this.verifyProfileVerificationResult(verificationResults).pipe(
+                        map(result => result && lastResult)
+                    );
+                }
+            }, true),
+            tap((result) => {
+                if (result && options.showSuccessMessage) {
+                    this.snackbar.open("Mods verified successfully!", undefined, {
+                        duration: 3000
+                    });
+                } else if (options.showErrorMessage) {
+                    this.snackbar.open("Mod verification failed with errors", "Close", {
+                        panelClass: "snackbar-error"
+                    });
+                }
+            })
+        ));
+    }
+
+    private verifyProfileVerificationResult(verificationResult: AppProfile.VerificationResult): Observable<boolean> {
+        return of(!verificationResult.error);
+    }
+
+    public updateModVerification(modName: string, verificationResult: AppProfile.ModVerificationResult): Observable<any> {
+        return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(modName, verificationResult));
     }
 
     public addProfile(profile: AppProfile): Observable<any> {
@@ -156,7 +214,7 @@ export class ProfileManager {
     }
 
     public createProfileFromUser(): Observable<AppProfile> {
-        return this.showNewProfileWizard();
+        return ObservableUtils.hotResult$(this.showNewProfileWizard());
     }
 
     public setActiveProfile(profile: AppProfile | string): Observable<any> {
@@ -183,7 +241,6 @@ export class ProfileManager {
     public showProfileSettings(): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            filterDefined(),
             map((activeProfile) => {
                 const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
                     center: true,
@@ -201,7 +258,7 @@ export class ProfileManager {
         ));
     }
 
-    public showNewProfileWizard(setActive: boolean = true): Observable<AppProfile> {
+    public showNewProfileWizard(): Observable<AppProfile> {
         return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
             switchMap((overlayRef) => {
                 overlayRef.component.instance.profile = AppProfile.create("New Profile");
@@ -236,18 +293,41 @@ export class ProfileManager {
         return this.store.dispatch(new ActiveProfileActions.AddMod(name, modRef));
     }
 
-    public deleteMod(name: string): Observable<void> {
-        return this.store.dispatch(new ActiveProfileActions.DeleteMod(name));
+    public deleteMod(modName: string): Observable<any> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => forkJoin([
+                this.store.dispatch(new ActiveProfileActions.DeleteMod(modName)),
+                ElectronUtils.invoke("profile:deleteMod", { profile: activeProfile, modName })
+            ]))
+        ));
+    }
+
+    public renameMod(modCurName: string, modNewName: string): Observable<any> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => concat([
+                ElectronUtils.invoke("profile:renameMod", { profile: activeProfile, modCurName, modNewName }),
+                this.store.dispatch(new ActiveProfileActions.RenameMod(modCurName, modNewName))
+            ]).pipe(toArray()))
+        ));
+    }
+
+    public renameModFromUser(modCurName: string): Observable<any> {
+        return ObservableUtils.hotResult$(this.dialogs.showModRenameDialog(modCurName).pipe(
+            filterDefined(),
+            switchMap((modNewName) => this.renameMod(modCurName, modNewName))
+        ));
     }
 
     public reorderMods(modOrder: string[]): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.ReorderMods(modOrder));
     }
 
-    public showModInFileExplorer(modRef: ModProfileRef): Observable<void> {
+    public showModInFileExplorer(modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showModInFileExplorer", { profile, modRef })
+            switchMap(profile => ElectronUtils.invoke("profile:showModInFileExplorer", { profile, modName })
         )));
     }
 
@@ -287,7 +367,9 @@ export class ProfileManager {
     }
 
     private deployActiveMods(): Observable<any> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return ObservableUtils.hotResult$(this.verifyActiveProfile({ showSuccessMessage: false }).pipe(
+            filterTrue(),
+            switchMap(() => this.activeProfile$),
             take(1),
             switchMap((activeProfile) => ElectronUtils.invoke("profile:deploy", { profile: activeProfile }))
         ));

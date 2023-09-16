@@ -32,13 +32,19 @@ export class AppModActionsComponent extends BaseComponent {
     }
 
     protected showModInFileExplorer(): void {
-        this.profileManager.showModInFileExplorer(this.modRef);
+        this.profileManager.showModInFileExplorer(this.modName);
 
         this.actionSelect$.emit();
     }
 
     protected deleteMod(): void {
         this.profileManager.deleteMod(this.modName);
+
+        this.actionSelect$.emit();
+    }
+
+    protected renameMod(): void {
+        this.profileManager.renameModFromUser(this.modName);
 
         this.actionSelect$.emit();
     }

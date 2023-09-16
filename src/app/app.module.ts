@@ -8,6 +8,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgxMaterialThemingModule } from "@lithiumjs/ngx-material-theming";
 import { NgxsModule } from "@ngxs/store";
 
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { NgxsReduxDevtoolsPluginModule } from "@ngxs/devtools-plugin";
 
 import { appStates } from "./state";
@@ -31,6 +33,8 @@ const STARTUP_SERVICES = [
     NgxMaterialThemingModule,
 
     NgxsModule.forRoot(appStates, { developmentMode: !environment.production }),
+
+    MatSnackBarModule,
 
     // Must be last
     NgxsReduxDevtoolsPluginModule.forRoot({ disabled: environment.production })

@@ -2,7 +2,6 @@ import * as _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { NgForm, NgModel } from "@angular/forms";
 import { ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
-import { Store } from "@ngxs/store";
 import { Observable, combineLatest } from "rxjs";
 import { filter, switchMap, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -40,7 +39,6 @@ export class AppProfileSettingsComponent extends BaseComponent {
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
-        store: Store,
         profileManager: ProfileManager
     ) {
         super({ cdRef });

@@ -1,4 +1,6 @@
+import type { AppProfile } from "./app-profile";
+
 export interface ModProfileRef {
-    path: string;
     enabled: boolean;
+    verificationError?: AppProfile.ModVerificationResult;
 }

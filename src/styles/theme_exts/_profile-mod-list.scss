@@ -5,6 +5,13 @@
 
     #{$selector} {
 
+        mat-list-item {
+    
+            &.mod-unverified {
+                background: mat.get-color-from-palette($warn, 400);
+            }
+        }
+
         @at-root .cdk-drag-preview {
             color: mixins.theme-foreground-color(text, $is-dark);
             background-color: mixins.theme-background-color(card, $is-dark) !important;

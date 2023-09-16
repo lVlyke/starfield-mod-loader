@@ -45,8 +45,9 @@
         }
 
         #profile-actions {
-            flex-basis: 50%;
+            flex-basis: 64%;
             margin-left: 1.5rem;
+            max-width: 768px;
 
             > mat-card-content {
                 display: flex;
@@ -56,6 +57,10 @@
                 height: 100%;
 
                 > .actions {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    row-gap: 1rem;
                     margin-bottom: 1.25rem;
 
                     > button {

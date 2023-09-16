@@ -33,6 +33,24 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
+    export class RenameMod {
+        public static readonly type = `[activeProfile] rename mod`;
+
+        constructor(
+            public curName: string,
+            public newName: string
+        ) {}
+    }
+
+    export class UpdateModVerification {
+        public static readonly type = `[activeProfile] update mod verification`;
+
+        constructor(
+            public modName: string,
+            public verificationResult?: AppProfile.ModVerificationResult
+        ) {}
+    }
+
     export class ReorderMods {
         public static readonly type = `[activeProfile] reorder mods`;
 

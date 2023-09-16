@@ -28,6 +28,36 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
+    @Action(ActiveProfileActions.RenameMod)
+    public renameMod(context: ActiveProfileState.Context, { curName, newName }: ActiveProfileActions.RenameMod): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        const mod = state.mods.get(curName);
+
+        if (!!mod) {
+            state.mods.delete(curName);
+            state.mods.set(newName, mod);
+        }
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.UpdateModVerification)
+    public updateModVerification(
+        context: ActiveProfileState.Context,
+        { modName, verificationResult }: ActiveProfileActions.UpdateModVerification
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        const mod = state.mods.get(modName);
+
+        if (!!mod) {
+            mod.verificationError = verificationResult?.error ? verificationResult : undefined;
+        }
+
+        context.setState(state);
+    }
+
     @Action(ActiveProfileActions.ReorderMods)
     public reorderMods(context: ActiveProfileState.Context, { modOrder }: ActiveProfileActions.ReorderMods): void {
         const state = _.cloneDeep(context.getState()!);

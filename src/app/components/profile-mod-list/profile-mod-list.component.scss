@@ -3,6 +3,14 @@
     mat-list-item {
         cursor: pointer;
 
+        &.mod-unverified {
+            font-style: italic;
+        }
+
+        &:not(.cdk-drag-placeholder) {
+            transition: transform 250ms ease-in;
+        }
+
         .item-line-info {
             display: inline-flex;
             flex-direction: row;
@@ -14,16 +22,21 @@
                 flex: 1 1 100%;
             }
 
-            > .mod-load-order {
+            .mod-title {
+                display: flex;
+                align-items: center;
+            }
+
+            .mod-verification-error-icon {
+                margin-left: 1rem;
+            }
+
+            .mod-load-order {
                 font-family: monospace;
                 font-size: 1rem;
                 opacity: 0.6;
                 min-width: 1rem;
             }
-        }
-
-        &:not(.cdk-drag-placeholder) {
-            transition: transform 250ms ease-in;
         }
     }
 
@@ -33,5 +46,12 @@
 
     @at-root .cdk-drag-animating {
         transition: transform 100ms ease-out;
+    }
+
+    @at-root .cdk-drag-preview {
+
+        .mod-load-order {
+            display: none;
+        }
     }
 }
