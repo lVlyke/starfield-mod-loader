@@ -1,5 +1,6 @@
 @use "./colors";
 @use "./layout";
+@use "./scrollbar";
 @use "./profile-mod-list";
 
 @mixin declare($primary, $accent, $warn, $is-dark) {
@@ -8,6 +9,7 @@
 
     @include colors.declare($primary, $accent, $warn, $is-dark);
     @include layout.declare($primary, $accent, $warn, $is-dark);
+    @include scrollbar.declare($primary, $accent, $warn, $is-dark);
 
     @include profile-mod-list.declare("app-profile-mod-list", $primary, $accent, $warn, $is-dark);
 }

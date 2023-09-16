@@ -1,0 +1,44 @@
+@use "../mixins";
+
+@mixin declare($primary, $accent, $warn, $is-dark) {
+    $track-color: mixins.theme-background-color(background, $is-dark);
+    $thumb-color: mixins.theme-background-color(focused-button, $is-dark);
+    $thumb-focused-color: mixins.theme-foreground-color(slider-off, $is-dark);
+    $corner-color: mixins.theme-background-color(selected-button, $is-dark);
+
+    @if ($is-dark) {
+        *::-webkit-scrollbar {
+            background: $track-color;
+        }
+
+        // DISABLED: *::-webkit-scrollbar-button {}
+        
+        *::-webkit-scrollbar-track {}
+        
+        *::-webkit-scrollbar-track-piece {}
+        
+        *::-webkit-scrollbar-thumb {
+            background: $thumb-color;
+
+            &:vertical {
+                border-top: 1px solid $track-color;
+                border-bottom: 1px solid $track-color;
+            }
+
+            &:horizontal {
+                border-left: 1px solid $track-color;
+                border-right: 1px solid $track-color;
+            }
+
+            &:hover, &:active {
+                background: $thumb-focused-color;
+            }
+        }
+        
+        *::-webkit-scrollbar-corner {
+            background: $corner-color;
+        }
+        
+        *::-webkit-resizer {}
+    }
+}

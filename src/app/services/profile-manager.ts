@@ -147,7 +147,6 @@ export class ProfileManager {
     public updateGameDatabase(): Observable<GameDatabase> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
             switchMap((gameDb) => {
-                console.log(gameDb);
                 if (!!gameDb) {
                     return this.store.dispatch(new AppActions.updateGameDb(gameDb))
                 } else {
