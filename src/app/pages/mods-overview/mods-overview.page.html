@@ -44,12 +44,12 @@
         </mat-card-header>
 
         <mat-card-content>
-            <app-profile-manual-mod-list [profile]="activeProfile" />
-
             <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
                                 [profile]="activeProfile"
                                 (modChange)="registerModUpdate($event.name, $event.modRef)"
                                 (modOrderChange)="reorderMods($event)" />
+
+            <app-profile-manual-mod-list [profile]="activeProfile" />
             
             <ng-template #emptyModListHint>
                 <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>

@@ -37,12 +37,14 @@ export class ActiveProfileState {
     public renameMod(context: ActiveProfileState.Context, { curName, newName }: ActiveProfileActions.RenameMod): void {
         const state = _.cloneDeep(context.getState()!);
 
-        const mod = state.mods.get(curName);
+        Array.from(state.mods.entries()).forEach(([modName, mod]) => {
+            state.mods.delete(modName);
 
-        if (!!mod) {
-            state.mods.delete(curName);
-            state.mods.set(newName, mod);
-        }
+            if (mod) {
+                // Rename the selected mod, preserving the prior load order
+                state.mods.set(modName === curName ? newName : modName, mod);
+            }
+        });
 
         context.setState(state);
     }

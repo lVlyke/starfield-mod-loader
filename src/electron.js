@@ -6,6 +6,7 @@ const url = require("url");
 const path = require("path");
 const { exec } = require("child_process");
 const fs = require("fs-extra");
+const fsPromises = require("fs").promises;
 const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
@@ -558,19 +559,22 @@ class ElectronLoader {
         }
 
         // Copy all mods to the modBaseDir for this profile
-        // (Copy mods in reverse with `overwrite: false` to allow existing manual mods in the folder to be preserved)
+        // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
         const deployableModFiles = Array.from(profile.mods.entries()).reverse();
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
                 const modDirPath = this.getProfileModDir(profile.name, modName);
 
-                await fs.copy(modDirPath, profile.modBaseDir, {
+                fs.copySync(modDirPath, profile.modBaseDir, {
                     overwrite: false,
+                    errorOnExist: false,
                     filter: (src, dest) => {
                         const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
                         const isModSubDir = fs.lstatSync(src).isDirectory();
-                        // Don't copy empty directories
-                        const shouldCopy = isModSubDir ? fs.readdirSync(src).length > 0 : true;
+                        const shouldCopy = isModSubDir
+                            // Don't copy empty directories
+                            ? fs.readdirSync(src).length > 0
+                            : true;
 
                         // Record mod files written from profile
                         if (shouldCopy && !isModSubDir && modRelPath.length > 0) {
@@ -601,7 +605,10 @@ class ElectronLoader {
         // Only remove files managed by this profile
         const undeployJobs = profileModFiles.map(async (existingFile) => {
             const fullExistingPath = path.join(profile.modBaseDir, existingFile);
-            await fs.remove(fullExistingPath);
+
+            if (fs.existsSync(fullExistingPath)) {
+                await fsPromises.rm(fullExistingPath, { force: true, recursive: true });
+            }
 
             // Recursively remove empty parent directories
             let existingDir = path.dirname(fullExistingPath);
