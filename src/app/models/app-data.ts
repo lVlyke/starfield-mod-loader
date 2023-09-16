@@ -4,4 +4,5 @@ export interface AppData {
     profileNames: string[];
     activeProfile?: AppProfile;
     modsActivated: boolean;
+    deployInProgress?: boolean;
 }

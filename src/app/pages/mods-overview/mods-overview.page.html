@@ -25,8 +25,9 @@
                 <mat-card-title>Mod List</mat-card-title>
 
                 <span id="mod-list-actions">
-                    <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="profileManager.addModFromUser()">
+                    <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
                         <mat-icon>add</mat-icon>
+                        <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                     </button>
 
                     <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="profileManager.showProfileModsDirInFileExplorer()">
@@ -44,6 +45,8 @@
             </mat-card-header>
 
             <mat-card-content>
+                <app-profile-manual-mod-list [profile]="activeProfile" />
+
                 <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
                                     [profile]="activeProfile"
                                     (modChange)="registerModUpdate($event.name, $event.modRef)"
@@ -132,3 +135,22 @@
         </mat-card-content>
     </mat-card>
 </div>
+
+<!-- Add mod menu popup -->
+<ng-template #addModMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                <button mat-list-item (click)="profileManager.addModFromUser(); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="accent">archive</mat-icon>
+                    <span matLine>Add Mod</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.addModFromUser({ importMod: true }); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="accent">folder</mat-icon>
+                    <span matLine>Import Mod</span>
+                </button>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>

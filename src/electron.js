@@ -10,6 +10,8 @@ const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
 
+const DEBUG_MODE = !app.isPackaged;
+
 class ElectronLoader {
     
     /** @type BrowserWindow */ mainWindow;
@@ -24,13 +26,6 @@ class ElectronLoader {
         // Some APIs can only be used after this event occurs.
         app.whenReady().then(() => {
             this.initWindow();
-
-            // TODO - Only enable in debug mode
-            // this.mainWindow.webContents.once("dom-ready", async () => {
-            //     await installExtension([REDUX_DEVTOOLS])
-            //         .then((name) => log.debug(`Added Extension:  ${name}`))
-            //         .catch((err) => log.debug("An error occurred: ", err));
-            // });
 
             app.on('activate', () => {
                 // On macOS it's common to re-create a window in the app when the
@@ -108,6 +103,10 @@ class ElectronLoader {
             };
         });
 
+        ipcMain.handle("profile:findManualMods", async (_event, { profile }) => {
+            return this.findManualMods(profile);
+        });
+
         ipcMain.handle("profile:addMod", async (_event, data) => {
             const pickedFile = (await dialog.showOpenDialog({
                 filters: [
@@ -122,13 +121,12 @@ class ElectronLoader {
                 ]
             }));
             
-            const filePath = pickedFile.filePaths[0];
-            const fileType = path.extname(filePath);
-            const modName = path.basename(filePath, fileType);
-            const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
-            const modDirStagingPath = path.join("profiles", data.profile.name, "_tmp", modName);
-
+            const filePath = pickedFile?.filePaths[0];
             if (!!filePath) {
+                const fileType = path.extname(filePath);
+                const modName = path.basename(filePath, fileType);
+                const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
+                const modDirStagingPath = path.join("profiles", data.profile.name, "_tmp", modName);
                 /** @type Promise */ let decompressOperation;
 
                 switch (fileType.toLowerCase()) {
@@ -183,6 +181,39 @@ class ElectronLoader {
             }
 
             return null;
+        });
+
+        ipcMain.handle("profile:importMod", async (_event, data) => {
+            const pickedModFolder = await dialog.showOpenDialog({
+                properties: ["openDirectory"]
+            });
+            
+            const folderPath = pickedModFolder?.filePaths[0];
+            if (!!folderPath) {
+                const modName = path.basename(folderPath);
+                const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
+                const modDataDirs = [
+                    path.join(folderPath, "Data"),
+                    path.join(folderPath, "data"),
+                ];
+
+                let modDataDir = modDataDirs.find(dataDir => fs.existsSync(dataDir));
+                if (!modDataDir) {
+                    modDataDir = folderPath;
+                }
+
+                // TODO - Notify user of Data dir change if modDataDir exists
+
+                // Copy the data dir to the mod directory
+                fs.copySync(modDataDir, modDirPath, { overwrite: true });
+
+                return {
+                    name: modName,
+                    modRef: {
+                        enabled: true
+                    }
+                };
+            }
         });
 
         ipcMain.handle("profile:deleteMod", async (_event, { profile, modName }) => {
@@ -278,18 +309,27 @@ class ElectronLoader {
                 label: 'Profile',
                 submenu: [
                     {
-                        label: "Change Profile...",
-                        click: () => this.mainWindow.webContents.send("app:changeProfile")
+                        label: "Add New Profile",
+                        click: () => this.mainWindow.webContents.send("app:newProfile")
                     },
                     {
                         type: 'separator'
                     },
                     {
-                        label: "Add Mod...",
-                        click: () => this.mainWindow.webContents.send("profile:addMod")
+                        label: "Mods",
+                        submenu: [
+                            {
+                                label: "Add Mod",
+                                click: () => this.mainWindow.webContents.send("profile:addMod")
+                            },
+                            {
+                                label: "Import Mod",
+                                click: () => this.mainWindow.webContents.send("profile:importMod")
+                            }
+                        ]
                     },
                     {
-                        label: "Settings",
+                        label: "Profile Settings",
                         click: () => this.mainWindow.webContents.send("profile:settings")
                     },
                 ]
@@ -298,12 +338,16 @@ class ElectronLoader {
             {
                 label: 'View',
                 submenu: [
-                    {
-                        role: 'toggleDevTools'
-                    }
+                    ...this.createDebugMenuOption({
+                       role: "toggleDevTools"
+                    })
                 ]
-            },
+            }
         ]);
+    }
+
+    createDebugMenuOption(menuOption) {
+        return DEBUG_MODE ? [menuOption] : [];
     }
 
     loadSettings() {
@@ -386,16 +430,48 @@ class ElectronLoader {
         };
     }
 
-    deployProfile(profile) {
+    isProfileDeployed(profile) {
+        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        return fs.existsSync(metaFilePath);
+    }
+
+    readProfileDeploymentMetadata(profile) {
         const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
         const metaFileExists = fs.existsSync(metaFilePath);
 
-        if (metaFileExists) {
-            this.undeployProfile(profile);
+        if (!metaFileExists) {
+            return undefined;
         }
 
-        const existingFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
-        fs.writeFileSync(metaFilePath, JSON.stringify(existingFiles));
+        return JSON.parse(fs.readFileSync(metaFilePath).toString("utf-8"));
+    }
+
+    writeProfileDeploymentMetadata(profile, deploymentMetadata) {
+        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+
+        return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
+    }
+
+    findManualMods(profile) {
+        let modDirFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
+
+        if (this.isProfileDeployed(profile)) {
+            const profileModFiles = this.readProfileDeploymentMetadata(profile).profileModFiles;
+            
+            // @ts-ignore
+            modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file));
+        }
+
+        // Filter out directories
+        return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file.toString())).isDirectory());
+    }
+
+    deployProfile(profile) {
+        const profileModFiles = [];
+
+        if (this.isProfileDeployed(profile)) {
+            this.undeployProfile(profile);
+        }
 
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to allow existing manual mods in the folder to be preserved)
@@ -403,25 +479,50 @@ class ElectronLoader {
             if (mod.enabled) {
                 const modDirPath = path.join("profiles", profile.name, "mods", modName);
 
-                fs.copySync(modDirPath, profile.modBaseDir, { overwrite: false });
+                fs.copySync(modDirPath, profile.modBaseDir, {
+                    overwrite: false,
+                    filter: (src, dest) => {
+                        const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
+                        const isModSubDir = fs.lstatSync(src).isDirectory();
+                        // Don't copy empty directories
+                        const shouldCopy = isModSubDir ? fs.readdirSync(src).length > 0 : true;
+
+                        // Record mod files written from profile
+                        if (shouldCopy && !isModSubDir && modRelPath.length > 0) {
+                            profileModFiles.push(modRelPath);
+                        }
+
+                        return shouldCopy;
+                    }
+                });
             }
+        });
+
+        profileModFiles.push(".sml.json");
+
+        this.writeProfileDeploymentMetadata(profile, {
+            profile: profile.name,
+            profileModFiles
         });
     }
 
     undeployProfile(profile) {
-        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
-        const metaFileExists = fs.existsSync(metaFilePath);
-
-        if (!metaFileExists) {
+        if (!this.isProfileDeployed(profile)) {
             return;
         }
 
-        const overwriteFiles = JSON.parse(fs.readFileSync(metaFilePath).toString("utf-8"));
-        const existingFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
+        const { profileModFiles } = this.readProfileDeploymentMetadata(profile);
 
-        existingFiles.forEach((existingFile) => {
-            if (!overwriteFiles.includes(existingFile)) {
-                fs.removeSync(path.join(profile.modBaseDir, existingFile));
+        // Only remove files managed by this profile
+        profileModFiles.forEach((existingFile) => {
+            const fullExistingPath = path.join(profile.modBaseDir, existingFile);
+            fs.removeSync(fullExistingPath);
+
+            // Recursively remove empty parent directories
+            let existingDir = path.dirname(fullExistingPath);
+            while (existingDir !== profile.modBaseDir && fs.existsSync(existingDir) && fs.readdirSync(existingDir).length === 0) {
+                fs.rmdirSync(existingDir);
+                existingDir = path.dirname(existingDir);
             }
         });
     }

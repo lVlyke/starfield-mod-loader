@@ -46,6 +46,10 @@ export namespace AppMessage {
         };
     }
 
+    export interface NewProfile extends Base {
+        id: `${Prefix}:newProfile`;
+    }
+
     export interface LoadProfile extends Base {
         id: `${Prefix}:loadProfile`;
         data: {
@@ -72,6 +76,7 @@ export namespace AppMessage {
                            | ChooseFilePath
                            | LoadSettings
                            | SaveSettings
+                           | NewProfile
                            | LoadProfile
                            | SaveProfile
                            | VerifyProfile;
@@ -94,6 +99,13 @@ export namespace AppMessage {
 
     export interface AddProfileMod extends Base {
         id: `${ProfileMessage.Prefix}:addMod`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ImportProfileMod extends Base {
+        id: `${ProfileMessage.Prefix}:importMod`;
         data: {
             profile: AppProfile;
         };
@@ -125,6 +137,13 @@ export namespace AppMessage {
 
     export interface UndeployProfile extends Base {
         id: `${ProfileMessage.Prefix}:undeploy`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface FindManualProfileMods extends Base {
+        id: `${ProfileMessage.Prefix}:findManualMods`;
         data: {
             profile: AppProfile;
         };
@@ -175,10 +194,12 @@ export namespace AppMessage {
 
     export type ProfileMessage = ProfileSettings
                                | AddProfileMod
+                               | ImportProfileMod
                                | DeleteProfileMod
                                | RenameProfileMod
                                | DeployProfile
                                | UndeployProfile
+                               | FindManualProfileMods
                                | ShowModInFileExplorer
                                | ShowModBaseDirInFileExplorer
                                | ShowProfileBaseDirInFileExplorer
@@ -193,16 +214,19 @@ export namespace AppMessage {
         "app:chooseFilePath",
         "app:loadSettings",
         "app:saveSettings",
+        "app:newProfile",
         "app:loadProfile",
         "app:saveProfile",
         "app:verifyProfile",
 
         "profile:settings",
         "profile:addMod",
+        "profile:importMod",
         "profile:deleteMod",
         "profile:renameMod",
         "profile:deploy",
         "profile:undeploy",
+        "profile:findManualMods",
         "profile:showModInFileExplorer",
         "profile:showModBaseDirInFileExplorer",
         "profile:showProfileBaseDirInFileExplorer",

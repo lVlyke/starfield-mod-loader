@@ -1,0 +1,29 @@
+:host {
+    &, > mat-card {
+        width: 100%;
+        height: 100%;
+    }
+
+    mat-card-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding: 1rem;
+
+        > #mod-sync-icon {
+            margin-right: 0.7rem;
+            animation: sync-rotate 2s linear;
+        }
+
+        @keyframes sync-rotate {
+            from {
+                transform: rotateZ(0)
+            }
+
+            to {
+                transform: rotateZ(359deg);
+            }
+        }
+    }
+}

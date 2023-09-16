@@ -51,6 +51,14 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
+    export class UpdateManualMods {
+        public static readonly type = `[activeProfile] update manual mods`;
+
+        constructor(
+            public manualMods: string[]
+        ) {}
+    }
+
     export class ReorderMods {
         public static readonly type = `[activeProfile] reorder mods`;
 

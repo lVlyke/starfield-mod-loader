@@ -1,0 +1,22 @@
+<mat-list *ngIf="profile.manualMods && profile.manualMods.length > 0">
+    <mat-list-item>
+        <span matLine class="item-line-info">
+            <mat-checkbox [checked]="true"
+                          [disabled]="true" />
+            <span class="mod-title">
+                <span>
+                    <span>[Manually installed mods]</span>
+                    <span class="manual-files-count">&nbsp;({{ profile.manualMods.length }} files)</span>
+                </span>
+
+                <mat-icon class="manual-mods-tooltip"
+                          matTooltip="These are external files found in the mod folder that are not being managed by this profile">
+                    help
+                </mat-icon>
+            </span>
+            <span class="mod-load-order">0</span>
+        </span>
+    </mat-list-item>
+
+    <mat-divider />
+</mat-list>

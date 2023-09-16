@@ -34,6 +34,11 @@ export class AppState {
         return state.modsActivated;
     }
 
+    @Selector()
+    public static isDeployInProgress(state: AppData): boolean {
+        return !!state.deployInProgress;
+    }
+
     @Action(AppActions.SetProfiles)
     public setProfiles(context: AppState.Context, { profileNames }: AppActions.SetProfiles): void {
         context.setState(patch({
@@ -55,6 +60,11 @@ export class AppState {
 
     @Action(AppActions.activateMods)
     public activateMods(context: AppState.Context, state: AppActions.ModsActivatedAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.setDeployInProgress)
+    public setDeployInProgress(context: AppState.Context, state: AppActions.DeployInProgressAction): void {
         context.patchState(_.cloneDeep(state));
     }
 }

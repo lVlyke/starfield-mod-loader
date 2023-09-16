@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 import { Injectable } from "@angular/core";
-import { Action, State, StateContext } from "@ngxs/store";
+import { Action, Selector, State, StateContext } from "@ngxs/store";
 import { AppProfile } from "../../models/app-profile";
 import { ActiveProfileActions } from "./active-profile.actions";
 
@@ -11,6 +11,11 @@ import { ActiveProfileActions } from "./active-profile.actions";
 })
 @Injectable()
 export class ActiveProfileState {
+
+    @Selector()
+    public static getManualMods(state: AppProfile): string[] {
+        return state.manualMods ?? [];
+    }
 
     @Action(ActiveProfileActions.AddMod)
     public addMod(context: ActiveProfileState.Context, { name, mod }: ActiveProfileActions.AddMod): void {
@@ -56,6 +61,14 @@ export class ActiveProfileState {
         }
 
         context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.UpdateManualMods)
+    public updateManualMods(
+        context: ActiveProfileState.Context,
+        state: ActiveProfileActions.UpdateManualMods
+    ): void {
+        context.patchState(state);
     }
 
     @Action(ActiveProfileActions.ReorderMods)

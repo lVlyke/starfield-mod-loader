@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from "@angular/core";
-import { ComponentState, AsyncState } from "@lithiumjs/angular";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
+import { ComponentState, AsyncState, DeclareState } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
+import { CdkPortal } from "@angular/cdk/portal";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable } from "rxjs";
 import { AppProfile } from "../../models/app-profile";
-import { ModProfileRef } from "src/app/models/mod-profile-ref";
-import { ProfileManager } from "src/app/services/profile-manager";
+import { ModProfileRef } from "../../models/mod-profile-ref";
+import { ProfileManager } from "../../services/profile-manager";
+import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -35,9 +37,16 @@ export class AppModsOverviewPage extends BasePage {
     @AsyncState()
     public readonly isModsActivated!: boolean;
 
+    @ViewChild("addModMenu", { read: CdkPortal })
+    protected readonly addModMenuPortal!: CdkPortal;
+
+    @DeclareState()
+    protected addModMenuRef?: OverlayHelpersRef;
+
     constructor(
         cdRef: ChangeDetectorRef,
-        protected readonly profileManager: ProfileManager
+        protected readonly profileManager: ProfileManager,
+        protected readonly overlayHelpers: OverlayHelpers
     ) {
         super({ cdRef });
     }
@@ -48,5 +57,15 @@ export class AppModsOverviewPage extends BasePage {
 
     protected reorderMods(modOrder: string[]): Observable<void> {
         return this.profileManager.reorderMods(modOrder);
+    }
+
+    protected showAddModMenu($event: MouseEvent): void {
+        this.addModMenuRef = this.overlayHelpers.createAttached(this.addModMenuPortal,
+            $event.target as HTMLElement,
+            OverlayHelpers.ConnectionPositions.contextMenu, {
+                managed: false,
+                maxHeight: "20vh"
+            }
+        );
     }
 }

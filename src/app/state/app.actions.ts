@@ -18,9 +18,11 @@ export namespace AppActions {
 
     export type ActiveProfileAction = BasicAction<AppData, "activeProfile">;
     export type ModsActivatedAction = BasicAction<AppData, "modsActivated">;
+    export type DeployInProgressAction = BasicAction<AppData, "deployInProgress">;
 
     export const updateActiveProfile = createUpdateAction("activeProfile");
     export const activateMods = createUpdateAction("modsActivated");
+    export const setDeployInProgress = createUpdateAction("deployInProgress");
 
     export class SetProfiles {
         public static readonly type = `[app] set profiles`;

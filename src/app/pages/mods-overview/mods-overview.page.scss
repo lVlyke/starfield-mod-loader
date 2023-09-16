@@ -44,6 +44,22 @@
             }
         }
 
+        #mod-list-actions {
+
+            > button {
+                position: relative;
+
+                > .button-menu-icon {
+                    position: absolute;
+                    right: 0;
+                    bottom: 0;
+                    font-size: 1.3rem;
+                    width: 1.3rem;
+                    height: 1.3rem;
+                }
+            }
+        }
+
         #profile-actions {
             flex-basis: 64%;
             margin-left: 1.5rem;

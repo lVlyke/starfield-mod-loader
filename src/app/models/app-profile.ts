@@ -6,6 +6,7 @@ export interface AppProfile {
     modBaseDir: string;
     gameBinaryPath: string;
     mods: Map<string, ModProfileRef>;
+    manualMods?: string[];
 }
 
 export namespace AppProfile {

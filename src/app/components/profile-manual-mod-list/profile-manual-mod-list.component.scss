@@ -5,16 +5,6 @@
     }
 
     mat-list-item {
-        cursor: pointer;
-
-        &.mod-unverified {
-            font-style: italic;
-        }
-
-        &:not(.cdk-drag-placeholder) {
-            transition: transform 250ms ease-in;
-        }
-
         .item-line-info {
             display: inline-flex;
             flex-direction: row;
@@ -29,9 +19,15 @@
             .mod-title {
                 display: flex;
                 align-items: center;
+                font-style: italic;
+
+                .manual-files-count {
+                    font-size: 0.8em;
+                    opacity: 0.8;
+                }
             }
 
-            .mod-verification-error-icon {
+            .manual-mods-tooltip {
                 margin-left: 1rem;
             }
 
@@ -41,21 +37,6 @@
                 opacity: 0.6;
                 min-width: 1rem;
             }
-        }
-    }
-
-    .cdk-drag-placeholder {
-        opacity: 0;
-    }
-
-    @at-root .cdk-drag-animating {
-        transition: transform 100ms ease-out;
-    }
-
-    @at-root .cdk-drag-preview {
-
-        .mod-load-order {
-            display: none;
         }
     }
 }
