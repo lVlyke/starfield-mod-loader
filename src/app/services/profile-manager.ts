@@ -19,6 +19,7 @@ import { AppProfileSettingsModal } from "../modals/profile-settings";
 import { AppDialogs } from "../services/app-dialogs";
 import { filterTrue } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
+import { AppPreferencesModal } from "../modals/app-preferences";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -57,6 +58,11 @@ export class ProfileManager {
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:settings"),
             switchMap(() => this.showProfileSettings())
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "app:showPreferences"),
+            switchMap(() => this.showAppPreferences())
         ).subscribe();
         
         // Wait for NGXS to load
@@ -126,6 +132,12 @@ export class ProfileManager {
             take(1),
             map(appState => this.appDataToUserCfg(appState)),
             switchMap(settings => ElectronUtils.invoke("app:saveSettings", { settings }))
+        ));
+    }
+
+    public updateSettings(settings: Partial<AppData>): Observable<void> {
+        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
+            switchMap(() => this.saveSettings())
         ));
     }
 
@@ -304,6 +316,27 @@ export class ProfileManager {
 
     public updateActiveProfile(profileChanges: AppProfile): Observable<any> {
         return this.store.dispatch(new AppActions.updateActiveProfile(profileChanges));
+    }
+
+    public showAppPreferences(): Observable<OverlayHelpersComponentRef<AppPreferencesModal>> {
+        return ObservableUtils.hotResult$(this.appState$.pipe(
+            take(1),
+            map((preferences) => {
+                const modContextMenuRef = this.overlayHelpers.createFullScreen(AppPreferencesModal, {
+                    center: true,
+                    hasBackdrop: true,
+                    disposeOnBackdropClick: false,
+                    minWidth: "24rem",
+                    width: "40%",
+                    height: "auto",
+                    maxHeight: "75%",
+                    panelClass: "mat-app-background"
+                });
+
+                modContextMenuRef.component.instance.preferences = preferences;
+                return modContextMenuRef;
+            })
+        ));
     }
 
     public showProfileSettings(): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {

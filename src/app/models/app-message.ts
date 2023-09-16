@@ -72,6 +72,10 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowPreferences extends Base {
+        id: `${Prefix}:showPreferences`;
+    }
+
     export type AppMessage = ChooseDirectory
                            | ChooseFilePath
                            | LoadSettings
@@ -79,7 +83,8 @@ export namespace AppMessage {
                            | NewProfile
                            | LoadProfile
                            | SaveProfile
-                           | VerifyProfile;
+                           | VerifyProfile
+                           | ShowPreferences;
 
     // Profile messages:
 
@@ -218,6 +223,7 @@ export namespace AppMessage {
         "app:loadProfile",
         "app:saveProfile",
         "app:verifyProfile",
+        "app:showPreferences",
 
         "profile:settings",
         "profile:addMod",

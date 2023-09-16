@@ -6,13 +6,14 @@ import { append, patch } from "@ngxs/store/operators";
 import { AppActions } from "./app.actions";
 import { AppProfile } from "../models/app-profile";
 import { ActiveProfileState } from "./active-profile/active-profile.state";
-
+import { AppTheme } from "../models/app-theme";
 
 @State<AppData>({
     name: "app",
     defaults: {
         profileNames: [],
-        modsActivated: false
+        theme: AppTheme.Dark,
+        modsActivated: false,
     },
     children: [ActiveProfileState]
 })
@@ -30,6 +31,11 @@ export class AppState {
     }
 
     @Selector()
+    public static getTheme(state: AppData): AppTheme {
+        return state.theme;
+    }
+
+    @Selector()
     public static isModsActivated(state: AppData): boolean {
         return state.modsActivated;
     }
@@ -37,6 +43,11 @@ export class AppState {
     @Selector()
     public static isDeployInProgress(state: AppData): boolean {
         return !!state.deployInProgress;
+    }
+
+    @Action(AppActions.UpdateSettings)
+    public updateSettings(context: AppState.Context, { settings }: AppActions.UpdateSettings): void {
+        context.patchState(settings);
     }
 
     @Action(AppActions.SetProfiles)

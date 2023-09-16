@@ -6,6 +6,7 @@ import { BaseComponent } from "./core/base-component";
 import { AppState } from "./state";
 import { OverlayHelpers, OverlayHelpersRef } from "./services/overlay-helpers";
 import { AppModSyncIndicatorModal } from "./modals/mod-sync-indicator";
+import { AppTheme } from "./models/app-theme";
 
 @Component({
     selector: "app-root",
@@ -19,8 +20,11 @@ export class AppComponent extends BaseComponent {
     @Select(AppState.isDeployInProgress)
     public readonly isDeployInProgress$!: Observable<boolean>;
 
+    @Select(AppState.getTheme)
+    public readonly theme$!: Observable<AppTheme>;
+
     @AsyncState()
-    public readonly isDeployInProgress!: boolean;
+    public readonly theme!: AppTheme;
 
     constructor (
         cdRef: ChangeDetectorRef,

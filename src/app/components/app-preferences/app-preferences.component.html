@@ -1,0 +1,12 @@
+<form #preferencesForm="ngForm" id="preferences-form" (ngSubmit)="onFormSubmit$.next(preferencesForm)">
+    <ng-container *ngIf="!!formModel">
+        <mat-form-field appearance="fill">
+            <mat-label>App Theme</mat-label>
+            <mat-select name="theme" [(ngModel)]="formModel.theme">
+                <mat-option *ngFor="let theme of themes" [value]="theme">
+                    {{ theme }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </ng-container>
+</form>

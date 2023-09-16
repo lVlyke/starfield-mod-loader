@@ -1,7 +1,7 @@
 // @ts-check
 
-const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
-const log = require('electron-log');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron");
+const log = require("electron-log");
 const url = require("url");
 const path = require("path");
 const { exec } = require("child_process");
@@ -13,6 +13,13 @@ const sevenBin = require("7zip-bin");
 const DEBUG_MODE = !app.isPackaged;
 
 class ElectronLoader {
+
+    static /** @type string */ APP_SETTINGS_FILE = "settings.json";
+    static /** @type string */ APP_PROFILES_DIR = "profiles";
+    static /** @type string */ PROFILE_SETTINGS_FILE = "profile.json";
+    static /** @type string */ PROFILE_METADATA_FILE = ".sml.json";
+    static /** @type string */ PROFILE_MODS_DIR = "mods";
+    static /** @type string */ PROFILE_MODS_STAGING_DIR = "_tmp";
     
     /** @type BrowserWindow */ mainWindow;
     /** @type Record<string, any> */ monitoredPaths = {};
@@ -79,22 +86,22 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:saveSettings", async (_event, data) => {
-           this.saveSettings(data.settings);
+        ipcMain.handle("app:saveSettings", async (_event, { settings }) => {
+           return this.saveSettings(settings);
         });
 
-        ipcMain.handle("app:loadProfile", async (_event, data) => {
-            return this.loadProfile(data.name);
+        ipcMain.handle("app:loadProfile", async (_event, { name }) => {
+            return this.loadProfile(name);
         });
 
-        ipcMain.handle("app:saveProfile", async (_event, data) => {
-            this.saveProfile(data.profile.name, data.profile);
+        ipcMain.handle("app:saveProfile", async (_event, { profile }) => {
+            return this.saveProfile(profile);
         });
 
-        ipcMain.handle("app:verifyProfile", async (_event, data) => {
-            const modVerifyResult = this.verifyProfileModsExist(data.profile);
-            const modDirVerifyResult = this.verifyProfileModDirExists(data.profile);
-            const gameDirVerifyResult = this.verifyProfileGameDirExists(data.profile);
+        ipcMain.handle("app:verifyProfile", async (_event, { profile }) => {
+            const modVerifyResult = this.verifyProfileModsExist(profile);
+            const modDirVerifyResult = this.verifyProfileModDirExists(profile);
+            const gameDirVerifyResult = this.verifyProfileGameDirExists(profile);
 
             return {
                 mods: modVerifyResult,
@@ -107,7 +114,7 @@ class ElectronLoader {
             return this.findManualMods(profile);
         });
 
-        ipcMain.handle("profile:addMod", async (_event, data) => {
+        ipcMain.handle("profile:addMod", async (_event, { profile }) => {
             const pickedFile = (await dialog.showOpenDialog({
                 filters: [
                     { 
@@ -125,8 +132,8 @@ class ElectronLoader {
             if (!!filePath) {
                 const fileType = path.extname(filePath);
                 const modName = path.basename(filePath, fileType);
-                const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
-                const modDirStagingPath = path.join("profiles", data.profile.name, "_tmp", modName);
+                const modDirPath = this.getProfileModDir(profile.name, modName);
+                const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
                 /** @type Promise */ let decompressOperation;
 
                 switch (fileType.toLowerCase()) {
@@ -135,8 +142,17 @@ class ElectronLoader {
                     case ".zip":
                     case ".rar": {
                         decompressOperation = new Promise((resolve, _reject) => {
+                            // Look for 7-Zip installed on system
+                            const _7zBinaryLocations = [
+                                "7z",
+                                "7z.exe",
+                                "C:\\Program Files\\7-Zip\\7z.exe",
+                                "C:\\Program Files (x86)\\7-Zip\\7z.exe"
+                            ];
                             const decompressStream = Seven.extractFull(filePath, modDirStagingPath, {
-                                $bin: sevenBin.path7za // TODO
+                                // Fall back to bundled 7-Zip binary if not found on system
+                                // TODO - Warn user about opening RARs if 7-Zip not installed on machine
+                                $bin: _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath)) ?? sevenBin.path7za
                             });
 
                             decompressStream.on("end", () => resolve(true));
@@ -166,10 +182,10 @@ class ElectronLoader {
                     // TODO - Notify user of Data dir change if modDataDir exists
 
                     // Copy the data dir to the mod directory
-                    fs.copySync(modDataDir, modDirPath, { overwrite: true });
+                    await fs.copy(modDataDir, modDirPath, { overwrite: true });
 
                     // Erase the staging data
-                    fs.removeSync(modDirStagingPath);
+                    await fs.remove(modDirStagingPath);
 
                     return {
                         name: modName,
@@ -183,7 +199,7 @@ class ElectronLoader {
             return null;
         });
 
-        ipcMain.handle("profile:importMod", async (_event, data) => {
+        ipcMain.handle("profile:importMod", async (_event, { profile }) => {
             const pickedModFolder = await dialog.showOpenDialog({
                 properties: ["openDirectory"]
             });
@@ -191,7 +207,7 @@ class ElectronLoader {
             const folderPath = pickedModFolder?.filePaths[0];
             if (!!folderPath) {
                 const modName = path.basename(folderPath);
-                const modDirPath = path.join("profiles", data.profile.name, "mods", modName);
+                const modDirPath = this.getProfileModDir(profile.name, modName);
                 const modDataDirs = [
                     path.join(folderPath, "Data"),
                     path.join(folderPath, "data"),
@@ -205,7 +221,7 @@ class ElectronLoader {
                 // TODO - Notify user of Data dir change if modDataDir exists
 
                 // Copy the data dir to the mod directory
-                fs.copySync(modDataDir, modDirPath, { overwrite: true });
+                await fs.copy(modDataDir, modDirPath, { overwrite: true });
 
                 return {
                     name: modName,
@@ -217,28 +233,28 @@ class ElectronLoader {
         });
 
         ipcMain.handle("profile:deleteMod", async (_event, { profile, modName }) => {
-            const modDirPath = path.join("profiles", profile.name, "mods", modName);
+            const modDirPath = this.getProfileModDir(profile.name, modName);
 
-            fs.removeSync(modDirPath);
+            await fs.remove(modDirPath);
         });
 
         ipcMain.handle("profile:renameMod", async (_event, { profile, modCurName, modNewName }) => {
-            const modCurDir = path.join("profiles", profile.name, "mods", modCurName);
-            const modNewDir = path.join("profiles", profile.name, "mods", modNewName);
+            const modCurDir = this.getProfileModDir(profile.name, modCurName);
+            const modNewDir = this.getProfileModDir(profile.name, modNewName);
 
-            fs.moveSync(modCurDir, modNewDir);
+            await fs.move(modCurDir, modNewDir);
         });
 
         ipcMain.handle("profile:deploy", async (_event, { profile }) => {
-            this.deployProfile(profile);
+            return this.deployProfile(profile);
         });
 
         ipcMain.handle("profile:undeploy", async (_event, { profile }) => {
-            this.undeployProfile(profile);
+            return this.undeployProfile(profile);
         });
 
         ipcMain.handle("profile:showModInFileExplorer", async (_event, { profile, modName }) => {
-            const modDirPath = path.join("profiles", profile.name, "mods", modName);
+            const modDirPath = this.getProfileModDir(profile.name, modName);
 
             shell.openPath(path.resolve(modDirPath));
         });
@@ -252,13 +268,13 @@ class ElectronLoader {
         });
 
         ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (_event, { profile }) => {
-            const profileDir = path.join("profiles", profile.name);
+            const profileDir = this.getProfileDir(profile.name);
 
             shell.openPath(path.resolve(profileDir));
         });
 
         ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (_event, { profile }) => {
-            const profileModsDir = path.join("profiles", profile.name, "mods");
+            const profileModsDir = this.getProfileModsDir(profile.name);
 
             shell.openPath(path.resolve(profileModsDir));
         });
@@ -299,6 +315,13 @@ class ElectronLoader {
             {
                 label: 'File',
                 submenu: [
+                    {
+                        label: "Preferences",
+                        click: () => this.mainWindow.webContents.send("app:showPreferences")
+                    },
+                    {
+                        type: 'separator'
+                    },
                     {
                         role: 'quit'
                     }
@@ -351,21 +374,33 @@ class ElectronLoader {
     }
 
     loadSettings() {
-        const settingsSrc = fs.readFileSync("settings.json"); // TODO
+        const settingsSrc = fs.readFileSync(ElectronLoader.APP_SETTINGS_FILE);
 
         return JSON.parse(settingsSrc.toString("utf8"));
     }
 
     saveSettings(settings) {
         return fs.writeFileSync(
-            path.join("settings.json"),
+            path.join(ElectronLoader.APP_SETTINGS_FILE),
             JSON.stringify(settings)
         );
     }
 
+    getProfileDir(profileName) {
+        return path.join(ElectronLoader.APP_PROFILES_DIR, profileName);
+    }
+
+    getProfileModsDir(profileName) {
+        return path.join(this.getProfileDir(profileName), ElectronLoader.PROFILE_MODS_DIR);
+    }
+
+    getProfileModDir(profileName, modName) {
+        return path.join(this.getProfileModsDir(profileName), modName);
+    }
+
     loadProfile(/** @type string */ name) {
-        const profileDir = path.join("profiles", name);
-        const profileSettingsName = "profile.json";
+        const profileDir = this.getProfileDir(name);
+        const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
         const profileSettingsPath = path.join(profileDir, profileSettingsName);
 
         if (!fs.existsSync(profileSettingsPath)) {
@@ -381,9 +416,9 @@ class ElectronLoader {
         return { name, ...profile };
     }
 
-    saveProfile(/** @type string */ name, profile, options) {
-        const profileDir = path.join("profiles", name);
-        const profileSettingsName = "profile.json";
+    saveProfile(profile, options) {
+        const profileDir = this.getProfileDir(profile.name);
+        const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
 
         // Serialize mods Map as entries
         profile.mods = Array.from(profile.mods.entries());
@@ -398,7 +433,7 @@ class ElectronLoader {
     }
 
     verifyProfileModsExist(profile) {
-        const modsDir = path.join("profiles", profile.name, "mods");
+        const modsDir = this.getProfileModsDir(profile.name);
 
         return Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
             const modExists = fs.existsSync(path.join(modsDir, modName));
@@ -431,12 +466,12 @@ class ElectronLoader {
     }
 
     isProfileDeployed(profile) {
-        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
         return fs.existsSync(metaFilePath);
     }
 
     readProfileDeploymentMetadata(profile) {
-        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
         const metaFileExists = fs.existsSync(metaFilePath);
 
         if (!metaFileExists) {
@@ -447,7 +482,7 @@ class ElectronLoader {
     }
 
     writeProfileDeploymentMetadata(profile, deploymentMetadata) {
-        const metaFilePath = path.join(profile.modBaseDir, ".sml.json");
+        const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
 
         return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
     }
@@ -466,20 +501,21 @@ class ElectronLoader {
         return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file.toString())).isDirectory());
     }
 
-    deployProfile(profile) {
+    async deployProfile(profile) {
         const profileModFiles = [];
 
         if (this.isProfileDeployed(profile)) {
-            this.undeployProfile(profile);
+            await this.undeployProfile(profile);
         }
 
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to allow existing manual mods in the folder to be preserved)
-        Array.from(profile.mods.entries()).reverse().forEach(([modName, mod]) => {
+        const deployableModFiles = Array.from(profile.mods.entries()).reverse();
+        for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
-                const modDirPath = path.join("profiles", profile.name, "mods", modName);
+                const modDirPath = this.getProfileModDir(profile.name, modName);
 
-                fs.copySync(modDirPath, profile.modBaseDir, {
+                await fs.copy(modDirPath, profile.modBaseDir, {
                     overwrite: false,
                     filter: (src, dest) => {
                         const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
@@ -496,9 +532,9 @@ class ElectronLoader {
                     }
                 });
             }
-        });
+        }
 
-        profileModFiles.push(".sml.json");
+        profileModFiles.push(ElectronLoader.PROFILE_METADATA_FILE);
 
         this.writeProfileDeploymentMetadata(profile, {
             profile: profile.name,
@@ -506,7 +542,7 @@ class ElectronLoader {
         });
     }
 
-    undeployProfile(profile) {
+    async undeployProfile(profile) {
         if (!this.isProfileDeployed(profile)) {
             return;
         }
@@ -514,9 +550,9 @@ class ElectronLoader {
         const { profileModFiles } = this.readProfileDeploymentMetadata(profile);
 
         // Only remove files managed by this profile
-        profileModFiles.forEach((existingFile) => {
+        const undeployJobs = profileModFiles.map(async (existingFile) => {
             const fullExistingPath = path.join(profile.modBaseDir, existingFile);
-            fs.removeSync(fullExistingPath);
+            await fs.remove(fullExistingPath);
 
             // Recursively remove empty parent directories
             let existingDir = path.dirname(fullExistingPath);
@@ -525,6 +561,9 @@ class ElectronLoader {
                 existingDir = path.dirname(existingDir);
             }
         });
+
+        // Wait for all files to be removed
+        await Promise.all(undeployJobs);
     }
 }
 

@@ -9,7 +9,7 @@ import { AppProfile } from "../../models/app-profile";
 import { ObservableUtils } from "../../util/observable-utils";
 import { ElectronUtils } from "../../util/electron-utils";
 import { filterDefined } from "../../core/operators";
-import { ProfileManager } from "src/app/services/profile-manager";
+import { ProfileManager } from "../../services/profile-manager";
 
 @Component({
     selector: "app-profile-settings",

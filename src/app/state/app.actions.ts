@@ -24,6 +24,14 @@ export namespace AppActions {
     export const activateMods = createUpdateAction("modsActivated");
     export const setDeployInProgress = createUpdateAction("deployInProgress");
 
+    export class UpdateSettings {
+        public static readonly type = `[app] update settings`;
+
+        constructor(
+            public settings: Partial<AppData>
+        ) {}
+    }
+
     export class SetProfiles {
         public static readonly type = `[app] set profiles`;
 

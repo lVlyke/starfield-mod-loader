@@ -1,0 +1,23 @@
+<mat-card *ngIf="!!preferences">
+    <mat-card-header>
+        <mat-card-title>App Preferences</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+        <app-preferences [preferences]="preferences" />
+    </mat-card-content>
+
+    <mat-card-actions *ngIf="!!preferencesComponent">
+        <button mat-raised-button
+                type="submit"
+                form="preferences-form"
+                color="primary"
+                [disabled]="(preferencesComponent.form.statusChanges | async) !== 'VALID'">
+                Save
+        </button>
+
+        <button mat-raised-button (click)="overlayRef.close()">
+            Cancel
+        </button>
+    </mat-card-actions>
+</mat-card>

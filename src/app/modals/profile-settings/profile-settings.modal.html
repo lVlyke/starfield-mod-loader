@@ -16,11 +16,11 @@
                 form="profile-form"
                 color="primary"
                 [disabled]="(profileSettingsComponent.form.statusChanges | async) !== 'VALID'">
-                Save
+                {{ createMode ? "Create" : "Save" }}
         </button>
 
         <button mat-raised-button (click)="overlayRef.close()">
-            Close
+            Cancel
         </button>
     </mat-card-actions>
 </mat-card>
