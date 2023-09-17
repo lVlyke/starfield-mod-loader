@@ -14,11 +14,11 @@ A simple mod manager for Starfield that supports both Steam and Game Pass versio
 
 Releases can be found here:
 
-&nbsp;&nbsp;&nbsp;&nbsp;[Starfield Mod Loader releases](/releases)
+&nbsp;&nbsp;&nbsp;&nbsp;[Starfield Mod Loader releases](https://github.com/lVlyke/starfield-mod-loader/releases)
 
 # Installation
 
-To install Starfield Mod Loader, simply download the latest release from the [releases page](/releases) and extract the archive to a folder of your choice.
+To install Starfield Mod Loader, simply download the latest release from the [releases page](https://github.com/lVlyke/starfield-mod-loader/releases) and extract the archive to a folder of your choice.
 
 To enable mods in Starfield, add the following lines to the `StarfieldCustom.ini` file in your `Documents/My Games/Starfield` folder if not already present:
 
@@ -64,7 +64,7 @@ Click the **Start Game** button or launch the game directly from Steam or Game P
 
 # Troubleshooting
 
-If you run into a problem, please check the [issues page](/issues) to see if your question has been answered or create a new issue if you have a bug to report.
+If you run into a problem, please check the [issues page](https://github.com/lVlyke/starfield-mod-loader/issues) to see if your question has been answered or create a new issue if you have a bug to report.
 
 # Devs - Building and testing
 
