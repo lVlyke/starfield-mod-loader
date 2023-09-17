@@ -2,6 +2,8 @@
 
 A simple mod manager for Starfield that supports both Steam and Game Pass versions of the game.
 
+![Starfield Mod Loader](/docs/app.png)
+
 ## Features
 
 * **Add**, **re-order**, **rename**, **disable** and **remove** your mods
@@ -63,3 +65,7 @@ Click the **Start Game** button or launch the game directly from Steam or Game P
 # Troubleshooting
 
 If you run into a problem, please check the [issues page](/issues) to see if your question has been answered or create a new issue if you have a bug to report.
+
+# Devs - Building and testing
+
+To build and run the app for testing and development, simply ensure you have `npm` installed on your machine and run `npm install` and `npm run start`.
