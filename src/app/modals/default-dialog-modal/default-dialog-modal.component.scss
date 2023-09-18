@@ -12,12 +12,12 @@
         padding: 1.5rem;
     }
 
-    mat-card-footer {
+    mat-card-actions {
         display: flex;
         justify-content: center;
 
         > button {
-            margin: 0 1rem;
+            margin: 1rem;
             width: 6rem;
         }
     }

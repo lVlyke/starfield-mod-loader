@@ -51,6 +51,14 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
+    export class UpdateModVerifications {
+        public static readonly type = `[activeProfile] update mod verifications`;
+
+        constructor(
+            public modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
+        ) {}
+    }
+
     export class UpdateManualMods {
         public static readonly type = `[activeProfile] update manual mods`;
 

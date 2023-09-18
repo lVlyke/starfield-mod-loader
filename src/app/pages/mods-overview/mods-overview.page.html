@@ -2,23 +2,31 @@
 
 <div id="profile-controls" *ngIf="!!activeProfile">
     <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
-        <mat-form-field [attr.subscript]="false">
-            <mat-label>Active Profile</mat-label>
-            <mat-select [ngModel]="activeProfile.name" (ngModelChange)="profileManager.setActiveProfile($event)">
-                <mat-select-trigger id="profile-select-trigger">
-                    <span matColor="primary">{{ activeProfile.name }}</span>
+        <div id="profile-mgmt-controls">
+            <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
+                <mat-label>Active Profile</mat-label>
+                <mat-select [ngModel]="activeProfile.name" (ngModelChange)="profileManager.setActiveProfile($event)">
+                    <mat-select-trigger id="profile-select-trigger">
+                        <span matColor="primary">{{ activeProfile.name }}</span>
+                    </mat-select-trigger>
 
-                    <button mat-icon-button color="primary"
-                            matTooltip="Add Profile"
-                            (click)="profileManager.createProfileFromUser(); $event.stopPropagation()">
-                        <mat-icon>person_add</mat-icon>
-                    </button>
-                </mat-select-trigger>
-                <mat-option *ngFor="let profileName of profileNames" [value]="profileName">
-                    {{ profileName }}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
+                    <mat-option *ngFor="let profileName of profileNames" [value]="profileName">
+                        {{ profileName }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <span id="profile-mgmt-buttons">
+                <button mat-icon-button
+                        id="profile-mgmt-button"
+                        color="primary"
+                        matTooltip="Manage Profiles"
+                        (click)="showProfileMgmtMenu($event); $event.stopPropagation()">
+                    <mat-icon>person</mat-icon>
+                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                </button>
+            </span>
+        </div>
         
         <mat-card-header>
             <mat-card-title>Mod List</mat-card-title>
@@ -147,6 +155,30 @@
                 <button mat-list-item (click)="profileManager.addModFromUser({ importMod: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="accent">folder</mat-icon>
                     <span matLine>Import Mod</span>
+                </button>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Profile mgmt menu popup -->
+<ng-template #profileMgmtMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                <button mat-list-item (click)="profileManager.createProfileFromUser(); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">person_add</mat-icon>
+                    <span matLine>Add Profile</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.copyProfileFromUser(activeProfile!); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">people_alt</mat-icon>
+                    <span matLine>Copy Profile</span>
+                </button>
+
+                <button mat-list-item (click)="deleteActiveProfile(); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">person_remove</mat-icon>
+                    <span matLine>Delete Profile</span>
                 </button>
             </mat-action-list>
         </mat-card-content>

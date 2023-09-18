@@ -3,6 +3,7 @@ const { exit } = require("process");
 const execSync = require("child_process").execSync;
 const spawn = require("child_process").spawn;
 
+const BUILD_DIR = "./dist";
 const RELEASE_MODE = process.argv.includes("--release");
 
 const buildTask = spawn("npx", [
@@ -28,7 +29,11 @@ buildTask.stdout.on("data", (data) => {
         if (!electronProcess) {
             console.log("Starting Electron app");
 
-            electronProcess = spawn("npm", ["run", "electron:start"], { stdio: "inherit" });
+            electronProcess = spawn("npx", ["electron", BUILD_DIR]);
+
+            electronProcess.stdout.on("data", (data) => {
+                console.log(data.toString());
+            });
 
             electronProcess.on("close", () => {
                 console.log("Finished serving");

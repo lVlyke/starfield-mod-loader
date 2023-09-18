@@ -1,5 +1,7 @@
 @mixin declare() {
 
+    // Backdrop classes:
+
     .backdrop-clear {
         background: transparent;
     }
@@ -22,5 +24,11 @@
             width: 100%;
             height: auto;
         }
+    }
+
+    // Panel classes:
+
+    .panel-card > * {
+        @extend .mat-app-background;
     }
 }

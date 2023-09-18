@@ -49,4 +49,12 @@ export namespace AppActions {
             public profile: AppProfile
         ) {}
     }
+
+    export class DeleteProfile {
+        public static readonly type = `[app] delete profile`;
+
+        constructor(
+            public profile: AppProfile
+        ) {}
+    }
 }

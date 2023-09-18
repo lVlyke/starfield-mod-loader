@@ -31,11 +31,23 @@
 
         #profile-mod-list {
 
-            #profile-select-trigger {
+            > #profile-mgmt-controls {
                 display: flex;
                 flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
+                align-items: stretch;
+
+                > #active-profile-form-field {
+                    flex: 1 1 auto;
+                }
+
+                > #profile-mgmt-buttons {
+                    flex: 0 0 auto;
+                    padding: 0 1rem;
+                }
+
+                #profile-mgmt-button > mat-icon:not(.button-menu-icon) {
+                    margin-left: -0.5rem;
+                }
             }
 
             > mat-card-header {
@@ -54,15 +66,6 @@
 
             > button {
                 position: relative;
-
-                > .button-menu-icon {
-                    position: absolute;
-                    right: 0;
-                    bottom: 0;
-                    font-size: 1.3rem;
-                    width: 1.3rem;
-                    height: 1.3rem;
-                }
             }
         }
 
@@ -133,5 +136,14 @@
                 }
             }
         }
+    }
+
+    .button-menu-icon {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        font-size: 1.3rem;
+        width: 1.3rem;
+        height: 1.3rem;
     }
 }

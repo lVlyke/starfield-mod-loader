@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { AppData } from "../models/app-data";
 import { Injectable } from "@angular/core";
 import { State, Selector, Action, StateContext } from "@ngxs/store";
-import { append, patch } from "@ngxs/store/operators";
+import { append, patch, removeItem } from "@ngxs/store/operators";
 import { AppActions } from "./app.actions";
 import { AppProfile } from "../models/app-profile";
 import { ActiveProfileState } from "./active-profile/active-profile.state";
@@ -68,6 +68,13 @@ export class AppState {
     public addProfile(context: AppState.Context, { profile }: AppActions.AddProfile): void {
         context.setState(patch({
             profileNames: append([profile.name])
+        }));
+    }
+
+    @Action(AppActions.DeleteProfile)
+    public deleteProfile(context: AppState.Context, { profile }: AppActions.DeleteProfile): void {
+        context.setState(patch({
+            profileNames: removeItem(name => name === profile.name)
         }));
     }
 

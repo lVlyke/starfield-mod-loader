@@ -5,10 +5,12 @@ import { CdkPortal } from "@angular/cdk/portal";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable } from "rxjs";
+import { filter } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
+import { DialogManager } from "src/app/services/dialog-manager";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -40,13 +42,20 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("addModMenu", { read: CdkPortal })
     protected readonly addModMenuPortal!: CdkPortal;
 
+    @ViewChild("profileMgmtMenu", { read: CdkPortal })
+    protected readonly profileMgmtMenuPortal!: CdkPortal;
+
     @DeclareState()
     protected addModMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
+    protected showProfileMgmtMenuRef?: OverlayHelpersRef;
 
     constructor(
         cdRef: ChangeDetectorRef,
         protected readonly profileManager: ProfileManager,
-        protected readonly overlayHelpers: OverlayHelpers
+        private readonly overlayHelpers: OverlayHelpers,
+        private readonly dialogManager: DialogManager
     ) {
         super({ cdRef });
     }
@@ -62,10 +71,25 @@ export class AppModsOverviewPage extends BasePage {
     protected showAddModMenu($event: MouseEvent): void {
         this.addModMenuRef = this.overlayHelpers.createAttached(this.addModMenuPortal,
             $event.target as HTMLElement,
-            OverlayHelpers.ConnectionPositions.contextMenu, {
-                managed: false,
-                maxHeight: "20vh"
-            }
+            OverlayHelpers.ConnectionPositions.contextMenu,
+            { managed: false }
         );
+    }
+
+    protected showProfileMgmtMenu($event: MouseEvent): void {
+        this.showProfileMgmtMenuRef = this.overlayHelpers.createAttached(this.profileMgmtMenuPortal,
+            $event.target as HTMLElement,
+            OverlayHelpers.ConnectionPositions.contextMenu,
+            { managed: false }
+        );
+    }
+
+    protected deleteActiveProfile(): void {
+        this.dialogManager.createDefault("Are you sure you want to delete the current profile?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filter(choice => choice === DialogManager.YES_ACTION)
+        ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
     }
 }

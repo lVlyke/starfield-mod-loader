@@ -3,12 +3,12 @@
         {{ prompt }}
     </mat-card-content>
 
-    <mat-card-footer>
+    <mat-card-actions>
         <button *ngFor="let action of actions"
                 mat-raised-button
                 [color]="action.primary ? 'primary' : undefined"
                 (click)="actionSelected$.emit(action)">
             {{ action.label }}
         </button>
-    </mat-card-footer>
+    </mat-card-actions>
 </mat-card>

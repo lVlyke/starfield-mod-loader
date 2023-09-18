@@ -67,7 +67,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(gameDetails => ElectronUtils.invoke("app:findBestProfileDefaults", { gameDetails }))
         ).subscribe((profileDefaults: Partial<AppProfile>) => {
             Object.entries(profileDefaults).forEach(([profileProp, profileDefaultVal]) => {
-                if (!_.isNil(profileDefaultVal)) {
+                if (!_.isNil(profileDefaultVal) && !_.isEmpty(profileDefaultVal)) {
                     this._formModel = { ...this._formModel, [profileProp]: profileDefaultVal };
                 }
             });

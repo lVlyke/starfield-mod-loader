@@ -76,7 +76,8 @@ export class DialogManager {
                 minHeight: "25%",
                 maxHeight: "90%",
                 ...config,
-                withModalInstance: false
+                withModalInstance: false,
+                panelClass: "panel-card"
             },
             [
                 [DEFAULT_DIALOG_PROMPT_TOKEN, prompt],

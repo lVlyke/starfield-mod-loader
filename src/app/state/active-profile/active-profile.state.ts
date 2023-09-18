@@ -54,15 +54,15 @@ export class ActiveProfileState {
         context: ActiveProfileState.Context,
         { modName, verificationResult }: ActiveProfileActions.UpdateModVerification
     ): void {
-        const state = _.cloneDeep(context.getState()!);
+        this._updateModVerifications(context, { [modName]: verificationResult });
+    }
 
-        const mod = state.mods.get(modName);
-
-        if (!!mod) {
-            mod.verificationError = verificationResult?.error ? verificationResult : undefined;
-        }
-
-        context.setState(state);
+    @Action(ActiveProfileActions.UpdateModVerifications)
+    public updateModVerifications(
+        context: ActiveProfileState.Context,
+        { modVerificationResults }: ActiveProfileActions.UpdateModVerifications
+    ): void {
+        this._updateModVerifications(context, modVerificationResults);
     }
 
     @Action(ActiveProfileActions.UpdateManualMods)
@@ -84,6 +84,27 @@ export class ActiveProfileState {
 
             if (mod) {
                 state.mods.set(modName, mod);
+            }
+        });
+
+        context.setState(state);
+    }
+
+    private _updateModVerifications(
+        context: ActiveProfileState.Context,
+        modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        Object.entries(modVerificationResults).forEach(([modName, verificationResult]) => {
+            const mod = state.mods.get(modName);
+
+            if (!!mod) {
+                if (verificationResult?.error) {
+                    mod.verificationError = verificationResult;
+                } else {
+                    delete mod.verificationError;
+                }
             }
         });
 

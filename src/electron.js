@@ -28,8 +28,12 @@ class ElectronLoader {
     /** @type Record<string, boolean> */ ignorePathChanges = {};
 
     constructor() {
-        log.transports.file.level = "info";
-        log.transports.file.resolvePath = () => path.join(__dirname, "app.log");
+        if (DEBUG_MODE) {
+            log.transports.console.level = "debug";
+        }
+
+        log.transports.file.level = DEBUG_MODE ? "info" : "debug";
+        log.transports.file.resolvePath = () => "app.log";
 
         Menu.setApplicationMenu(this.createMenu());
 
@@ -110,6 +114,17 @@ class ElectronLoader {
 
         ipcMain.handle("app:saveProfile", async (_event, { profile }) => {
             return this.saveProfile(profile);
+        });
+
+        ipcMain.handle("app:deleteProfile", async (_event, { profile }) => {
+            return this.deleteProfile(profile);
+        });
+
+        ipcMain.handle("app:copyProfileMods", async (_event, { srcProfile, destProfile }) => {
+            const srcModsDir = this.getProfileModsDir(srcProfile.name);
+            const destModsDir = this.getProfileModsDir(destProfile.name);
+
+            return fs.copySync(srcModsDir, destModsDir);
         });
 
         ipcMain.handle("app:verifyProfile", async (_event, { profile }) => {
@@ -482,6 +497,12 @@ class ElectronLoader {
         );
     }
 
+    deleteProfile(profile) {
+        const profileDir = this.getProfileDir(profile.name);
+
+        return fs.rmdirSync(profileDir, { recursive: true });
+    }
+
     verifyProfileModsExist(profile) {
         const modsDir = this.getProfileModsDir(profile.name);
 
@@ -558,6 +579,8 @@ class ElectronLoader {
             await this.undeployProfile(profile);
         }
 
+        log.info("Deploying profile", profile.name);
+
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
         const deployableModFiles = Array.from(profile.mods.entries()).reverse();
@@ -565,25 +588,30 @@ class ElectronLoader {
             if (mod.enabled) {
                 const modDirPath = this.getProfileModDir(profile.name, modName);
 
-                fs.copySync(modDirPath, profile.modBaseDir, {
-                    overwrite: false,
-                    errorOnExist: false,
-                    filter: (src, dest) => {
-                        const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
-                        const isModSubDir = fs.lstatSync(src).isDirectory();
-                        const shouldCopy = isModSubDir
-                            // Don't copy empty directories
-                            ? fs.readdirSync(src).length > 0
-                            : true;
+                try {
+                    fs.copySync(path.resolve(modDirPath), path.resolve(profile.modBaseDir), {
+                        overwrite: false,
+                        errorOnExist: false,
+                        filter: (src, dest) => {
+                            const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
+                            const isModSubDir = fs.lstatSync(path.resolve(src)).isDirectory();
+                            const shouldCopy = isModSubDir
+                                // Don't copy empty directories
+                                ? fs.readdirSync(path.resolve(src)).length > 0
+                                : true;
 
-                        // Record mod files written from profile
-                        if (shouldCopy && !isModSubDir && modRelPath.length > 0) {
-                            profileModFiles.push(modRelPath);
+                            // Record mod files written from profile
+                            if (shouldCopy && !isModSubDir && modRelPath.length > 0) {
+                                profileModFiles.push(modRelPath);
+                            }
+
+                            return shouldCopy;
                         }
-
-                        return shouldCopy;
-                    }
-                });
+                    });
+                } catch (err) {
+                    log.error("Mod deployment failed: ", err);
+                    throw err;
+                }
             }
         }
 
@@ -593,12 +621,16 @@ class ElectronLoader {
             profile: profile.name,
             profileModFiles
         });
+
+        log.info("Mod deployment succeeded");
     }
 
     async undeployProfile(profile) {
         if (!this.isProfileDeployed(profile)) {
             return;
         }
+
+        log.info("Undeploying profile", profile.name);
 
         const { profileModFiles } = this.readProfileDeploymentMetadata(profile);
 
@@ -620,6 +652,8 @@ class ElectronLoader {
 
         // Wait for all files to be removed
         await Promise.all(undeployJobs);
+
+        log.info("Mod undeployment succeeded");
     }
 
     // Credit: https://stackoverflow.com/a/57253723

@@ -73,6 +73,14 @@ export namespace AppMessage {
         };
     }
 
+    export interface CopyProfileMods extends Base {
+        id: `${Prefix}:copyProfileMods`;
+        data: {
+            srcProfile: AppProfile;
+            destProfile: AppProfile;
+        };
+    }
+
     export interface ShowPreferences extends Base {
         id: `${Prefix}:showPreferences`;
     }

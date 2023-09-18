@@ -2,14 +2,20 @@
 @use "./layout";
 @use "./scrollbar";
 @use "./profile-mod-list";
+@use "./mods-overview-page";
 
 @mixin declare($primary, $accent, $warn, $is-dark) {
 
     // List all theme extensions here:
 
+    // Global styles:
     @include colors.declare($primary, $accent, $warn, $is-dark);
     @include layout.declare($primary, $accent, $warn, $is-dark);
     @include scrollbar.declare($primary, $accent, $warn, $is-dark);
 
+    // Component styles:
     @include profile-mod-list.declare("app-profile-mod-list", $primary, $accent, $warn, $is-dark);
+
+    // Page styles:
+    @include mods-overview-page.declare("app-mods-overview-page", $primary, $accent, $warn, $is-dark);
 }
