@@ -1,6 +1,6 @@
 # Starfield Mod Loader
 
-A simple mod manager for Starfield that supports both Steam and Game Pass versions of the game.
+A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) versions of the game.
 
 ![Starfield Mod Loader](/docs/app.png)
 
@@ -8,7 +8,7 @@ A simple mod manager for Starfield that supports both Steam and Game Pass versio
 
 * **Add**, **re-order**, **rename**, **disable** and **remove** your mods
 * Support for switching between **multiple profiles**
-* Support for **Steam** and **Game Pass** versions of Starfield
+* Support for **Steam** and **UWP (Game Pass)** versions of Starfield
 
 # Releases
 
@@ -36,7 +36,7 @@ To add and manage mods you must first create a profile. Upon first launching the
 
 The **Mod Base Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` directory (recommended) or the game's installation directory (not recommended). If `Documents/My Games/Starfield/Data` does not exist you should go ahead and create it now.
 
-The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for Game Pass, but this may vary depending on where you chose to install Starfield.
+The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install Starfield.
 
 The **Game Executable** path should point to `Starfield.exe`, which should be in the game base directory from the prior step.
 
@@ -52,7 +52,7 @@ Any mod files that you have manually copied to your **Mod Base Directory** outsi
 
 ## Activate your mods
 
-To enable mods in the game you must first activate them. press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
+To enable mods in the game you must first activate them. Press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
 
 Mods will now remain active until you press the **Deactivate Mods** button, even if you close the app or restart your PC.
 

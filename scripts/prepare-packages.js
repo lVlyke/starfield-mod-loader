@@ -1,6 +1,5 @@
 // @ts-check
 const fs = require("fs");
-const path = require("path");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
 const { version } = require("../package.json");
@@ -8,15 +7,15 @@ const { version } = require("../package.json");
 const PKG_DIR = "./out";
 const SEQUENTIAL_MODE = process.argv.includes("--sequential");
 
-const packages = fs.readdirSync(PKG_DIR);
-
 (async() => {
+    process.chdir(PKG_DIR);
+
+    const packages = fs.readdirSync(".");
     const tasks = [];
 
-    for (const package of packages) {
-        const pkgPath = path.join(PKG_DIR, package);
+    for (const pkgPath of packages) {
         if (fs.existsSync(pkgPath)) {
-            if (fs.lstatSync(pkgPath).isDirectory() && !package.includes("template")) {
+            if (fs.lstatSync(pkgPath).isDirectory() && !pkgPath.includes("template")) {
                 const archivePath = `${pkgPath}_${version}.7z`;
 
                 fs.rmSync(archivePath, { force: true });
@@ -44,5 +43,6 @@ const packages = fs.readdirSync(PKG_DIR);
     }
 
     await Promise.all(tasks);
-})();
 
+    process.chdir("..");
+})();
