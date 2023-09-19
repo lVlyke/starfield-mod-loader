@@ -28,6 +28,6 @@ const RELEASE_MODE = process.argv.includes("--release");
     
     execSync([
         "npx electron-packager ./dist starfield-mod-loader --out ./out --overwrite --no-tmpdir",
-        BUILD_ALL ? " --platform 'win32, linux, darwin' --arch 'ia32, x64, armv7l, arm64'" : ""
+        BUILD_ALL ? " --platform 'win32, linux' --arch 'ia32, x64, armv7l, arm64'" : ""
     ].join(""), { stdio: "inherit" });
 })();

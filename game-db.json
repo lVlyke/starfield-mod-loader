@@ -10,6 +10,8 @@
             "C:\\XboxGames\\Starfield\\Content"
         ],
         "gameBinaryPaths": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "C:\\XboxGames\\Starfield\\Content\\Starfield.exe"

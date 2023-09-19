@@ -4,7 +4,7 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron")
 const log = require("electron-log");
 const url = require("url");
 const path = require("path");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs-extra");
 const fsPromises = require("fs").promises;
 const _ = require("lodash");
@@ -333,7 +333,10 @@ class ElectronLoader {
         });
 
         ipcMain.handle("profile:launchGame", async (_event, { profile }) => {
-            exec(path.resolve(profile.gameBinaryPath));
+            spawn(path.resolve(profile.gameBinaryPath), {
+                detached: true,
+                cwd: profile.gameBaseDir
+            });
         });
     }
 
