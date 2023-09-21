@@ -1,13 +1,17 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, ViewChild } from "@angular/core";
 import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, ValidationErrors } from "@angular/forms";
-import { ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
+import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
+import { Select } from "@ngxs/store";
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { BehaviorSubject, Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { filter, map, switchMap, take } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
-import { filterDefined } from "../../core/operators";
+import { filterDefined, filterTrue } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
+import { AppProfile } from "../../models/app-profile";
+import { AppState } from "../../state";
+import { DialogManager } from "../../services/dialog-manager";
 
 interface FileTreeNode {
     terminal: boolean;
@@ -38,8 +42,14 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
 
+    @Select(AppState.getActiveProfile)
+    public readonly activeProfile$!: Observable<AppProfile>;
+
     @Output("importRequestChange")
     public readonly importRequestChange$ = new EventEmitter<ModImportRequest>();
+
+    @AsyncState()
+    public readonly activeProfile!: AppProfile;
 
     @Input()
     public importRequest!: ModImportRequest;
@@ -78,9 +88,13 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     @DeclareState("fileDataInput")
     private _fileDataInput!: FileTreeNode[];
 
+    @DeclareState("sfseDetected")
+    private _sfseDetected: boolean = false;
+
     constructor(
         cdRef: ChangeDetectorRef,
-        stateRef: ComponentStateRef<AppModImportOptionsComponent>
+        stateRef: ComponentStateRef<AppModImportOptionsComponent>,
+        dialogManager: DialogManager
     ) {
         super({ cdRef });
 
@@ -116,6 +130,11 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
                     inputData[curPath] = pathPartInputData;
                     parentInputData = pathPartInputData;
+
+                    // Check if this mod is using SFSE
+                    if (pathPart.toLowerCase() === "sfse") {
+                        this._sfseDetected = true;
+                    }
                 });
 
                 return inputData;
@@ -133,8 +152,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                         return rootDirNode;
                     }
                     
-                    if (this.importRequest.modSubdirRoot.includes(node.fullPath)) {
-                        if (node.fullPath === this.importRequest.modSubdirRoot) {
+                    if (this.importRequest.modSubdirRoot.toLowerCase().includes(node.fullPath.toLowerCase())) {
+                        if (node.fullPath.toLowerCase() === this.importRequest.modSubdirRoot.toLowerCase()) {
                             return node;
                         } else if (!!node.children) {
                             return findRootNode(node.children);
@@ -157,6 +176,27 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         stateRef.get("form").pipe(
             filterDefined()
         ).subscribe(({ form }) => form.addValidators([this._validateFilesEnabled]));
+
+        // Warn user that mod uses SFSE if they aren't using SFSE
+        stateRef.get("sfseDetected").pipe(
+            filterTrue(),
+            take(1),
+            filter(() => !this.activeProfile.gameBinaryPath.toLowerCase().endsWith("sfse_loader.exe")),
+            switchMap(() => dialogManager.createDefault(
+                "This mod requires SFSE, but the active profile does not appear to be set up to use SFSE. Are you sure you want to continue?",
+                [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION],
+                { hasBackdrop: true, disposeOnBackdropClick: false }
+            ))
+        ).subscribe((action) => {
+            if (action === DialogManager.CANCEL_ACTION) {
+                this.importRequest.importStatus = "CANCELED";
+                this.onFormSubmit$.next(this.form);
+            }
+        });
+    }
+
+    public get sfseDetected(): boolean {
+        return this._sfseDetected;
     }
 
     public get fileDataInput(): FileTreeNode[] {
@@ -181,8 +221,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
      */
     protected isRootDirNode(node: FileTreeNode, nestedCheck = false): boolean {
         return nestedCheck
-            ? node.fullPath.includes(this.importRequest.modSubdirRoot)
-            : node.fullPath === this.importRequest.modSubdirRoot;
+            ? node.fullPath.toLowerCase().includes(this.importRequest.modSubdirRoot.toLowerCase())
+            : node.fullPath.toLowerCase() === this.importRequest.modSubdirRoot.toLowerCase();
     }
 
     /**
