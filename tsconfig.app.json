@@ -10,5 +10,8 @@
   ],
   "include": [
     "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/app-types.d.ts"
   ]
 }

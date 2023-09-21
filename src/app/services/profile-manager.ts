@@ -4,7 +4,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
 import { catchError, delay, distinctUntilChanged, filter, map, skip, switchMap, take, tap, toArray } from "rxjs/operators";
-import { EMPTY, Observable, combineLatest, concat, forkJoin, of, throwError } from "rxjs";
+import { EMPTY, Observable, combineLatest, concat, forkJoin, merge, of, throwError } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -19,8 +19,10 @@ import { AppProfileSettingsModal } from "../modals/profile-settings";
 import { AppDialogs } from "../services/app-dialogs";
 import { LangUtils } from "../util/lang-utils";
 import { AppPreferencesModal } from "../modals/app-preferences";
+import { AppModImportOptionsModal } from "../modals/mod-import-options";
 import { GameId } from "../models/game-id";
 import { GameDatabase } from "../models/game-database";
+import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -49,15 +51,15 @@ export class ProfileManager {
         ).subscribe();
 
         messageHandler.messages$.pipe(
-            filter(message => message.id === "profile:addMod"),
+            filter(message => message.id === "profile:beginModAdd"),
             switchMap(() => this.addModFromUser().pipe(
                 catchError((err) => (console.error("Failed to add mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
-            filter(message => message.id === "profile:importMod"),
-            switchMap(() => this.addModFromUser({ importMod: true }).pipe(
+            filter(message => message.id === "profile:beginModExternalImport"),
+            switchMap(() => this.addModFromUser({ externalImport: true }).pipe(
                 catchError((err) => (console.error("Failed to import mod: ", err), EMPTY))
             ))
         ).subscribe();
@@ -230,12 +232,15 @@ export class ProfileManager {
         showErrorMessage?: boolean;
         updateManualMods?: boolean;
         mutateState?: boolean;
-    } = {
-        showErrorMessage: true,
-        showSuccessMessage: true,
-        updateManualMods: true,
-        mutateState: true,
-    }): Observable<boolean> {
+    } = {}): Observable<boolean> {
+        // Provide default options
+        options = Object.assign({
+            showErrorMessage: true,
+            showSuccessMessage: true,
+            updateManualMods: true,
+            mutateState: true,
+        }, options);
+
         let result$;
         if (options.updateManualMods) {
             result$ = this.updateActiveProfileManualMods();
@@ -280,7 +285,7 @@ export class ProfileManager {
                                 this.snackbar.open("Mods verified successfully!", undefined, {
                                     duration: 3000
                                 });
-                            } else if (options.showErrorMessage) {
+                            } else if (!result && options.showErrorMessage) {
                                 this.snackbar.open("Mod verification failed with errors", "Close", {
                                     panelClass: "snackbar-error"
                                 });
@@ -482,23 +487,55 @@ export class ProfileManager {
         ));
     }
 
-    public addModFromUser(options?: { importMod?: boolean }): Observable<ModProfileRef> {
+    public addModFromUser(options?: { externalImport?: boolean }): Observable<ModProfileRef | undefined> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            switchMap((activeProfile) => ElectronUtils.invoke(options?.importMod ? "profile:importMod": "profile:addMod", {
-                profile: activeProfile
-            })),
-            switchMap((result) => {
-                if (!result) {
+            switchMap((activeProfile) => ElectronUtils.invoke<ModImportRequest | undefined>(
+                options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
+                { profile: activeProfile }
+            )),
+            switchMap((importRequest) => {
+                if (!importRequest || importRequest.importStatus === "FAILED") {
                     alert("Failed to add mod."); // TODO - Dialog w/ error
                     return throwError(() => "Failed to add mod.");
                 }
 
-                return of(result);
-            }),
-            switchMap(({ name, modRef }) => this.store.dispatch(new ActiveProfileActions.AddMod(name, modRef)).pipe(
-                map(() => modRef)
-            ))
+                const modImportOptionsRef = this.overlayHelpers.createFullScreen(AppModImportOptionsModal, {
+                    center: true,
+                    hasBackdrop: true,
+                    disposeOnBackdropClick: false,
+                    minWidth: "24rem",
+                    width: "40%",
+                    height: "auto",
+                    maxHeight: "75%",
+                    panelClass: "mat-app-background"
+                });
+
+                modImportOptionsRef.component.instance.importRequest = importRequest;
+                return merge(
+                    modImportOptionsRef.component.instance.onFormSubmit$,
+                    modImportOptionsRef.onClose$
+                ).pipe(
+                    take(1),
+                    switchMap((userResult) => {
+                        if (!userResult) {
+                            importRequest.importStatus = "CANCELED";
+                        }
+
+                        return ElectronUtils.invoke<ModImportResult | undefined>("profile:completeModImport", { importRequest }).pipe(
+                            switchMap((importResult) => {
+                                if (!!importResult) {
+                                    return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.modName, importResult.modRef)).pipe(
+                                        map(() => importResult.modRef)
+                                    );
+                                } else {
+                                    return of(undefined);
+                                }
+                            })
+                        );
+                    })
+                );
+            })
         ));
     }
 

@@ -5,6 +5,7 @@ import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { AppProfileManualModListComponent } from "./profile-manual-mod-list.component";
+import { AppPipesModule } from "../../pipes";
 
 @NgModule({
     declarations: [
@@ -16,7 +17,9 @@ import { AppProfileManualModListComponent } from "./profile-manual-mod-list.comp
         MatListModule,
         MatCheckboxModule,
         MatIconModule,
-        MatTooltipModule
+        MatTooltipModule,
+
+        AppPipesModule
     ],
     exports: [
         AppProfileManualModListComponent

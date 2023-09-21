@@ -1,6 +1,6 @@
 {
   "name": "starfield-mod-loader",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "main": "electron.js",
   "scripts": {
     "app:build-dist": "npm run build:release && npm run package",
@@ -19,7 +19,7 @@
     "test": "ng test",
     "start": "npm run serve",
     "electron:start": "npx electron ./dist",
-    "electron-wsl-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^26.2.0 && unset npm_config_platform"
+    "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^26.2.2 && unset npm_config_platform"
   },
   "private": true,
   "dependencies": {
@@ -42,6 +42,7 @@
     "lodash": "^4.17.21",
     "node-7z": "^3.0.0",
     "normalize.css": "^8.0.1",
+    "recursive-readdir": "^2.2.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
@@ -56,7 +57,7 @@
     "@types/node": "^18.17.15",
     "@types/node-7z": "^2.1.5",
     "chokidar": "^3.5.3",
-    "electron": "^26.2.0",
+    "electron": "^26.2.2",
     "electron-packager": "^17.1.2",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",

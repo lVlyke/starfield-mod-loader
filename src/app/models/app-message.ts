@@ -1,10 +1,13 @@
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 import { GameDetails } from "./game-details";
+import { ModImportRequest } from "./mod-import-status";
 
 export type AppMessage
     = AppMessage.AppMessage
     | AppMessage.ProfileMessage;
+
+export type AppMessageData<I extends AppMessage["id"]> = (AppMessage & { id: I })["data"];
 
 type _AppMessage = AppMessage;
 
@@ -49,6 +52,13 @@ export namespace AppMessage {
 
     export interface NewProfile extends Base {
         id: `${Prefix}:newProfile`;
+    }
+
+    export interface DeleteProfile extends Base {
+        id: `${Prefix}:deleteProfile`;
+        data: {
+            profile: AppProfile;
+        };
     }
 
     export interface LoadProfile extends Base {
@@ -101,9 +111,11 @@ export namespace AppMessage {
                            | LoadSettings
                            | SaveSettings
                            | NewProfile
+                           | DeleteProfile
                            | LoadProfile
                            | SaveProfile
                            | VerifyProfile
+                           | CopyProfileMods
                            | ShowPreferences
                            | LoadGameDatabase
                            | FindBestProfileDefaults;
@@ -124,17 +136,24 @@ export namespace AppMessage {
         };
     }
 
-    export interface AddProfileMod extends Base {
-        id: `${ProfileMessage.Prefix}:addMod`;
+    export interface BeginModAdd extends Base {
+        id: `${ProfileMessage.Prefix}:beginModAdd`;
         data: {
             profile: AppProfile;
         };
     }
 
-    export interface ImportProfileMod extends Base {
-        id: `${ProfileMessage.Prefix}:importMod`;
+    export interface BeginModExternalImport extends Base {
+        id: `${ProfileMessage.Prefix}:beginModExternalImport`;
         data: {
             profile: AppProfile;
+        };
+    }
+
+    export interface CompleteModImport extends Base {
+        id: `${ProfileMessage.Prefix}:completeModImport`;
+        data: {
+            importRequest: ModImportRequest;
         };
     }
 
@@ -220,8 +239,9 @@ export namespace AppMessage {
     }
 
     export type ProfileMessage = ProfileSettings
-                               | AddProfileMod
-                               | ImportProfileMod
+                               | BeginModAdd
+                               | BeginModExternalImport
+                               | CompleteModImport
                                | DeleteProfileMod
                                | RenameProfileMod
                                | DeployProfile
@@ -242,16 +262,19 @@ export namespace AppMessage {
         "app:loadSettings",
         "app:saveSettings",
         "app:newProfile",
+        "app:deleteProfile",
         "app:loadProfile",
         "app:saveProfile",
+        "app:copyProfileMods",
         "app:verifyProfile",
         "app:showPreferences",
         "app:loadGameDatabase",
         "app:findBestProfileDefaults",
 
         "profile:settings",
-        "profile:addMod",
-        "profile:importMod",
+        "profile:beginModAdd",
+        "profile:beginModExternalImport",
+        "profile:completeModImport",
         "profile:deleteMod",
         "profile:renameMod",
         "profile:deploy",

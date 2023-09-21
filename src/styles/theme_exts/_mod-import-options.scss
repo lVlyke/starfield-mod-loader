@@ -1,0 +1,15 @@
+@use "@angular/material" as mat;
+@use "../mixins";
+
+@mixin declare($selector, $primary, $accent, $warn, $is-dark) {
+
+    #{$selector} {
+
+        mat-tree.file-tree {
+            background: var(--mdc-filled-text-field-container-color);
+            border-width: 1px;
+            border-style: solid;
+            border-color: var(--mdc-filled-text-field-active-indicator-color);
+        }
+    }
+}

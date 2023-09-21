@@ -21,7 +21,12 @@ const DEPENDENCIES = [
     "debug",
     "ms",
     "normalize-path",
-    "7zip-bin"
+    "7zip-bin",
+    "recursive-readdir",
+    "minimatch",
+    "brace-expansion",
+    "balanced-match",
+    "concat-map"
 ];
 
 fs.mkdirSync(BUILD_DIR, { recursive: true })

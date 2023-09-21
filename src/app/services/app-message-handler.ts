@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from "@angular/core";
 import { Subject } from 'rxjs';
-import { AppMessage } from "../models/app-message";
+import { AppMessage, AppMessageData } from "../models/app-message";
 import { ElectronUtils } from '../util/electron-utils';
 
 @Injectable({ providedIn: "root" })
@@ -13,8 +13,8 @@ export class AppMessageHandler {
         const electron = ElectronUtils.electron;
 
         if (!!electron) {
-            AppMessage.record.forEach((id) => electron.ipcRenderer.on(id, (_, data) => {
-                zone.run(() => this._messages$.next({ id, data }));
+            AppMessage.record.forEach((id: AppMessage["id"]) => electron.ipcRenderer.on(id, (_, data: AppMessageData<typeof id>) => {
+                zone.run(() => this._messages$.next({ id, data } as AppMessage));
             }));
         }
     }

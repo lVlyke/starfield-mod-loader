@@ -1,0 +1,35 @@
+:host {
+
+    mat-form-field {
+        display: block;
+    }
+
+    mat-tree {
+
+        [mod-enabled] {
+
+            &:not(:hover) > .root-dir-action {
+                display: none;
+            }
+
+            > .path-info-badge {
+                margin-left: 0.5rem;
+                font-size: 0.8em;
+            }
+
+            > .root-dir-clear-action {
+                margin-left: 0.25rem;
+                font-size: 0.9rem;
+                width: 0.9rem;
+                height: 0.9rem;
+                cursor: pointer;
+            }
+        }
+
+        [mod-enabled="false"] > .mod-path-part {
+            font-style: italic;
+            opacity: 0.75;
+            transition: opacity linear 0.5s;
+        }
+    }
+}

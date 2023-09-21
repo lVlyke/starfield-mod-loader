@@ -1,0 +1,23 @@
+<mat-card *ngIf="!!importRequest">
+    <mat-card-header>
+        <mat-card-title>Mod Options</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+        <app-mod-import-options [(importRequest)]="importRequest" />
+    </mat-card-content>
+
+    <mat-card-actions *ngIf="!!importOptionsComponent">
+        <button mat-raised-button
+                type="submit"
+                form="mod-import-form"
+                color="primary"
+                [disabled]="(importOptionsComponent.form.statusChanges | async) === 'INVALID'">
+                OK
+        </button>
+
+        <button mat-raised-button (click)="overlayRef.close()">
+            Cancel
+        </button>
+    </mat-card-actions>
+</mat-card>

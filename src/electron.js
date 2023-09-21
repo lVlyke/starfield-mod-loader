@@ -1,4 +1,5 @@
 // @ts-check
+/// <reference path="./app-types.d.ts" />
 
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron");
 const log = require("electron-log");
@@ -11,21 +12,24 @@ const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
 
+// TODO - Replace this with fs.readdir(..., { recursive: true }) when electron uses Node v18.17.0+
+const recursiveReaddir = require("recursive-readdir");
+
 const DEBUG_MODE = !app.isPackaged;
 
 class ElectronLoader {
 
-    static /** @type string */ APP_SETTINGS_FILE = "settings.json";
-    static /** @type string */ APP_PROFILES_DIR = "profiles";
-    static /** @type string */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
-    static /** @type string */ PROFILE_SETTINGS_FILE = "profile.json";
-    static /** @type string */ PROFILE_METADATA_FILE = ".sml.json";
-    static /** @type string */ PROFILE_MODS_DIR = "mods";
-    static /** @type string */ PROFILE_MODS_STAGING_DIR = "_tmp";
+    static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
+    static /** @type {string} */ APP_PROFILES_DIR = "profiles";
+    static /** @type {string} */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
+    static /** @type {string} */ PROFILE_SETTINGS_FILE = "profile.json";
+    static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
+    static /** @type {string} */ PROFILE_MODS_DIR = "mods";
+    static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     
-    /** @type BrowserWindow */ mainWindow;
-    /** @type Record<string, any> */ monitoredPaths = {};
-    /** @type Record<string, boolean> */ ignorePathChanges = {};
+    /** @type {BrowserWindow} */ mainWindow;
+    /** @type {Record<string, any>} */ monitoredPaths = {};
+    /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
     constructor() {
         if (DEBUG_MODE) {
@@ -63,7 +67,10 @@ class ElectronLoader {
 
         ipcMain.handle("app:reload", () => this.loadApp());
 
-        ipcMain.handle("app:chooseDirectory", async (_event, { baseDir }) => {
+        ipcMain.handle("app:chooseDirectory", async (
+            _event,
+            /** @type {AppMessageData<"app:chooseDirectory">} */ { baseDir }
+        ) => {
             const result = await dialog.showOpenDialog({
                 properties: ["openDirectory"],
                 defaultPath: baseDir
@@ -72,7 +79,10 @@ class ElectronLoader {
             return result?.filePaths?.[0];
         });
 
-        ipcMain.handle("app:chooseFilePath", async (_event, { baseDir, fileTypes }) => {
+        ipcMain.handle("app:chooseFilePath", async (
+            _event,
+            /** @type {AppMessageData<"app:chooseFilePath">} */ { baseDir, fileTypes }
+        ) => {
             const result = await dialog.showOpenDialog({
                 filters: fileTypes ? [
                     {
@@ -86,7 +96,7 @@ class ElectronLoader {
             return result?.filePaths?.[0];
         });
 
-        ipcMain.handle("app:loadSettings", async (_event, _data) => {
+        ipcMain.handle("app:loadSettings", async (_event, /** @type {AppMessageData<"app:loadSettings">} */ _data) => {
             try {
                 return this.loadSettings();
             } catch (e) {
@@ -95,11 +105,11 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:saveSettings", async (_event, { settings }) => {
+        ipcMain.handle("app:saveSettings", async (_event, /** @type {AppMessageData<"app:saveSettings">} */ { settings }) => {
            return this.saveSettings(settings);
         });
 
-        ipcMain.handle("app:loadGameDatabase", async (_event, _data) => {
+        ipcMain.handle("app:loadGameDatabase", async (_event, /** @type {AppMessageData<"app:loadGameDatabase">} */ _data) => {
             try {
                 return this.loadGameDatabase();
             } catch (e) {
@@ -108,26 +118,29 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:loadProfile", async (_event, { name }) => {
+        ipcMain.handle("app:loadProfile", async (_event, /** @type {AppMessageData<"app:loadProfile">} */ { name }) => {
             return this.loadProfile(name);
         });
 
-        ipcMain.handle("app:saveProfile", async (_event, { profile }) => {
+        ipcMain.handle("app:saveProfile", async (_event, /** @type {AppMessageData<"app:saveProfile">} */ { profile }) => {
             return this.saveProfile(profile);
         });
 
-        ipcMain.handle("app:deleteProfile", async (_event, { profile }) => {
+        ipcMain.handle("app:deleteProfile", async (_event, /** @type {AppMessageData<"app:deleteProfile">} */ { profile }) => {
             return this.deleteProfile(profile);
         });
 
-        ipcMain.handle("app:copyProfileMods", async (_event, { srcProfile, destProfile }) => {
+        ipcMain.handle("app:copyProfileMods", async (
+            _event,
+            /** @type {AppMessageData<"app:copyProfileMods">} */ { srcProfile, destProfile }
+        ) => {
             const srcModsDir = this.getProfileModsDir(srcProfile.name);
             const destModsDir = this.getProfileModsDir(destProfile.name);
 
             return fs.copySync(srcModsDir, destModsDir);
         });
 
-        ipcMain.handle("app:verifyProfile", async (_event, { profile }) => {
+        ipcMain.handle("app:verifyProfile", async (_event, /** @type {AppMessageData<"app:verifyProfile">} */ { profile }) => {
             const modVerifyResult = this.verifyProfileModsExist(profile);
             const modDirVerifyResult = this.verifyProfileModDirExists(profile);
             const gameDirVerifyResult = this.verifyProfileGameDirExists(profile);
@@ -139,35 +152,41 @@ class ElectronLoader {
             };
         });
 
-        ipcMain.handle("app:findBestProfileDefaults", async (_event, { gameDetails }) => {
+        ipcMain.handle("app:findBestProfileDefaults", async (
+            _event,
+            /** @type {AppMessageData<"app:findBestProfileDefaults">} */ { gameDetails }
+        ) => {
             const result = {};
 
             if (gameDetails.modBaseDirs) {
                 result.modBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.modBaseDirs.find((modBaseDir) => {
                     return fs.existsSync(modBaseDir) || fs.existsSync(path.dirname(modBaseDir));
-                }));
+                }) ?? "");
             }
 
             if (gameDetails.gameBaseDirs) {
                 result.gameBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBaseDirs.find((gameBaseDir) => {
                     return fs.existsSync(gameBaseDir);
-                }));
+                }) ?? "");
             }
 
             if (gameDetails.gameBinaryPaths) {
                 result.gameBinaryPath = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBinaryPaths.find((gameBinaryPath) => {
                     return fs.existsSync(gameBinaryPath);
-                }));
+                }) ?? "");
             }
 
             return result;
         });
 
-        ipcMain.handle("profile:findManualMods", async (_event, { profile }) => {
+        ipcMain.handle("profile:findManualMods", async (_event, /** @type {AppMessageData<"profile:findManualMods">} */ { profile }) => {
             return this.findManualMods(profile);
         });
 
-        ipcMain.handle("profile:addMod", async (_event, { profile }) => {
+        ipcMain.handle("profile:beginModAdd", async (
+            _event,
+            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile }
+        ) => {
             const pickedFile = (await dialog.showOpenDialog({
                 filters: [
                     { 
@@ -185,8 +204,8 @@ class ElectronLoader {
             if (!!filePath) {
                 const fileType = path.extname(filePath);
                 const modName = path.basename(filePath, fileType);
-                const modDirPath = this.getProfileModDir(profile.name, modName);
                 const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
+                const modFilePaths = [];
                 /** @type Promise */ let decompressOperation;
 
                 switch (fileType.toLowerCase()) {
@@ -208,6 +227,9 @@ class ElectronLoader {
                                 $bin: _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath)) ?? sevenBin.path7za
                             });
 
+                            decompressStream.on("data", ({ file }) => {
+                                modFilePaths.push(file);
+                            });
                             decompressStream.on("end", () => resolve(true));
                             decompressStream.on("error", (e) => {
                                 log.error(e);
@@ -222,37 +244,26 @@ class ElectronLoader {
                 }
 
                 if (await decompressOperation) {
-                    const modStagingDirDataDirs = [
-                        path.join(modDirStagingPath, "Data"),
-                        path.join(modDirStagingPath, "data"),
-                    ];
+                    try {
+                        return this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
+                    } catch (err) {
+                        log.error(`Error occurred while adding mod ${modName}: `, err);
 
-                    let modDataDir = modStagingDirDataDirs.find(dataDir => fs.existsSync(dataDir));
-                    if (!modDataDir) {
-                        modDataDir = modDirStagingPath;
+                        // Erase the staging data
+                        await fsPromises.rm(modDirStagingPath, { force: true });
+
+                        throw err;
                     }
-
-                    // TODO - Notify user of Data dir change if modDataDir exists
-
-                    // Copy the data dir to the mod directory
-                    await fs.copy(modDataDir, modDirPath, { overwrite: true });
-
-                    // Erase the staging data
-                    await fs.remove(modDirStagingPath);
-
-                    return {
-                        name: modName,
-                        modRef: {
-                            enabled: true
-                        }
-                    };
                 }
             }
 
             return null;
         });
 
-        ipcMain.handle("profile:importMod", async (_event, { profile }) => {
+        ipcMain.handle("profile:beginModExternalImport", async (
+            _event,
+            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile }
+        ) => {
             const pickedModFolder = await dialog.showOpenDialog({
                 properties: ["openDirectory"]
             });
@@ -260,79 +271,87 @@ class ElectronLoader {
             const folderPath = pickedModFolder?.filePaths[0];
             if (!!folderPath) {
                 const modName = path.basename(folderPath);
-                const modDirPath = this.getProfileModDir(profile.name, modName);
-                const modDataDirs = [
-                    path.join(folderPath, "Data"),
-                    path.join(folderPath, "data"),
-                ];
+                const modFilePaths = (await recursiveReaddir(folderPath)).map((filePath) => {
+                    return filePath.replace(`${folderPath}${path.sep}`, "");
+                });
 
-                let modDataDir = modDataDirs.find(dataDir => fs.existsSync(dataDir));
-                if (!modDataDir) {
-                    modDataDir = folderPath;
-                }
-
-                // TODO - Notify user of Data dir change if modDataDir exists
-
-                // Copy the data dir to the mod directory
-                await fs.copy(modDataDir, modDirPath, { overwrite: true });
-
-                return {
-                    name: modName,
-                    modRef: {
-                        enabled: true
-                    }
-                };
+                return this.beginModImport(profile, modName, folderPath, modFilePaths, true);
             }
         });
 
-        ipcMain.handle("profile:deleteMod", async (_event, { profile, modName }) => {
+        ipcMain.handle("profile:completeModImport", async (
+            _event,
+            /** @type {AppMessageData<"profile:completeModImport">} */ { importRequest }
+        ) => {
+            return this.completeModImport(importRequest);
+        });
+
+        ipcMain.handle("profile:deleteMod", async (_event, /** @type {AppMessageData<"profile:deleteMod">} */ { profile, modName }) => {
             const modDirPath = this.getProfileModDir(profile.name, modName);
 
             await fs.remove(modDirPath);
         });
 
-        ipcMain.handle("profile:renameMod", async (_event, { profile, modCurName, modNewName }) => {
+        ipcMain.handle("profile:renameMod", async (
+            _event,
+            /** @type {AppMessageData<"profile:renameMod">} */ { profile, modCurName, modNewName }
+        ) => {
             const modCurDir = this.getProfileModDir(profile.name, modCurName);
             const modNewDir = this.getProfileModDir(profile.name, modNewName);
 
             await fs.move(modCurDir, modNewDir);
         });
 
-        ipcMain.handle("profile:deploy", async (_event, { profile }) => {
+        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ { profile }) => {
             return this.deployProfile(profile);
         });
 
-        ipcMain.handle("profile:undeploy", async (_event, { profile }) => {
+        ipcMain.handle("profile:undeploy", async (_event, /** @type {AppMessageData<"profile:undeploy">} */ { profile }) => {
             return this.undeployProfile(profile);
         });
 
-        ipcMain.handle("profile:showModInFileExplorer", async (_event, { profile, modName }) => {
+        ipcMain.handle("profile:showModInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName }
+        ) => {
             const modDirPath = this.getProfileModDir(profile.name, modName);
 
             shell.openPath(path.resolve(modDirPath));
         });
 
-        ipcMain.handle("profile:showModBaseDirInFileExplorer", async (_event, { profile }) => {
+        ipcMain.handle("profile:showModBaseDirInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showModBaseDirInFileExplorer">} */ { profile }
+        ) => {
             shell.openPath(path.resolve(profile.modBaseDir));
         });
 
-        ipcMain.handle("profile:showGameBaseDirInFileExplorer", async (_event, { profile }) => {
+        ipcMain.handle("profile:showGameBaseDirInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showGameBaseDirInFileExplorer">} */ { profile }
+        ) => {
             shell.openPath(path.resolve(profile.gameBaseDir));
         });
 
-        ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (_event, { profile }) => {
+        ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showProfileBaseDirInFileExplorer">} */ { profile }
+        ) => {
             const profileDir = this.getProfileDir(profile.name);
 
             shell.openPath(path.resolve(profileDir));
         });
 
-        ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (_event, { profile }) => {
+        ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
+        ) => {
             const profileModsDir = this.getProfileModsDir(profile.name);
 
             shell.openPath(path.resolve(profileModsDir));
         });
 
-        ipcMain.handle("profile:launchGame", async (_event, { profile }) => {
+        ipcMain.handle("profile:launchGame", async (_event, /** @type {AppMessageData<"profile:launchGame">} */ { profile }) => {
             spawn(path.resolve(profile.gameBinaryPath), {
                 detached: true,
                 cwd: profile.gameBaseDir
@@ -401,11 +420,11 @@ class ElectronLoader {
                         submenu: [
                             {
                                 label: "Add Mod",
-                                click: () => this.mainWindow.webContents.send("profile:addMod")
+                                click: () => this.mainWindow.webContents.send("profile:beginModAdd")
                             },
                             {
                                 label: "Import Mod",
-                                click: () => this.mainWindow.webContents.send("profile:importMod")
+                                click: () => this.mainWindow.webContents.send("profile:beginModExternalImport")
                             }
                         ]
                     },
@@ -427,23 +446,29 @@ class ElectronLoader {
         ]);
     }
 
-    createDebugMenuOption(menuOption) {
+    /** @returns {[Record<any, any>] | []} */
+    createDebugMenuOption(/** @type {Record<any, any>} */ menuOption) {
         return DEBUG_MODE ? [menuOption] : [];
     }
 
+    /**
+     * @returns {AppSettingsUserCfg}
+     */
     loadSettings() {
         const settingsSrc = fs.readFileSync(ElectronLoader.APP_SETTINGS_FILE);
 
         return JSON.parse(settingsSrc.toString("utf8"));
     }
 
-    saveSettings(settings) {
+    /** @returns {void} */
+    saveSettings(/** @type {AppSettingsUserCfg} */ settings) {
         return fs.writeFileSync(
             path.join(ElectronLoader.APP_SETTINGS_FILE),
             JSON.stringify(settings)
         );
     }
 
+    /** @returns {GameDatabase} */
     loadGameDatabase() {
         if (!fs.existsSync(ElectronLoader.GAME_DB_FILE)) {
             return {};
@@ -454,19 +479,23 @@ class ElectronLoader {
         return JSON.parse(dbSrc.toString("utf8"));
     }
 
-    getProfileDir(profileName) {
+    /** @returns {string} */
+    getProfileDir(/** @type {string} */ profileName) {
         return path.join(ElectronLoader.APP_PROFILES_DIR, profileName);
     }
 
-    getProfileModsDir(profileName) {
+    /** @returns {string} */
+    getProfileModsDir(/** @type {string} */ profileName) {
         return path.join(this.getProfileDir(profileName), ElectronLoader.PROFILE_MODS_DIR);
     }
 
-    getProfileModDir(profileName, modName) {
+    /** @returns {string} */
+    getProfileModDir(/** @type {string} */ profileName, /** @type {string} */ modName) {
         return path.join(this.getProfileModsDir(profileName), modName);
     }
 
-    loadProfile(/** @type string */ name) {
+    /** @returns {AppProfile | null} */
+    loadProfile(/** @type {string} */ name) {
         const profileDir = this.getProfileDir(name);
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
         const profileSettingsPath = path.join(profileDir, profileSettingsName);
@@ -478,37 +507,112 @@ class ElectronLoader {
         const profileSrc = fs.readFileSync(profileSettingsPath);
         const profile = JSON.parse(profileSrc.toString("utf8"));
 
-        // Deserialize mods entries to Map
+        // Deserialize `mods` entries to Map
         profile.mods = new Map(profile.mods);
 
         return { name, ...profile };
     }
 
-    saveProfile(profile, options) {
+    /** @returns {void} */
+    saveProfile(/** @type {AppProfile} */ profile, options) {
         const profileDir = this.getProfileDir(profile.name);
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
 
-        // Serialize mods Map as entries
-        profile.mods = Array.from(profile.mods.entries());
+        // Serialize `mods` Map as entries
+        const profileToWrite = Object.assign({}, profile, { mods: Array.from(profile.mods.entries()) });
 
         fs.mkdirSync(profileDir, { recursive: true });
 
         return fs.writeFileSync(
             path.join(profileDir, profileSettingsName),
-            JSON.stringify(_.omit(profile, ["name"])),
+            JSON.stringify(_.omit(profileToWrite, ["name"])),
             options
         );
     }
 
-    deleteProfile(profile) {
+    /** @returns {void} */
+    deleteProfile(/** @type {AppProfile} */ profile) {
         const profileDir = this.getProfileDir(profile.name);
 
         return fs.rmdirSync(profileDir, { recursive: true });
     }
 
-    verifyProfileModsExist(profile) {
+    /** @returns {ModImportRequest} */
+    beginModImport(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ modName,
+        /** @type {string} */ modImportPath,
+        /** @type {string[]} */ modFilePaths,
+        /** @type {boolean} */ externalImport
+    ) {
+        const modDataDirs = ["Data", "data"];
+        const modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
+
+        return {
+            profile,
+            modName,
+            externalImport,
+            importStatus: "PENDING",
+            modFilePaths: modFilePaths.map(filePath => ({
+                filePath: filePath.replace(/[\\/]/g, path.sep),
+                enabled: true
+            })),
+            modPath: modImportPath,
+            filePathSeparator: path.sep,
+            modSubdirRoot
+        };
+    }
+
+    /** @returns {Promise<ModImportResult | undefined>} */
+    async completeModImport(
+        /** @type {ModImportRequest} */ {
+            profile,
+            modName,
+            modPath,
+            externalImport,
+            importStatus,
+            modFilePaths,
+            modSubdirRoot
+        }
+    ) {
+        try {
+            // If the import status is anything except `PENDING`, an error occurred. 
+            if (importStatus !== "PENDING") {
+                return undefined;
+            }
+
+            const modProfilePath = this.getProfileModDir(profile.name, modName);
+            const enabledModFiles =  modFilePaths.filter(({ enabled, filePath }) => {
+                return enabled && filePath.startsWith(modSubdirRoot);
+            });
+
+            // Clear the mod dir for the profile
+            fs.rmSync(modProfilePath, { recursive: true, force: true });
+
+            // Copy all enabled files to the final mod folder
+            enabledModFiles.map(({ filePath }) => fs.copySync(
+                path.join(modPath, filePath),
+                path.join(modProfilePath, filePath.replace(modSubdirRoot, "")),
+                { recursive: true }
+            ));
+        } finally {
+            if (!externalImport) {
+                // Erase the staging data if this was added via archive
+                await fs.remove(modPath);
+            }
+        }
+
+        return {
+            modName,
+            modRef: { enabled: true }
+        };
+    }
+
+    /** @returns {AppProfileModVerificationResult} */
+    verifyProfileModsExist(/** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile.name);
 
+        // @ts-ignore
         return Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
             const modExists = fs.existsSync(path.join(modsDir, modName));
 
@@ -523,7 +627,8 @@ class ElectronLoader {
         }, {});
     }
 
-    verifyProfileModDirExists(profile) {
+    /** @returns {AppProfileVerificationResult} */
+    verifyProfileModDirExists(/** @type {AppProfile} */ profile) {
         const modDirExists = fs.existsSync(profile.modBaseDir);
         return {
             error: !modDirExists,
@@ -531,7 +636,8 @@ class ElectronLoader {
         };
     }
 
-    verifyProfileGameDirExists(profile) {
+    /** @returns {AppProfileVerificationResult} */
+    verifyProfileGameDirExists(/** @type {AppProfile} */ profile) {
         const gameDirExists = fs.existsSync(profile.gameBaseDir);
         return {
             error: !gameDirExists,
@@ -539,12 +645,17 @@ class ElectronLoader {
         };
     }
 
-    isProfileDeployed(profile) {
+    /** 
+     * @description Determines whether or not **any** profile is deployed in the `modBaseDir` of `profile`.
+     * @returns {boolean}
+     * */
+    isProfileDeployed(/** @type {AppProfile} */ profile) {
         const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
         return fs.existsSync(metaFilePath);
     }
 
-    readProfileDeploymentMetadata(profile) {
+    /** @returns {ModDeploymentMetadata | undefined} */
+    readProfileDeploymentMetadata(/** @type {AppProfile} */ profile) {
         const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
         const metaFileExists = fs.existsSync(metaFilePath);
 
@@ -555,19 +666,28 @@ class ElectronLoader {
         return JSON.parse(fs.readFileSync(metaFilePath).toString("utf-8"));
     }
 
-    writeProfileDeploymentMetadata(profile, deploymentMetadata) {
+    /** @returns {void} */
+    writeProfileDeploymentMetadata(/** @type {AppProfile} */ profile, /** @type {ModDeploymentMetadata} */ deploymentMetadata) {
         const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
 
         return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
     }
 
-    findManualMods(profile) {
-        let modDirFiles = fs.readdirSync(profile.modBaseDir, { recursive: true });
+    /** @returns {Promise<Array<string>>} */
+    async findManualMods(/** @type {AppProfile} */ profile) {
+        let modDirFiles = (await recursiveReaddir(profile.modBaseDir)).map((filePath) => {
+            return filePath.replace(`${profile.modBaseDir}${path.sep}`, "").toLowerCase();
+        });
 
         if (this.isProfileDeployed(profile)) {
-            const profileModFiles = this.readProfileDeploymentMetadata(profile).profileModFiles;
+            const profileModFiles = this.readProfileDeploymentMetadata(profile)?.profileModFiles.map((filePath) => {
+                return filePath.toLowerCase();
+            });
+
+            if (!profileModFiles) {
+                throw new Error("Unable to read deployment metadata.");
+            }
             
-            // @ts-ignore
             modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file));
         }
 
@@ -575,7 +695,8 @@ class ElectronLoader {
         return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file.toString())).isDirectory());
     }
 
-    async deployProfile(profile) {
+    /** @returns {Promise<void>} */
+    async deployProfile(/** @type {AppProfile} */ profile) {
         const profileModFiles = [];
 
         if (this.isProfileDeployed(profile)) {
@@ -596,7 +717,7 @@ class ElectronLoader {
                         overwrite: false,
                         errorOnExist: false,
                         filter: (src, dest) => {
-                            const modRelPath = dest.replace(`${profile.modBaseDir}\\`, "");
+                            const modRelPath = dest.replace(`${profile.modBaseDir}${path.sep}`, "");
                             const isModSubDir = fs.lstatSync(path.resolve(src)).isDirectory();
                             const shouldCopy = isModSubDir
                                 // Don't copy empty directories
@@ -628,13 +749,15 @@ class ElectronLoader {
         log.info("Mod deployment succeeded");
     }
 
-    async undeployProfile(profile) {
+    /** @returns {Promise<void>} */
+    async undeployProfile(/** @type {AppProfile} */ profile) {
         if (!this.isProfileDeployed(profile)) {
             return;
         }
 
         log.info("Undeploying profile", profile.name);
 
+        // @ts-ignore
         const { profileModFiles } = this.readProfileDeploymentMetadata(profile);
 
         // Only remove files managed by this profile

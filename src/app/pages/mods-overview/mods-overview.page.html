@@ -152,7 +152,7 @@
                     <span matLine>Add Mod</span>
                 </button>
 
-                <button mat-list-item (click)="profileManager.addModFromUser({ importMod: true }); addModMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.addModFromUser({ externalImport: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="accent">folder</mat-icon>
                     <span matLine>Import Mod</span>
                 </button>

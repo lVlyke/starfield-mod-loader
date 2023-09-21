@@ -11,6 +11,10 @@ export interface AppProfile {
     manualMods?: string[];
 }
 
+export type AppProfileVerificationResult = AppProfile.VerificationResult;
+export type AppProfileVerificationResults = AppProfile.VerificationResults;
+export type AppProfileModVerificationResult = AppProfile.ModVerificationResult;
+
 export namespace AppProfile {
 
     export interface VerificationResult {
