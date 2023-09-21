@@ -38,23 +38,23 @@
                     <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node }" />
 
                     <a *ngIf="!isRootDirNode(node)"
-                    mat-button
-                    class="path-info-badge root-dir-action root-dir-select-action"
-                    target="_blank"
-                    (click)="setModRootSubdir(node.fullPath)">
-                    &lt;set base dir&gt;
+                        mat-button
+                        class="path-info-badge root-dir-action root-dir-select-action"
+                        target="_blank"
+                        (click)="setModRootSubdir(node.fullPath)">
+                        &lt;set data dir&gt;
                     </a>
 
                     <ng-container *ngIf="isRootDirNode(node)">
                         <span class="path-info-badge root-dir-marker"
                             matColor="primary"
                             matTooltip="Only files inside this directory will be added">
-                            &lt;base dir&gt;
+                            &lt;data dir&gt;
                         </span>
 
                         <mat-icon color="warn"
                                 class="path-info-badge root-dir-action root-dir-clear-action"
-                                matTooltip="Clear base dir"
+                                matTooltip="Clear data dir"
                                 (click)="setModRootSubdir('')">
                             close
                         </mat-icon>
