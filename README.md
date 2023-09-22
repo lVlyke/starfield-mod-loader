@@ -34,7 +34,9 @@ sResourceDataDirsFinal=
 
 To add and manage mods you must first create a profile. Upon first launching the app you will be shown a form to create a new profile.
 
-The **Mod Base Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` directory (recommended) or the game's installation directory (not recommended). If `Documents/My Games/Starfield/Data` does not exist you should go ahead and create it now.
+The **Mod Base Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` folder or the game's installation folder (required for SFSE mods).
+
+**Note:** If you are using the game's installation `Data` folder, make sure you delete the `Data` folder at `Documents/My Games/Starfield`, otherwise your mods will not be detected by the game.
 
 The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install Starfield.
 
