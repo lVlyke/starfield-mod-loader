@@ -592,8 +592,7 @@ class ElectronLoader {
             // Copy all enabled files to the final mod folder
             enabledModFiles.map(({ filePath }) => fs.copySync(
                 path.join(modPath, filePath),
-                path.join(modProfilePath, filePath.replace(modSubdirRoot, "")),
-                { recursive: true }
+                path.join(modProfilePath, filePath.replace(modSubdirRoot, ""))
             ));
         } finally {
             if (!externalImport) {

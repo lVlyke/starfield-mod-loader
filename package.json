@@ -1,6 +1,6 @@
 {
   "name": "starfield-mod-loader",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "electron.js",
   "scripts": {
     "app:build-dist": "npm run build:release && npm run package",

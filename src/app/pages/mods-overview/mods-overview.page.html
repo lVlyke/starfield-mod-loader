@@ -87,7 +87,7 @@
                         class="mat-elevation-z3"
                         mat-stroked-button
                         [disabled]="!isModsActivated"
-                        (click)="profileManager.reactivateMods()">
+                        (click)="profileManager.refreshDeployedMods()">
                     <mat-icon [color]="isModsActivated ? 'accent' : null">refresh</mat-icon>
                     
                     Refresh Files

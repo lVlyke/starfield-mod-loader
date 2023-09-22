@@ -4,7 +4,7 @@ import { filter } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
-import { DialogManager } from "src/app/services/dialog-manager";
+import { DialogManager } from "../../services/dialog-manager";
 
 @Component({
     selector: "app-mod-actions",

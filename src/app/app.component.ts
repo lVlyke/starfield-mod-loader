@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/
 import { AsyncState, ComponentState } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { Observable } from "rxjs";
+import { distinctUntilChanged } from "rxjs/operators";
 import { BaseComponent } from "./core/base-component";
 import { AppState } from "./state";
 import { OverlayHelpers, OverlayHelpersRef } from "./services/overlay-helpers";
@@ -35,7 +36,9 @@ export class AppComponent extends BaseComponent {
         let deployInProgressOverlayRef: OverlayHelpersRef | undefined;
 
         // Show a loading indicator when app is syncing mod files to base deployment dir
-        this.isDeployInProgress$.subscribe((deployInProgress) => {
+        this.isDeployInProgress$.pipe(
+            distinctUntilChanged()
+        ).subscribe((deployInProgress) => {
             if (deployInProgress && !deployInProgressOverlayRef) {
                 deployInProgressOverlayRef = overlay.createFullScreen(AppModSyncIndicatorModal, {
                     width: "auto",
@@ -46,8 +49,10 @@ export class AppComponent extends BaseComponent {
                     disposeOnBackdropClick: false,
                     panelClass: "mat-app-background"
                 });
+
+                deployInProgressOverlayRef.onClose$.subscribe(() => deployInProgressOverlayRef = undefined);
             } else if (!!deployInProgressOverlayRef) {
-                deployInProgressOverlayRef.close().subscribe(() => deployInProgressOverlayRef = undefined);
+                deployInProgressOverlayRef.close();
             }
         });
     }

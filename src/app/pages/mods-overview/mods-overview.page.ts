@@ -10,7 +10,7 @@ import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
-import { DialogManager } from "src/app/services/dialog-manager";
+import { DialogManager } from "../../services/dialog-manager";
 
 @Component({
     selector: "app-mods-overview-page",

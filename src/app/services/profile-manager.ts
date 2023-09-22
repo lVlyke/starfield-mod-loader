@@ -195,13 +195,10 @@ export class ProfileManager {
         ));
     }
 
-    public reactivateMods(): Observable<any> {
-        return concat([
-            this.activateMods(false),
-            this.activateMods(true),
-        ]).pipe(
-            toArray()
-        );
+    public refreshDeployedMods(): Observable<any> {
+        return ObservableUtils.hotResult$(this.undeployActiveMods().pipe(
+            switchMap(() => this.deployActiveMods())
+        ));
     }
 
     public loadProfile(profileName: string, setActive: boolean = true): Observable<AppProfile | undefined> {
@@ -633,7 +630,6 @@ export class ProfileManager {
                             if (activeProfile) {
                                 return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
                                     switchMap(() => ElectronUtils.invoke("profile:deploy", { profile: activeProfile })),
-                                    delay(0),
                                     switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
                                     switchMap(() => this.updateActiveProfileManualMods()), // Update the manual mod list
                                     map(() => true) // Success
