@@ -5,12 +5,14 @@
                           [disabled]="true" />
             <span class="mod-title">
                 <span>
-                    <span>[Manually installed mods]</span>
-                    <span class="manual-files-count">&nbsp;({{ profile.manualMods.length }} files)</span>
+                    <span>[External files]</span>
+                    <span class="manual-files-count">
+                        &nbsp;(<a target="_blank" matColor="accent" (click)="showFileList()">{{ profile.manualMods.length }}</a>)
+                    </span>
                 </span>
 
                 <mat-icon class="manual-mods-tooltip"
-                          matTooltip="These are external files found in the mod folder that are not being managed by this profile">
+                          matTooltip="These are external game/mod files found in the mod base directory that are not being managed by this profile">
                     help
                 </mat-icon>
             </span>

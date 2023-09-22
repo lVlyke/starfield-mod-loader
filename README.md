@@ -46,9 +46,11 @@ You can create additional profiles at any time by pressing the **Create Profile*
 
 ## Add some mods
 
-Once your profile is set up you can begin adding and managing mods. To add a new mod either click the **+** icon in the **Mod List** section and select **Add Mod**, or select **Profile > Mods > Add Mod** from the menu bar. Choose the mod you want to install.
+Once your profile is set up you can begin adding and managing mods. To add a new mod, click the **+** icon in the **Mod List** section and select **Add Mod**, or select **Profile > Mods > Add Mod** from the menu bar. Choose the mod you want to install.
 
-Upon choosing a mod you will be shown a form with options to rename the mod and select which files to add. By default, all mod files will be added. However, some mods, such as those in the FOMOD format, may have a directory structure with multiple install options like in the example below:
+**Tip:** You can also add mods by dragging and dropping them into the app. This will allow you to install multiple mods at a time.
+
+Upon choosing a mod to add, you will be shown a form with options to rename the mod and select which files from the mod to add. By default, all files will be added. However some mods, such as those in the FOMOD format, may have a directory structure with multiple install options like in the example below:
 
 ![Add Mod Example 1](/docs/mod-add-1.png)
 
@@ -59,6 +61,8 @@ In this example, each subdirectory represents a different option of installation
 Now, only the files in `120 FPS/Data` directory will be added for this mod.
 
 The mod you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. To rename or delete a mod, right click it and select the appropriate option.
+
+**Tip**: You can also import existing mods by clicking the **+** icon in the **Mod List** section and select **Import Mod**, or select **Profile > Mods > Import Mod** from the menu bar. This will allow you to add a mod from a folder, which can be useful for importing mods from other profiles.
 
 Any mod files that you have manually copied to your **Mod Base Directory** outside of the app will show up in the UI as **Manually installed mods**. These mods cannot be managed by Starfield Mod Loader and will not be removed or overwritten. This means that **any manually copied mods in your Mod Base Directory folder will override the mods in Starfield Mod Loader.**
 

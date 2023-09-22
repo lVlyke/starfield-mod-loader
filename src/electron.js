@@ -140,7 +140,10 @@ class ElectronLoader {
             return fs.copySync(srcModsDir, destModsDir);
         });
 
-        ipcMain.handle("app:verifyProfile", async (_event, /** @type {AppMessageData<"app:verifyProfile">} */ { profile }) => {
+        ipcMain.handle("app:verifyProfile", /** @returns {Promise<AppProfileVerificationResults>} */ async (
+            _event,
+            /** @type {AppMessageData<"app:verifyProfile">} */ { profile }
+        ) => {
             const modVerifyResult = this.verifyProfileModsExist(profile);
             const modDirVerifyResult = this.verifyProfileModDirExists(profile);
             const gameDirVerifyResult = this.verifyProfileGameDirExists(profile);
@@ -185,22 +188,26 @@ class ElectronLoader {
 
         ipcMain.handle("profile:beginModAdd", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile }
+            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath }
         ) => {
-            const pickedFile = (await dialog.showOpenDialog({
-                filters: [
-                    { 
-                        name: "Mod", extensions: [
-                            "zip",
-                            "rar",
-                            "7z",
-                            "7zip",
-                        ]
-                    }
-                ]
-            }));
+            if (!modPath) {
+                const pickedFile = (await dialog.showOpenDialog({
+                    filters: [
+                        { 
+                            name: "Mod", extensions: [
+                                "zip",
+                                "rar",
+                                "7z",
+                                "7zip",
+                            ]
+                        }
+                    ]
+                }));
+                
+                modPath = pickedFile?.filePaths[0];
+            }
             
-            const filePath = pickedFile?.filePaths[0];
+            const filePath = modPath ?? "";
             if (!!filePath) {
                 const fileType = path.extname(filePath);
                 const modName = path.basename(filePath, fileType);
@@ -262,13 +269,17 @@ class ElectronLoader {
 
         ipcMain.handle("profile:beginModExternalImport", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile }
+            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath }
         ) => {
-            const pickedModFolder = await dialog.showOpenDialog({
-                properties: ["openDirectory"]
-            });
-            
-            const folderPath = pickedModFolder?.filePaths[0];
+            if (!modPath) {
+                const pickedModFolder = await dialog.showOpenDialog({
+                    properties: ["openDirectory"]
+                });
+                
+                modPath = pickedModFolder?.filePaths[0];
+            }
+
+            const folderPath = modPath ?? "";
             if (!!folderPath) {
                 const modName = path.basename(folderPath);
                 const modFilePaths = (await recursiveReaddir(folderPath)).map((filePath) => {
@@ -630,7 +641,7 @@ class ElectronLoader {
     verifyProfileModDirExists(/** @type {AppProfile} */ profile) {
         const modDirExists = fs.existsSync(profile.modBaseDir);
         return {
-            error: !modDirExists,
+            error: false,
             found: modDirExists
         };
     }
@@ -674,6 +685,10 @@ class ElectronLoader {
 
     /** @returns {Promise<Array<string>>} */
     async findManualMods(/** @type {AppProfile} */ profile) {
+        if (!fs.existsSync(profile.modBaseDir)) {
+            return [];
+        }
+
         let modDirFiles = (await recursiveReaddir(profile.modBaseDir)).map((filePath) => {
             return filePath.replace(`${profile.modBaseDir}${path.sep}`, "").toLowerCase();
         });
@@ -697,6 +712,9 @@ class ElectronLoader {
     /** @returns {Promise<void>} */
     async deployProfile(/** @type {AppProfile} */ profile) {
         const profileModFiles = [];
+
+        // Ensure the mod base dir exists
+        fs.mkdirpSync(profile.modBaseDir);
 
         if (this.isProfileDeployed(profile)) {
             await this.undeployProfile(profile);

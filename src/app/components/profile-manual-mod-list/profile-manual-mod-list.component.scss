@@ -22,8 +22,19 @@
                 font-style: italic;
 
                 .manual-files-count {
+                    font-style: normal;
                     font-size: 0.8em;
                     opacity: 0.8;
+
+                    > a {
+                        font-weight: bold;
+                        margin: 0 0.15rem;
+                        cursor: pointer;
+
+                        &:hover {
+                            text-decoration: underline;
+                        }
+                    }
                 }
             }
 

@@ -23,7 +23,7 @@ export namespace AppProfile {
     }
 
     export type VerificationResults = {
-        [K in keyof AppProfile]: VerificationResult;
+        [K in keyof Partial<AppProfile>]: VerificationResult;
     };
 
     export type ModVerificationResult = VerificationResults["mods"];

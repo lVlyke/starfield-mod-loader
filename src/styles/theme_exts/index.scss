@@ -4,6 +4,7 @@
 @use "./profile-mod-list";
 @use "./mod-import-options";
 @use "./mods-overview-page";
+@use "./profile-external-files-list-modal";
 
 @mixin declare($primary, $accent, $warn, $is-dark) {
 
@@ -20,4 +21,7 @@
 
     // Page styles:
     @include mods-overview-page.declare("app-mods-overview-page", $primary, $accent, $warn, $is-dark);
+
+    // Modal styles:
+    @include profile-external-files-list-modal.declare("app-profile-external-files-list-modal", $primary, $accent, $warn, $is-dark);
 }

@@ -1,0 +1,23 @@
+:host {
+    &, > mat-card {
+        width: 100%;
+        height: 100%;
+    }
+
+    mat-card-content {
+        height: 100%;
+        padding: 1rem;
+        overflow: auto;
+
+        .external-files {
+            font-family: monospace;
+            padding: 0.5rem;
+        }
+    }
+
+    mat-card-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}

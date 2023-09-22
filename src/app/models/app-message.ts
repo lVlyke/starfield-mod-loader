@@ -140,6 +140,7 @@ export namespace AppMessage {
         id: `${ProfileMessage.Prefix}:beginModAdd`;
         data: {
             profile: AppProfile;
+            modPath?: string;
         };
     }
 
@@ -147,6 +148,7 @@ export namespace AppMessage {
         id: `${ProfileMessage.Prefix}:beginModExternalImport`;
         data: {
             profile: AppProfile;
+            modPath?: string;
         };
     }
 

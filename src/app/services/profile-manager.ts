@@ -3,8 +3,8 @@ import { Inject, Injectable, forwardRef } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
-import { catchError, delay, distinctUntilChanged, filter, map, skip, switchMap, take, tap, toArray } from "rxjs/operators";
-import { EMPTY, Observable, combineLatest, concat, forkJoin, merge, of, throwError } from "rxjs";
+import { catchError, concatMap, delay, distinctUntilChanged, filter, map, skip, switchMap, take, tap, toArray } from "rxjs/operators";
+import { EMPTY, Observable, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -130,6 +130,27 @@ export class ProfileManager {
                     }
                 })
             ).subscribe();
+
+            // Enable dragging and dropping mods to add/import them
+            fromEvent<DragEvent>(document, "drop").pipe(
+                filter(event => !!event.dataTransfer?.files.length),
+                tap((event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }),
+                switchMap(event => from(event.dataTransfer!.files)),
+                concatMap((file) => this.addModFromUser({
+                        modPath: file.path,
+                        externalImport: !file.type && !file.size // `file` is a dir if no type & size
+                    }).pipe(
+                        catchError((err) => (console.error(err), EMPTY))
+                    ))
+            ).subscribe();
+
+            fromEvent<DragEvent>(document, "dragover").subscribe((event) => {
+                event.preventDefault();
+                event.stopPropagation();
+            });
         });
     }
 
@@ -484,12 +505,15 @@ export class ProfileManager {
         ));
     }
 
-    public addModFromUser(options?: { externalImport?: boolean }): Observable<ModProfileRef | undefined> {
+    public addModFromUser(options?: {
+        externalImport?: boolean;
+        modPath?: string;
+    }): Observable<ModProfileRef | undefined> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => ElectronUtils.invoke<ModImportRequest | undefined>(
                 options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
-                { profile: activeProfile }
+                { profile: activeProfile, modPath: options?.modPath }
             )),
             switchMap((importRequest) => {
                 if (!importRequest || importRequest.importStatus === "FAILED") {

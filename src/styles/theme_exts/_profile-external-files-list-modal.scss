@@ -1,0 +1,14 @@
+@use "@angular/material" as mat;
+
+@mixin declare($selector, $primary, $accent, $warn, $is-dark) {
+
+    #{$selector} {
+
+        .external-files {
+            background: var(--mdc-filled-text-field-container-color);
+            border-width: 1px;
+            border-style: solid;
+            border-color: var(--mdc-filled-text-field-active-indicator-color);
+        }
+    }
+}
