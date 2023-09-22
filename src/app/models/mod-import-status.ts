@@ -2,11 +2,13 @@ import { AppProfile } from "./app-profile";
 import { ModProfileRef } from "./mod-profile-ref";
 
 export type ModImportStatus = "FAILED" | "PENDING" | "CANCELED";
+export type ModImportMergeStrategy = "REPLACE" | "OVERWRITE" | "ADD";
 
 export interface ModImportRequest {
     profile: AppProfile;
     modName: string;
     importStatus: ModImportStatus;
+    mergeStrategy: ModImportMergeStrategy;
     externalImport: boolean;
     modPath: string;
     modFilePaths: ModImportRequest.ModPathReference[];

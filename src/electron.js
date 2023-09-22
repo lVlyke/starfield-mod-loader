@@ -532,7 +532,8 @@ class ElectronLoader {
         // Serialize `mods` Map as entries
         const profileToWrite = Object.assign({}, profile, { mods: Array.from(profile.mods.entries()) });
 
-        fs.mkdirSync(profileDir, { recursive: true });
+        // Make sure the profile and mods directory exists
+        fs.mkdirpSync(this.getProfileModsDir(profile.name));
 
         return fs.writeFileSync(
             path.join(profileDir, profileSettingsName),
@@ -564,6 +565,7 @@ class ElectronLoader {
             modName,
             externalImport,
             importStatus: "PENDING",
+            mergeStrategy: "REPLACE",
             modFilePaths: modFilePaths.map(filePath => ({
                 filePath: filePath.replace(/[\\/]/g, path.sep),
                 enabled: true
@@ -582,6 +584,7 @@ class ElectronLoader {
             modPath,
             externalImport,
             importStatus,
+            mergeStrategy,
             modFilePaths,
             modSubdirRoot
         }
@@ -597,14 +600,18 @@ class ElectronLoader {
                 return enabled && filePath.startsWith(modSubdirRoot);
             });
 
-            // Clear the mod dir for the profile
-            fs.rmSync(modProfilePath, { recursive: true, force: true });
+            if (mergeStrategy === "REPLACE") {
+                // Clear the mod dir for the profile
+                fs.rmSync(modProfilePath, { recursive: true, force: true });
+            }
 
             // Copy all enabled files to the final mod folder
             enabledModFiles.map(({ filePath }) => fs.copySync(
                 path.join(modPath, filePath),
-                path.join(modProfilePath, filePath.replace(modSubdirRoot, ""))
-            ));
+                path.join(modProfilePath, filePath.replace(modSubdirRoot, "")), {
+                    errorOnExist: false,
+                    overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
+                }));
         } finally {
             if (!externalImport) {
                 // Erase the staging data if this was added via archive

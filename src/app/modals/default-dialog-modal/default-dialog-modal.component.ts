@@ -2,6 +2,7 @@ import { Component, EventEmitter, Inject, Output } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
 
 @Component({
@@ -12,7 +13,8 @@ import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTI
         CommonModule,
 
         MatCardModule,
-        MatButtonModule
+        MatButtonModule,
+        MatTooltipModule
     ]
 })
 export class AppDefaultDialogComponent implements DialogComponent {

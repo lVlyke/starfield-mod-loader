@@ -6,6 +6,9 @@ export const DEFAULT_DIALOG_PROMPT_TOKEN = new InjectionToken<string>("DEFAULT_D
 export interface DialogAction {
     label: string;
     primary?: boolean;
+    accent?: boolean;
+    warn?: boolean;
+    tooltip?: string;
 }
 
 export interface DialogComponent {

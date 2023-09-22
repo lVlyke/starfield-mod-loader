@@ -3,7 +3,20 @@ import { Inject, Injectable, forwardRef } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Select, Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
-import { catchError, concatMap, delay, distinctUntilChanged, filter, map, skip, switchMap, take, tap, toArray } from "rxjs/operators";
+import {
+    catchError,
+    concatMap,
+    delay,
+    distinctUntilChanged,
+    filter,
+    map,
+    skip,
+    switchMap,
+    take,
+    tap,
+    toArray,
+    withLatestFrom
+} from "rxjs/operators";
 import { EMPTY, Observable, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
@@ -23,6 +36,8 @@ import { AppModImportOptionsModal } from "../modals/mod-import-options";
 import { GameId } from "../models/game-id";
 import { GameDatabase } from "../models/game-database";
 import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
+import { DialogManager } from "./dialog-manager";
+import { DialogAction } from "./dialog-manager.types";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -41,6 +56,7 @@ export class ProfileManager {
         @Inject(forwardRef(() => Store)) private readonly store: Store,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogs: AppDialogs,
+        private readonly dialogManager: DialogManager,
         private readonly snackbar: MatSnackBar
     ) {
         messageHandler.messages$.pipe(
@@ -167,8 +183,8 @@ export class ProfileManager {
                             return this.createProfileFromUser();
                         }
                     }),
-                    switchMap(() => this.activateMods(settings?.modsActivated))
-                )
+                    switchMap(() => this.activateMods(settings?.modsActivated ?? false))
+                );
             }),
             switchMap(() => this.appState$.pipe(take(1)))
         ));
@@ -521,6 +537,7 @@ export class ProfileManager {
                     return throwError(() => "Failed to add mod.");
                 }
 
+                // Show the `AppModImportOptionsModal` to the user
                 const modImportOptionsRef = this.overlayHelpers.createFullScreen(AppModImportOptionsModal, {
                     center: true,
                     hasBackdrop: true,
@@ -533,6 +550,8 @@ export class ProfileManager {
                 });
 
                 modImportOptionsRef.component.instance.importRequest = importRequest;
+
+                // Wait for the user to finish making changes
                 return merge(
                     modImportOptionsRef.component.instance.onFormSubmit$,
                     modImportOptionsRef.onClose$
@@ -540,20 +559,86 @@ export class ProfileManager {
                     take(1),
                     switchMap((userResult) => {
                         if (!userResult) {
+                            // User canceled, so cancel the import
                             importRequest.importStatus = "CANCELED";
                         }
 
-                        return ElectronUtils.invoke<ModImportResult | undefined>("profile:completeModImport", { importRequest }).pipe(
-                            switchMap((importResult) => {
-                                if (!!importResult) {
-                                    return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.modName, importResult.modRef)).pipe(
-                                        map(() => importResult.modRef)
-                                    );
-                                } else {
-                                    return of(undefined);
+                        return of(importRequest);
+                    })
+                );
+            }),
+            withLatestFrom(this.activeProfile$),
+            switchMap(([importRequest, activeProfile]) => {
+                const modAlreadyExists = Array.from(activeProfile!.mods.keys()).includes(importRequest.modName);
+
+                // Check if this mod already exists in the active profile
+                if (modAlreadyExists && importRequest.importStatus !== "CANCELED") {
+                    const ACTION_REPLACE: DialogAction = {
+                        label: "Replace",
+                        accent: true,
+                        tooltip: "Removes all existing mod files and replaces them with the new files"
+                    };
+                    const ACTION_OVERWRITE: DialogAction = {
+                        label: "Overwrite",
+                        accent: true,
+                        tooltip: "Keeps existing mod files and adds new files, overwriting any existing files"
+                    };
+                    const ACTION_ADD: DialogAction = {
+                        label: "Add",
+                        accent: true,
+                        tooltip: "Keeps existing mod files and only adds new files that do not exist"
+                    };
+
+                    // Determine which merge strategy to use
+                    return this.dialogManager.createDefault(
+                        `"${importRequest.modName}" already exists. Choose a method of resolving file conflicts.`, [
+                            ACTION_REPLACE,
+                            ACTION_OVERWRITE,
+                            ACTION_ADD,
+                            DialogManager.CANCEL_ACTION_PRIMARY
+                        ], {
+                            width: "auto",
+                            maxWidth: "50vw"
+                        }
+                    ).pipe(
+                        switchMap((result) => {
+                            switch (result) {
+                                case ACTION_REPLACE: {
+                                    importRequest.mergeStrategy = "REPLACE";
+                                    break;
                                 }
-                            })
-                        );
+                                case ACTION_OVERWRITE:{
+                                    importRequest.mergeStrategy = "OVERWRITE";
+                                    break;
+                                }
+                                case ACTION_ADD:{
+                                    importRequest.mergeStrategy = "ADD";
+                                    break;
+                                }
+                                case DialogManager.CANCEL_ACTION_PRIMARY: {
+                                    importRequest.importStatus = "CANCELED";
+                                    break;
+                                }
+                            }
+
+                            return of(importRequest);
+                        })
+                    );
+                }
+
+                return of(importRequest);
+            }),
+            switchMap((importRequest) => {
+                // Complete the mod import
+                return ElectronUtils.invoke<ModImportResult | undefined>("profile:completeModImport", { importRequest }).pipe(
+                    switchMap((importResult) => {
+                        if (!!importResult) {
+                            return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.modName, importResult.modRef)).pipe(
+                                map(() => importResult.modRef)
+                            );
+                        } else {
+                            return of(undefined);
+                        }
                     })
                 );
             })
