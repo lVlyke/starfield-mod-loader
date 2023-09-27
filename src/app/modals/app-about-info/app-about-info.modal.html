@@ -1,0 +1,40 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>About Starfield Mod Loader</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+        <div class="actions">
+            <a mat-stroked-button color="accent" target="_blank" href="https://github.com/lVlyke/starfield-mod-loader">
+                Homepage
+            </a>
+
+            <a mat-stroked-button color="accent" target="_blank" href="https://github.com/lVlyke/starfield-mod-loader/blob/master/LICENSE">
+                License
+            </a>
+        </div>
+        
+        <details class="app-deps">
+            <summary>3rd Party Libraries and Tools</summary>
+
+            <div class="content">
+                <div *ngFor="let dep of aboutData.depsInfo | keyvalue">
+                    {{ dep.key }}
+                </div>
+            </div>
+        </details>
+
+        <details class="app-deps-licenses">
+            <summary>3rd Party Licenses</summary>
+
+            <div class="content" [innerText]="aboutData.depsLicenseText">
+            </div>
+        </details>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="overlayRef.close()">
+            Close
+        </button>
+    </mat-card-actions>
+</mat-card>

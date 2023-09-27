@@ -13,7 +13,7 @@
 
         > #mod-sync-icon {
             margin-right: 0.7rem;
-            animation: sync-rotate 2s linear;
+            animation: sync-rotate 2s linear infinite;
         }
 
         @keyframes sync-rotate {
