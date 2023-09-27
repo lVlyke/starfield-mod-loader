@@ -27,7 +27,7 @@ import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
 import { ModProfileRef } from "../models/mod-profile-ref";
-import { OverlayHelpers, OverlayHelpersComponentRef } from "./overlay-helpers";
+import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from "./overlay-helpers";
 import { AppProfileSettingsModal } from "../modals/profile-settings";
 import { AppDialogs } from "../services/app-dialogs";
 import { LangUtils } from "../util/lang-utils";
@@ -38,6 +38,8 @@ import { GameDatabase } from "../models/game-database";
 import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
 import { DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
+import { AppStateBehaviorManager } from "./app-state-behavior-manager";
+import { moveItemInArray } from "@angular/cdk/drag-drop";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -57,7 +59,8 @@ export class ProfileManager {
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogs: AppDialogs,
         private readonly dialogManager: DialogManager,
-        private readonly snackbar: MatSnackBar
+        private readonly snackbar: MatSnackBar,
+        private readonly appManager: AppStateBehaviorManager
     ) {
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:newProfile"),
@@ -525,12 +528,16 @@ export class ProfileManager {
         externalImport?: boolean;
         modPath?: string;
     }): Observable<ModProfileRef | undefined> {
+        let loadingIndicatorRef: OverlayHelpersRef | undefined;
+
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
+            tap(() => loadingIndicatorRef = this.appManager.showLoadingIndicator("Reading mod data...")),
             switchMap((activeProfile) => ElectronUtils.invoke<ModImportRequest | undefined>(
                 options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
                 { profile: activeProfile, modPath: options?.modPath }
             )),
+            tap(() => loadingIndicatorRef?.close()),
             switchMap((importRequest) => {
                 if (!importRequest || importRequest.importStatus === "FAILED") {
                     alert("Failed to add mod."); // TODO - Dialog w/ error
@@ -683,6 +690,42 @@ export class ProfileManager {
 
     public reorderMods(modOrder: string[]): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.ReorderMods(modOrder));
+    }
+
+    public reorderMod(modName: string, newIndex: number): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                if (activeProfile) {
+                    const modOrder = Array.from(activeProfile.mods.keys());
+                    moveItemInArray(
+                        modOrder,
+                        modOrder.findIndex(curModName => modName === curModName),
+                        newIndex
+                    );
+                    return this.reorderMods(modOrder);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public moveModToTopOfOrder(modName: string): Observable<void> {
+        return this.reorderMod(modName, 0);
+    }
+
+    public moveModToBottomOfOrder(modName: string): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                if (activeProfile) {
+                    return this.reorderMod(modName, activeProfile.mods.size - 1);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
     }
 
     public showModInFileExplorer(modName: string): Observable<void> {

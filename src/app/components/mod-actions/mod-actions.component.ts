@@ -56,4 +56,16 @@ export class AppModActionsComponent extends BaseComponent {
 
         this.actionSelect$.emit();
     }
+
+    protected moveModToTop(): void {
+        this.profileManager.moveModToTopOfOrder(this.modName);
+
+        this.actionSelect$.emit();
+    }
+
+    protected moveModToBottom(): void {
+        this.profileManager.moveModToBottomOfOrder(this.modName);
+
+        this.actionSelect$.emit();
+    }
 }
