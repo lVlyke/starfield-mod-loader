@@ -1,3 +1,4 @@
+import { AppData } from "./app-data";
 import { AppDependenciesInfo } from "./app-dependency-info";
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
@@ -24,6 +25,15 @@ export namespace AppMessage {
     }
 
     // App messages:
+
+    export interface SyncUiState extends Base {
+        id: `${Prefix}:syncUiState`;
+        data: {
+            appState: AppData;
+            modListCols: string[];
+            defaultModListCols: string[];
+        }
+    }
 
     export interface ChooseDirectory extends Base {
         id: `${Prefix}:chooseDirectory`;
@@ -115,7 +125,16 @@ export namespace AppMessage {
         };
     }
 
-    export type AppMessage = ChooseDirectory
+    export interface ToggleModListColumn extends Base {
+        id: `${Prefix}:toggleModListColumn`;
+        data: {
+            column?: string;
+            reset?: boolean;
+        };
+    }
+
+    export type AppMessage = SyncUiState
+                           | ChooseDirectory
                            | ChooseFilePath
                            | LoadSettings
                            | SaveSettings
@@ -128,7 +147,8 @@ export namespace AppMessage {
                            | ShowPreferences
                            | LoadGameDatabase
                            | FindBestProfileDefaults
-                           | ShowAboutInfo;
+                           | ShowAboutInfo
+                           | ToggleModListColumn;
 
     // Profile messages:
 
@@ -269,6 +289,7 @@ export namespace AppMessage {
     // Message record:
 
     export const record: Array<_AppMessage["id"]> = [
+        "app:syncUiState",
         "app:chooseDirectory",
         "app:chooseFilePath",
         "app:loadSettings",
@@ -283,6 +304,7 @@ export namespace AppMessage {
         "app:loadGameDatabase",
         "app:findBestProfileDefaults",
         "app:showAboutInfo",
+        "app:toggleModListColumn",
 
         "profile:settings",
         "profile:beginModAdd",

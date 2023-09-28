@@ -1,11 +1,14 @@
 :host {
 
-    mat-list {
+    table {
         padding: 0;
     }
 
-    mat-list-item {
-        cursor: pointer;
+    tr {
+
+        &[external-files="false"] {
+            cursor: pointer;
+        }
 
         &.mod-unverified {
             font-style: italic;
@@ -15,27 +18,61 @@
             transition: transform 250ms ease-in;
         }
 
-        .item-line-info {
-            display: inline-flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
+        > td, th {
+            padding: 0;
+        }
 
-            > :not(mat-checkbox):first-of-type {
-                flex: 1 1 100%;
-            }
+         > th {
+            font-size: 0.9em;
+            opacity: 0.8;
+         }
 
-            .mod-title {
-                display: flex;
+        > .mod-title {
+            font-size: 1rem;
+            
+            .manual-mod-text {
+                font-style: italic;
+                display: inline-flex;
+                flex-direction: row;
                 align-items: center;
+
+                .manual-files-count {
+                    font-style: normal;
+                    font-size: 0.8em;
+                    opacity: 0.8;
+    
+                    > a {
+                        font-weight: bold;
+                        margin: 0 0.15rem;
+                        cursor: pointer;
+    
+                        &:hover {
+                            text-decoration: underline;
+                        }
+                    }
+                }
             }
+
+            .manual-mods-tooltip {
+                margin-left: 1rem;
+            } 
 
             .mod-verification-error-icon {
                 margin-left: 1rem;
             }
+        }
 
-            .mod-load-order {
+        > .mod-last-updated {
+
+            > * {
+                opacity: 0.8;
+            }
+        }
+
+        > .mod-load-order {
+
+            > * {
+                text-align: center;
                 font-family: monospace;
                 font-size: 1rem;
                 opacity: 0.6;
@@ -53,9 +90,21 @@
     }
 
     @at-root .cdk-drag-preview {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        .mod-enabled {
+            flex: 0 1 auto;
+            padding: 0;
+        }
+
+        .mod-title {
+            flex-grow: 1;
+        }
 
         .mod-load-order {
-            display: none;
+            visibility: hidden;
         }
     }
 }

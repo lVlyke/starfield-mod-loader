@@ -31,6 +31,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     
     /** @type {BrowserWindow} */ mainWindow;
+    /** @type {Menu} */ menu;
     /** @type {Record<string, any>} */ monitoredPaths = {};
     /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
@@ -42,7 +43,8 @@ class ElectronLoader {
         log.transports.file.level = DEBUG_MODE ? "info" : "debug";
         log.transports.file.resolvePath = () => "app.log";
 
-        Menu.setApplicationMenu(this.createMenu());
+        this.menu = this.createMenu();
+        Menu.setApplicationMenu(this.menu);
 
         // This method will be called when Electron has finished
         // initialization and is ready to create browser windows.
@@ -69,6 +71,20 @@ class ElectronLoader {
         });
 
         ipcMain.handle("app:reload", () => this.loadApp());
+
+        ipcMain.handle("app:syncUiState", (
+            _event,
+            /** @type {AppMessageData<"app:syncUiState">} */ { appState, modListCols, defaultModListCols }
+        ) => {
+            // Sync mod list column menu checkbox state
+            const activeModListCols = appState.modListColumns ?? defaultModListCols;
+            modListCols.forEach((col) => {
+                const colMenuItem = this.menu.getMenuItemById(`mod-list-col-${col}`);
+                if (colMenuItem) {
+                    colMenuItem.checked = activeModListCols.includes(col);
+                }
+            });
+        });
 
         ipcMain.handle("app:chooseDirectory", async (
             _event,
@@ -481,14 +497,57 @@ class ElectronLoader {
                 ]
             },
 
-            ...this.createDebugMenuOption({
+            {
                 label: "View",
                 submenu: [
                     {
+                        label: "Mod List Columns",
+                        submenu: [
+                            {
+                                id: "mod-list-col-enabled",
+                                type: "checkbox",
+                                label: "Mod Enabled",
+                                checked: false,
+                                click: () => this.mainWindow.webContents.send("app:toggleModListColumn", { column: "enabled" })
+                            },
+                            {
+                                id: "mod-list-col-name",
+                                type: "checkbox",
+                                label: "Mod Name",
+                                checked: false,
+                                enabled: false,
+                            },
+                            {
+                                id: "mod-list-col-updatedDate",
+                                type: "checkbox",
+                                label: "Mod Updated Date",
+                                checked: false,
+                                click: () => this.mainWindow.webContents.send("app:toggleModListColumn", { column: "updatedDate" })
+                            },
+                            {
+                                id: "mod-list-col-order",
+                                type: "checkbox",
+                                label: "Mod Order",
+                                checked: false,
+                                click: () => this.mainWindow.webContents.send("app:toggleModListColumn", { column: "order" })
+                            },
+                            {
+                                type: "separator"
+                            },
+                            {
+                                label: "Reset Defaults",
+                                click: () => this.mainWindow.webContents.send("app:toggleModListColumn", { reset: true })
+                            }
+                        ]
+                    },
+                    ...this.createDebugMenuOption({
+                        type: "separator"
+                     }),
+                    ...this.createDebugMenuOption({
                        role: "toggleDevTools"
-                    }
+                    })
                 ]
-            }),
+            },
 
             {
                 label: "Help",
@@ -670,7 +729,10 @@ class ElectronLoader {
 
         return {
             modName,
-            modRef: { enabled: true }
+            modRef: {
+                enabled: true,
+                updatedDate: new Date().toISOString()
+            }
         };
     }
 

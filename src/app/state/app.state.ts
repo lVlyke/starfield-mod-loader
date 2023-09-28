@@ -52,6 +52,11 @@ export class AppState {
         return state.gameDb;
     }
 
+    @Selector()
+    public static getModListColumns(state: AppData): string[] | undefined {
+        return state.modListColumns;
+    }
+
     @Action(AppActions.UpdateSettings)
     public updateSettings(context: AppState.Context, { settings }: AppActions.UpdateSettings): void {
         context.patchState(settings);
@@ -96,6 +101,37 @@ export class AppState {
     @Action(AppActions.updateGameDb)
     public updateGameDb(context: AppState.Context, state: AppActions.GameDbAction): void {
         context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.updateModListColumns)
+    public updateModListColumns(context: AppState.Context, state: AppActions.ModListColumnsAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.ToggleModListColumn)
+    public toggleModListColumn(context: AppState.Context, { column }: AppActions.ToggleModListColumn): void {
+        const state = _.cloneDeep(context.getState());
+        if (!state.modListColumns) {
+            state.modListColumns = _.cloneDeep(AppData.DEFAULT_MOD_LIST_COLUMNS);
+        }
+
+        const colIndex = state.modListColumns.findIndex(c => c === column);
+        if (colIndex === -1) {
+            state.modListColumns.push(column);
+        } else {
+            state.modListColumns.splice(colIndex, 1);
+        }
+
+        context.setState(state);
+    }
+
+    @Action(AppActions.ResetModListColumns)
+    public resetModListColumns(context: AppState.Context, _action: AppActions.ResetModListColumns): void {
+        const state = _.cloneDeep(context.getState());
+
+        delete state.modListColumns;
+
+        context.setState(state);
     }
 }
 

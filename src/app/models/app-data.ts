@@ -8,5 +8,22 @@ export interface AppData {
     theme: AppTheme;
     gameDb: GameDatabase;
     modsActivated: boolean;
+    modListColumns?: string[];
     deployInProgress?: boolean;
+}
+
+export namespace AppData {
+
+    export const DEFAULT_MOD_LIST_COLUMNS = [
+        "enabled",
+        "name",
+        "order"
+    ];
+
+    export const DEFAULT_MOD_LIST_COLUMN_ORDER = [
+        "enabled",
+        "name",
+        "updatedDate",
+        "order"
+    ];
 }

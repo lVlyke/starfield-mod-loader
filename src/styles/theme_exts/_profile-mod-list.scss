@@ -5,8 +5,7 @@
 
     #{$selector} {
 
-        mat-list-item {
-    
+        tr {
             &.mod-unverified {
                 background: mat.get-color-from-palette($warn, 400);
             }

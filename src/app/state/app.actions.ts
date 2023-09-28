@@ -20,11 +20,13 @@ export namespace AppActions {
     export type ModsActivatedAction = BasicAction<AppData, "modsActivated">;
     export type DeployInProgressAction = BasicAction<AppData, "deployInProgress">;
     export type GameDbAction = BasicAction<AppData, "gameDb">;
+    export type ModListColumnsAction = BasicAction<AppData, "modListColumns">;
 
     export const updateActiveProfile = createUpdateAction("activeProfile");
     export const activateMods = createUpdateAction("modsActivated");
     export const setDeployInProgress = createUpdateAction("deployInProgress");
     export const updateGameDb = createUpdateAction("gameDb");
+    export const updateModListColumns = createUpdateAction("modListColumns");
 
     export class UpdateSettings {
         public static readonly type = `[app] update settings`;
@@ -56,5 +58,17 @@ export namespace AppActions {
         constructor(
             public profile: AppProfile
         ) {}
+    }
+
+    export class ToggleModListColumn {
+        public static readonly type = `[app] toggle mod list column`;
+
+        constructor(
+            public column: string
+        ) {}
+    }
+
+    export class ResetModListColumns {
+        public static readonly type = `[app] reset mod list columns`;
     }
 }

@@ -1,26 +1,80 @@
-<mat-list cdkDropList (cdkDropListDropped)="dropReorder($event)">
-    <ng-container *ngFor="let modEntry of modList">
-        <mat-list-item cdkDrag
-                       [attr.li-theme]="themeContainer.theme"
-                       [class.mod-unverified]="!!modEntry.modRef.verificationError"
-                       (contextmenu)="showModContextMenu$.next([$event, modEntry])">
-            <span matLine class="item-line-info">
+<table mat-table [dataSource]="modDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
+    <ng-container matColumnDef="enabled">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let modEntry" class="mod-enabled">
+            <ng-container *ngIf="modEntry !== 'manual'; else manualModsTemplate">
                 <mat-checkbox [checked]="modEntry.modRef.enabled"
                               [disabled]="!!modEntry.modRef.verificationError"
                               (change)="modChange$.emit(assign({}, modEntry, { modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) }))" />
-                <span class="mod-title">
-                    <span>{{ modEntry.name }}</span>
-                    
-                    <mat-icon *ngIf="!!modEntry.modRef.verificationError"
-                              class="mod-verification-error-icon"
-                              matTooltip="This mod has a verification error">
-                        error
+            </ng-container>
+
+            <ng-template #manualModsTemplate>
+                <mat-checkbox [checked]="true" [disabled]="true" />
+            </ng-template>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Mod Name</th>
+        <td mat-cell *matCellDef="let modEntry" class="mod-title">
+            <ng-container *ngIf="modEntry !== 'manual'; else manualModsTemplate">
+                <span>{{ modEntry.name }}</span>
+                        
+                <mat-icon *ngIf="!!modEntry.modRef.verificationError"
+                            class="mod-verification-error-icon"
+                            matTooltip="This mod has a verification error">
+                    error
+                </mat-icon>
+            </ng-container>
+
+            <ng-template #manualModsTemplate>
+                <span class="manual-mod-text">
+                    <span>[External files]</span>
+                    <span class="manual-files-count">
+                        &nbsp;(<a matColor="accent" (click)="showExternalFileList()">{{ profile.manualMods!.length }}</a>)
+                    </span>
+
+                    <mat-icon class="manual-mods-tooltip"
+                        matTooltip="These are external game/mod files found in the mod base directory that are not being managed by this profile">
+                        help
                     </mat-icon>
                 </span>
-                <span class="mod-load-order">{{ modEntry.order ?? "--" }}</span>
-            </span>
-        </mat-list-item>
-
-        <mat-divider></mat-divider>
+            </ng-template>
+        </td>
     </ng-container>
-</mat-list>
+
+    <ng-container matColumnDef="updatedDate">
+        <th mat-header-cell *matHeaderCellDef>Last Updated</th>
+        <td mat-cell *matCellDef="let modEntry" class="mod-last-updated">
+            <ng-container *ngIf="modEntry !== 'manual'">
+                <div *ngIf="modEntry.modRef.updatedDate">{{ modEntry.modRef.updatedDate | date }}</div>
+            </ng-container>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="order">
+        <th mat-header-cell *matHeaderCellDef>Load Order</th>
+        <td mat-cell *matCellDef="let modEntry" class="mod-load-order">
+            <ng-container *ngIf="modEntry !== 'manual'; else manualModsTemplate">
+                <div>{{ modEntry.order ?? "--" }}</div>
+            </ng-container>
+
+            <ng-template #manualModsTemplate>
+                <div>{{ (profile | appProfileActiveModCount) + 1 }}</div>
+            </ng-template>
+        </td>
+    </ng-container>
+
+    <tr *matHeaderRowDef="displayedColumns"
+        mat-header-row
+        [attr.app-hidden]="!modListColumns?.length"></tr>
+
+    <tr *matRowDef="let modEntry; columns: displayedColumns;"
+        mat-row
+        cdkDrag
+        [cdkDragDisabled]="modEntry === 'manual'"
+        [attr.li-theme]="themeContainer.theme"
+        [attr.external-files]="modEntry === 'manual'"
+        [class.mod-unverified]="modEntry !== 'manual' && !!modEntry.modRef.verificationError"
+        (contextmenu)="modEntry !== 'manual' ? showModContextMenu$.next([$event, modEntry]) : null"></tr>
+</table>

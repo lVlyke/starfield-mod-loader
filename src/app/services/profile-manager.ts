@@ -106,7 +106,10 @@ export class ProfileManager {
             this.appState$.pipe(
                 filterDefined(),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap(() => this.saveSettings().pipe(
+                switchMap(() => forkJoin([
+                    this.saveSettings(),
+                    this.syncUiState()
+                ]).pipe(
                     catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
                 ))
             ).subscribe();
@@ -176,7 +179,10 @@ export class ProfileManager {
     public loadSettings(): Observable<AppData> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             switchMap((settings) => {
-                return this.store.dispatch(new AppActions.SetProfiles(settings?.profiles)).pipe(
+                return this.store.dispatch([
+                    new AppActions.SetProfiles(settings?.profiles),
+                    new AppActions.updateModListColumns(settings?.modListColumns)
+                ]).pipe(
                     switchMap(() => this.updateGameDatabase()),
                     switchMap(() => {
                         if (settings?.activeProfile) {
@@ -821,11 +827,23 @@ export class ProfileManager {
         ));
     }
 
+    private syncUiState(): Observable<void> {
+        return ObservableUtils.hotResult$(this.appState$.pipe(
+            take(1),
+            switchMap((appState) => ElectronUtils.invoke("app:syncUiState", {
+                appState,
+                modListCols: AppData.DEFAULT_MOD_LIST_COLUMN_ORDER,
+                defaultModListCols: AppData.DEFAULT_MOD_LIST_COLUMNS
+            }))
+        ));
+    }
+
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
             profiles: appData.profileNames,
             activeProfile: appData.activeProfile?.name,
-            modsActivated: appData.modsActivated
+            modsActivated: appData.modsActivated,
+            modListColumns: appData.modListColumns
         };
     }
 }
