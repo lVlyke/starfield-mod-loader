@@ -16,9 +16,11 @@ import { appStates } from "./state";
 
 import { ProfileManager } from './services/profile-manager';
 import { AppMessageHandler } from './services/app-message-handler';
+import { AppStateBehaviorManager } from './services/app-state-behavior-manager';
 
 const STARTUP_SERVICES = [
   AppMessageHandler,
+  AppStateBehaviorManager,
   ProfileManager
 ];
 

@@ -7,6 +7,16 @@
 
     <mat-divider></mat-divider>
 
+    <button mat-list-item (click)="moveModToTop()">
+        <mat-icon matListIcon>arrow_upward</mat-icon>
+        <span matLine>Move to Top</span>
+    </button>
+
+    <button mat-list-item (click)="moveModToBottom()">
+        <mat-icon matListIcon>arrow_downward</mat-icon>
+        <span matLine>Move to Bottom</span>
+    </button>
+
     <button mat-list-item (click)="renameMod()">
         <mat-icon matListIcon>abc</mat-icon>
         <span matLine>Rename Mod</span>

@@ -1,3 +1,4 @@
+import { AppDependenciesInfo } from "./app-dependency-info";
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 import { GameDetails } from "./game-details";
@@ -106,6 +107,14 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowAboutInfo extends Base {
+        id: `${Prefix}:showAboutInfo`;
+        data: {
+            depsInfo: AppDependenciesInfo;
+            depsLicenseText: string;
+        };
+    }
+
     export type AppMessage = ChooseDirectory
                            | ChooseFilePath
                            | LoadSettings
@@ -118,7 +127,8 @@ export namespace AppMessage {
                            | CopyProfileMods
                            | ShowPreferences
                            | LoadGameDatabase
-                           | FindBestProfileDefaults;
+                           | FindBestProfileDefaults
+                           | ShowAboutInfo;
 
     // Profile messages:
 
@@ -272,6 +282,7 @@ export namespace AppMessage {
         "app:showPreferences",
         "app:loadGameDatabase",
         "app:findBestProfileDefaults",
+        "app:showAboutInfo",
 
         "profile:settings",
         "profile:beginModAdd",

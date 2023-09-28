@@ -21,6 +21,8 @@ class ElectronLoader {
 
     static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
     static /** @type {string} */ APP_PROFILES_DIR = "profiles";
+    static /** @type {string} */ APP_DEPS_LICENSES_FILE = path.join(__dirname, "3rdpartylicenses.txt");
+    static /** @type {string} */ APP_DEPS_INFO_FILE = path.join(__dirname, "3rdpartylicenses.json");
     static /** @type {string} */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
     static /** @type {string} */ PROFILE_SETTINGS_FILE = "profile.json";
     static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
@@ -382,6 +384,12 @@ class ElectronLoader {
                 preload: DEBUG_MODE ? path.join(__dirname, "electron-watcher.js") : undefined
             }
         });
+
+        // Open all renderer links in the user's browser instead of the app
+        this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+            shell.openExternal(url);
+            return { action: "deny" };
+        });
     
         this.loadApp();
     }
@@ -408,23 +416,30 @@ class ElectronLoader {
                         click: () => this.mainWindow.webContents.send("app:showPreferences")
                     },
                     {
-                        type: 'separator'
+                        type: "separator"
                     },
                     {
-                        role: 'quit'
+                        label: "View Project Homepage",
+                        click: () => shell.openExternal("https://github.com/lVlyke/starfield-mod-loader")
+                    },
+                    {
+                        type: "separator"
+                    },
+                    {
+                        role: "quit"
                     }
                 ]
             },
 
             {
-                label: 'Profile',
+                label: "Profile",
                 submenu: [
                     {
                         label: "Add New Profile",
                         click: () => this.mainWindow.webContents.send("app:newProfile")
                     },
                     {
-                        type: 'separator'
+                        type: "separator"
                     },
                     {
                         label: "Mods",
@@ -447,13 +462,27 @@ class ElectronLoader {
             },
 
             ...this.createDebugMenuOption({
-                label: 'View',
+                label: "View",
                 submenu: [
                     {
                        role: "toggleDevTools"
                     }
                 ]
-            })
+            }),
+
+            {
+                label: "Help",
+                submenu: [
+                    {
+                        label: "View README",
+                        click: () => shell.openExternal("https://github.com/lVlyke/starfield-mod-loader/blob/master/README.md")
+                    },
+                    {
+                        label: "About Starfield Mod Loader",
+                        click: () => this.showAppAboutInfo()
+                    }
+                ]
+            }
         ]);
     }
 
@@ -804,6 +833,16 @@ class ElectronLoader {
         await Promise.all(undeployJobs);
 
         log.info("Mod undeployment succeeded");
+    }
+
+    showAppAboutInfo() {
+        const depsLicenseText = fs.readFileSync(ElectronLoader.APP_DEPS_LICENSES_FILE).toString("utf-8");
+        const depsInfo = JSON.parse(fs.readFileSync(ElectronLoader.APP_DEPS_INFO_FILE).toString("utf-8"));
+
+        this.mainWindow.webContents.send("app:showAboutInfo", {
+            depsLicenseText,
+            depsInfo
+        });
     }
 
     // Credit: https://stackoverflow.com/a/57253723

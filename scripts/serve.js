@@ -21,12 +21,13 @@ buildTask.stdout.on("data", (data) => {
     console.log(data.toString());
 
     if (data.toString().includes("Build at:")) {
-        execSync(
-            "node ./scripts/copy-assets.js",
-            { stdio: "inherit" }
-        );        
-
+                
         if (!electronProcess) {
+            execSync(
+                "node ./scripts/copy-assets.js",
+                { stdio: "inherit" }
+            );
+
             console.log("Starting Electron app");
 
             electronProcess = spawn("npx", ["electron", BUILD_DIR]);

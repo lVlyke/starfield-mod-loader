@@ -1,6 +1,7 @@
 //@ts-check
 const fs = require("fs-extra");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const BUILD_DIR = "./dist";
 
@@ -17,3 +18,9 @@ const assetFiles = Object.keys(ASSETS);
 assetFiles.forEach((assetFile) => {
     fs.copySync(assetFile, path.join(BUILD_DIR, ASSETS[assetFile]));
 });
+
+// Copy license info for prod dependencies to `3rdpartylicenses.json`
+execSync(
+    `npx license-checker-rseidelsohn --production --relativeLicensePath --relativeModulePath --json --out ${path.join(BUILD_DIR, "3rdpartylicenses.json")}`,
+    { stdio: "inherit" }
+);

@@ -2,11 +2,8 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/
 import { AsyncState, ComponentState } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { Observable } from "rxjs";
-import { distinctUntilChanged } from "rxjs/operators";
 import { BaseComponent } from "./core/base-component";
 import { AppState } from "./state";
-import { OverlayHelpers, OverlayHelpersRef } from "./services/overlay-helpers";
-import { AppModSyncIndicatorModal } from "./modals/mod-sync-indicator";
 import { AppTheme } from "./models/app-theme";
 
 @Component({
@@ -18,42 +15,13 @@ import { AppTheme } from "./models/app-theme";
 })
 export class AppComponent extends BaseComponent {
 
-    @Select(AppState.isDeployInProgress)
-    public readonly isDeployInProgress$!: Observable<boolean>;
-
     @Select(AppState.getTheme)
     public readonly theme$!: Observable<AppTheme>;
 
     @AsyncState()
     public readonly theme!: AppTheme;
 
-    constructor (
-        cdRef: ChangeDetectorRef,
-        overlay: OverlayHelpers
-    ) {
+    constructor (cdRef: ChangeDetectorRef) {
         super({ cdRef });
-
-        let deployInProgressOverlayRef: OverlayHelpersRef | undefined;
-
-        // Show a loading indicator when app is syncing mod files to base deployment dir
-        this.isDeployInProgress$.pipe(
-            distinctUntilChanged()
-        ).subscribe((deployInProgress) => {
-            if (deployInProgress && !deployInProgressOverlayRef) {
-                deployInProgressOverlayRef = overlay.createFullScreen(AppModSyncIndicatorModal, {
-                    width: "auto",
-                    height: "auto",
-                    minHeight: "10%",
-                    center: true,
-                    hasBackdrop: true,
-                    disposeOnBackdropClick: false,
-                    panelClass: "mat-app-background"
-                });
-
-                deployInProgressOverlayRef.onClose$.subscribe(() => deployInProgressOverlayRef = undefined);
-            } else if (!!deployInProgressOverlayRef) {
-                deployInProgressOverlayRef.close();
-            }
-        });
     }
 }

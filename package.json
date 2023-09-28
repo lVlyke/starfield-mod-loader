@@ -2,7 +2,8 @@
   "name": "starfield-mod-loader",
   "author": "Mychal Thompson <mychal.r.thompson@gmail.com>",
   "repository": "https://github.com/lVlyke/starfield-mod-loader",
-  "version": "0.3.0",
+  "license": "GPL-3.0",
+  "version": "0.3.1",
   "main": "electron.js",
   "scripts": {
     "app:build-dist": "npm run build:release && npm run package",
@@ -67,6 +68,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "license-checker-rseidelsohn": "^4.2.7",
     "typescript": "~5.1.3"
   },
   "browser": {
