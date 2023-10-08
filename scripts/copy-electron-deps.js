@@ -1,6 +1,7 @@
 //@ts-check
 const fs = require("fs-extra");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const BUILD_DIR = "./dist";
 
@@ -26,8 +27,15 @@ const DEPENDENCIES = [
     "minimatch",
     "brace-expansion",
     "balanced-match",
-    "concat-map"
+    "concat-map",
+    "which",
+    "isexe"
 ];
+
+execSync(
+    "node ./scripts/fix-7zip-bin-permissions.js",
+    { stdio: "inherit" }
+);
 
 fs.mkdirSync(BUILD_DIR, { recursive: true })
 

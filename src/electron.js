@@ -11,6 +11,7 @@ const fsPromises = require("fs").promises;
 const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
+const which = require("which");
 
 // TODO - Replace this with fs.readdir(..., { recursive: true }) when electron uses Node v18.17.0+
 const recursiveReaddir = require("recursive-readdir");
@@ -224,17 +225,36 @@ class ElectronLoader {
                     case ".rar": {
                         decompressOperation = new Promise((resolve, _reject) => {
                             // Look for 7-Zip installed on system
+                            const _7zBinaries = [
+                                "7zzs",
+                                "7zz",
+                                "7z.exe"
+                            ];
+
                             const _7zBinaryLocations = [
-                                "7z",
-                                "7z.exe",
                                 "C:\\Program Files\\7-Zip\\7z.exe",
                                 "C:\\Program Files (x86)\\7-Zip\\7z.exe"
                             ];
-                            const decompressStream = Seven.extractFull(filePath, modDirStagingPath, {
-                                // Fall back to bundled 7-Zip binary if not found on system
+
+                            let _7zBinaryPath = _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath));
+                            
+                            if (!_7zBinaryPath) {
+                                _7zBinaryPath = _7zBinaries.reduce((_7zBinaryPath, _7zBinaryPathGuess) => {
+                                    try {
+                                        _7zBinaryPath = which.sync(_7zBinaryPathGuess);
+                                    } catch (_err) {}
+
+                                    return _7zBinaryPath;
+                                }, _7zBinaryPath);
+                            }
+
+                            if (!_7zBinaryPath) {
+                                // Fall back to bundled 7-Zip binary if it's not found on system
                                 // TODO - Warn user about opening RARs if 7-Zip not installed on machine
-                                $bin: _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath)) ?? sevenBin.path7za
-                            });
+                                _7zBinaryPath = sevenBin.path7za;
+                            }
+
+                            const decompressStream = Seven.extractFull(filePath, modDirStagingPath, { $bin: _7zBinaryPath });
 
                             decompressStream.on("data", ({ file }) => {
                                 modFilePaths.push(file);

@@ -6,6 +6,11 @@ const spawn = require("child_process").spawn;
 const BUILD_DIR = "./dist";
 const RELEASE_MODE = process.argv.includes("--release");
 
+execSync(
+    "node ./scripts/fix-7zip-bin-permissions.js",
+    { stdio: "inherit" }
+);
+
 const buildTask = spawn("npx", [
     "ng",
     "build",
