@@ -8,6 +8,7 @@ import { AppProfile } from "../models/app-profile";
 import { ActiveProfileState } from "./active-profile/active-profile.state";
 import { AppTheme } from "../models/app-theme";
 import { GameDatabase } from "../models/game-database";
+import { GameDetails } from "../models/game-details";
 
 @State<AppData>({
     name: "app",
@@ -30,6 +31,15 @@ export class AppState {
     @Selector()
     public static getActiveProfile(state: AppData): AppProfile | undefined {
         return state.activeProfile;
+    }
+
+    @Selector()
+    public static getActiveGameDetails(state: AppData): GameDetails | undefined {
+        if (!state.gameDb || !state.activeProfile) {
+            return undefined;
+        }
+
+        return state.gameDb[state.activeProfile.gameId];
     }
 
     @Selector()

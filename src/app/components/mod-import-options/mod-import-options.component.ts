@@ -4,14 +4,15 @@ import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBeh
 import { Select } from "@ngxs/store";
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, EMPTY, Observable, combineLatest } from "rxjs";
 import { filter, map, switchMap, take } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
-import { filterDefined, filterTrue } from "../../core/operators";
+import { filterDefined } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
 import { AppProfile } from "../../models/app-profile";
 import { AppState } from "../../state";
 import { DialogManager } from "../../services/dialog-manager";
+import { GameDetails } from "../../models/game-details";
 
 interface FileTreeNode {
     terminal: boolean;
@@ -45,11 +46,17 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile>;
 
+    @Select(AppState.getActiveGameDetails)
+    public readonly gameDetails$!: Observable<GameDetails | undefined>;
+
     @Output("importRequestChange")
     public readonly importRequestChange$ = new EventEmitter<ModImportRequest>();
 
     @AsyncState()
     public readonly activeProfile!: AppProfile;
+
+    @AsyncState()
+    public readonly gameDetails?: GameDetails;
 
     @Input()
     public importRequest!: ModImportRequest;
@@ -88,8 +95,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     @DeclareState("fileDataInput")
     private _fileDataInput!: FileTreeNode[];
 
-    @DeclareState("sfseDetected")
-    private _sfseDetected: boolean = false;
+    @DeclareState("detectedScriptExtender")
+    private _detectedScriptExtender?: GameDetails.ScriptExtender;
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -130,11 +137,6 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
                     inputData[curPath] = pathPartInputData;
                     parentInputData = pathPartInputData;
-
-                    // Check if this mod is using SFSE
-                    if (pathPart.toLowerCase() === "sfse") {
-                        this._sfseDetected = true;
-                    }
                 });
 
                 return inputData;
@@ -177,16 +179,43 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
             filterDefined()
         ).subscribe(({ form }) => form.addValidators([this._validateFilesEnabled]));
 
-        // Warn user that mod uses SFSE if they aren't using SFSE
-        stateRef.get("sfseDetected").pipe(
-            filterTrue(),
+        // Check if this mod is using a script extender
+        combineLatest(stateRef.getAll(
+            "gameDetails",
+            "importRequest"
+        )).pipe(
+            filter(([gameDetails]) => !!gameDetails?.scriptExtenders?.length),
+            map(([
+                gameDetails, { 
+                modFilePaths,
+                filePathSeparator,
+                modSubdirRoot
+            }]) => gameDetails!.scriptExtenders!.find(scriptExtender => scriptExtender.modPaths.some((seModPath) => {
+                seModPath = this.normalizePath(seModPath, filePathSeparator, modSubdirRoot);
+                return modFilePaths.some(({ filePath }) => {
+                    return this.normalizePath(filePath, filePathSeparator, modSubdirRoot).startsWith(seModPath);
+                });
+            })))
+        ).subscribe(detectedScriptExtender => this._detectedScriptExtender = detectedScriptExtender);
+
+        // Warn user if a mod uses a script extender they don't appear to be using
+        stateRef.get("detectedScriptExtender").pipe(
+            filterDefined(),
             take(1),
-            filter(() => !this.activeProfile.gameBinaryPath.toLowerCase().endsWith("sfse_loader.exe")),
-            switchMap(() => dialogManager.createDefault(
-                "This mod requires SFSE, but the active profile does not appear to be set up to use SFSE. Are you sure you want to continue?",
-                [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION],
-                { hasBackdrop: true, disposeOnBackdropClick: false }
-            ))
+            switchMap((scriptExtender) => {
+                const gameBinaryPath = this.normalizePath(this.activeProfile.gameBinaryPath, "/");
+                const usingScriptExtender = scriptExtender.binaries.find(binary => gameBinaryPath.endsWith(this.normalizePath(binary, "/")));
+
+                if (!usingScriptExtender) {
+                    return dialogManager.createDefault(
+                        `This mod requires the script extender ${scriptExtender.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`,
+                        [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION],
+                        { hasBackdrop: true, disposeOnBackdropClick: false }
+                    );
+                } else {
+                    return EMPTY;
+                }
+            })
         ).subscribe((action) => {
             if (action === DialogManager.CANCEL_ACTION) {
                 this.importRequest.importStatus = "CANCELED";
@@ -195,8 +224,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         });
     }
 
-    public get sfseDetected(): boolean {
-        return this._sfseDetected;
+    public get detectedScriptExtender(): GameDetails.ScriptExtender | undefined {
+        return this._detectedScriptExtender;
     }
 
     public get fileDataInput(): FileTreeNode[] {
@@ -259,5 +288,12 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
      */
     protected setModRootSubdir(modSubdirRoot: string): void {
         this.importRequest = Object.assign(this.importRequest, { modSubdirRoot });
+    }
+
+    private normalizePath(path: string, sep: string, modSubdirRoot?: string): string {
+        return path
+            .toLowerCase()
+            .replace(/[/\\]/g, sep)
+            .replace(modSubdirRoot ? `${this.normalizePath(modSubdirRoot, sep)}${sep}` : "", "");
     }
 }

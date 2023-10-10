@@ -160,13 +160,14 @@ export class ProfileManager {
                     event.preventDefault();
                     event.stopPropagation();
                 }),
-                switchMap(event => from(event.dataTransfer!.files)),
-                concatMap((file) => this.addModFromUser({
+                switchMap(event => from(event.dataTransfer!.files).pipe(
+                    concatMap((file) => this.addModFromUser({
                         modPath: file.path,
                         externalImport: !file.type && !file.size // `file` is a dir if no type & size
                     }).pipe(
                         catchError((err) => (console.error(err), EMPTY))
                     ))
+                ))
             ).subscribe();
 
             fromEvent<DragEvent>(document, "dragover").subscribe((event) => {
@@ -611,7 +612,9 @@ export class ProfileManager {
                             DialogManager.CANCEL_ACTION_PRIMARY
                         ], {
                             width: "auto",
-                            maxWidth: "50vw"
+                            maxWidth: "50vw",
+                            hasBackdrop: true,
+                            disposeOnBackdropClick: false
                         }
                     ).pipe(
                         switchMap((result) => {
@@ -774,6 +777,10 @@ export class ProfileManager {
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:launchGame", { profile })
         )));
+    }
+
+    public openGameConfigFile(configPaths: string[]): Observable<void> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke("profile:openGameConfigFile", { configPaths }));
     }
 
     private deployActiveMods(): Observable<boolean> {

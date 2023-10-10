@@ -182,7 +182,7 @@ class ElectronLoader {
 
             if (gameDetails.modBaseDirs) {
                 result.modBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.modBaseDirs.find((modBaseDir) => {
-                    return fs.existsSync(modBaseDir) || fs.existsSync(path.dirname(modBaseDir));
+                    return fs.existsSync(modBaseDir);
                 }) ?? "");
             }
 
@@ -405,6 +405,10 @@ class ElectronLoader {
                 detached: true,
                 cwd: profile.gameBaseDir
             });
+        });
+
+        ipcMain.handle("profile:openGameConfigFile", async (_event, /** @type {AppMessageData<"profile:openGameConfigFile">} */ { configPaths }) => {
+            await this.openGameConfigFile(configPaths);
         });
     }
 
@@ -925,6 +929,18 @@ class ElectronLoader {
             depsLicenseText,
             depsInfo
         });
+    }
+
+    /** @returns {Promise<string>} */
+    async openGameConfigFile(/** @type {string[]} */ cfgPaths) {
+        for (const cfgPath of cfgPaths) {
+            try {
+                const preparedPath = path.resolve(this.#resolveWindowsEnvironmentVariables(cfgPath));
+                return await shell.openPath(preparedPath);
+            } catch (_e) {}
+        }
+
+        throw new Error("Unable to open config file.");
     }
 
     // Credit: https://stackoverflow.com/a/57253723

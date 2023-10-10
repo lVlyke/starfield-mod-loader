@@ -97,7 +97,7 @@
             }
         }
 
-        #primary-actions > button {
+        .primary-actions > button {
             height: 3.25rem;
             font-size: 1rem;
 
@@ -108,7 +108,7 @@
             }
         }
 
-        #secondary-actions > button {
+        .secondary-actions > button {
             font-size: 0.8rem;
         }
 
@@ -139,12 +139,19 @@
         }
     }
 
-    .button-menu-icon {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        font-size: 1.3rem;
-        width: 1.3rem;
-        height: 1.3rem;
+    button {
+
+        .button-menu-icon {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            font-size: 1.3rem;
+            width: 1.3rem;
+            height: 1.3rem;
+        }
+
+        &:not([mat-icon-button]) .button-menu-icon {
+            right: -0.5rem;
+        }
     }
 }

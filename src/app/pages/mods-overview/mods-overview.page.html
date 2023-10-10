@@ -69,7 +69,7 @@
         </mat-card-header>
 
         <mat-card-content>
-            <div id="primary-actions" class="actions">
+            <div id="primary-actions" class="actions primary-actions">
                 <button id="mod-activate-button"
                         class="mat-elevation-z3"
                         mat-stroked-button
@@ -92,7 +92,7 @@
                 </button>
             </div>
 
-            <div id="secondary-actions" class="actions">
+            <div id="secondary-actions" class="actions secondary-actions">
                 <button id="profile-dir-view-button"
                         mat-stroked-button
                         (click)="profileManager.showProfileBaseDirInFileExplorer()">
@@ -115,6 +115,14 @@
                     <mat-icon>source</mat-icon>
                     
                     Game Folder
+                </button>
+
+                <button mat-stroked-button
+                        id="game-config-button"
+                        (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
+                    <mat-icon>settings_app</mat-icon>
+                    Config Files&nbsp;&nbsp;
+                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                 </button>
             </div>
 
@@ -177,6 +185,23 @@
                 <button mat-list-item (click)="deleteActiveProfile(); showProfileMgmtMenuRef?.close()">
                     <mat-icon matListIcon color="primary">person_remove</mat-icon>
                     <span matLine>Delete Profile</span>
+                </button>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Game config file menu popup -->
+<ng-template #gameConfigFileMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                <button *ngFor="let gameConfigFile of gameDetails!.gameConfigFiles | keyvalue"
+                        class="game-config-button"
+                        mat-list-item
+                        (click)="profileManager.openGameConfigFile(gameConfigFile.value); gameConfigFileMenuRef?.close()">
+                    <mat-icon matListIcon>data_array</mat-icon>
+                    <span matLine>{{ gameConfigFile.key }}</span>
                 </button>
             </mat-action-list>
         </mat-card-content>

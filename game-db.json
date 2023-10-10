@@ -2,19 +2,42 @@
     "starfield": {
         "title": "Starfield",
         "modBaseDirs": [
-            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data"
+            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Data",
+            "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data",
+            "/home/deck/.local/share/Steam/steamapps/common/Starfield/Data"
         ],
         "gameBaseDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
-            "C:\\XboxGames\\Starfield\\Content"
+            "C:\\XboxGames\\Starfield\\Content",
+            "/home/deck/.local/share/Steam/steamapps/common/Starfield"
         ],
         "gameBinaryPaths": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
-            "C:\\XboxGames\\Starfield\\Content\\Starfield.exe"
-        ]
+            "C:\\XboxGames\\Starfield\\Content\\Starfield.exe",
+            "/home/deck/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
+        ],
+        "scriptExtenders": [
+            {
+                "name": "SFSE",
+                "binaries": ["sfse_loader.exe"],
+                "modPaths": ["SFSE"]
+            }
+        ],
+        "gameConfigFiles": {
+            "StarfieldCustom.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldCustom.ini",
+                "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldCustom.ini"
+            ],
+            "StarfieldPrefs.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldPrefs.ini",
+                "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
+            ]
+        }
     }
 }

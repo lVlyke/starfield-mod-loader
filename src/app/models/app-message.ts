@@ -270,6 +270,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface OpenGameConfigFile extends Base {
+        id: `${ProfileMessage.Prefix}:openGameConfigFile`;
+        data: {
+            configPaths: string[];
+        };
+    }
+
     export type ProfileMessage = ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
@@ -284,7 +291,8 @@ export namespace AppMessage {
                                | ShowProfileBaseDirInFileExplorer
                                | ShowGameBaseDirInFileExplorer
                                | ShowProfileModsDirInFileExplorer
-                               | LaunchGame;
+                               | LaunchGame
+                               | OpenGameConfigFile;
 
     // Message record:
 
@@ -321,5 +329,6 @@ export namespace AppMessage {
         "profile:showProfileModsDirInFileExplorer",
         "profile:showGameBaseDirInFileExplorer",
         "profile:launchGame",
+        "profile:openGameConfigFile"
     ];
 }

@@ -1,7 +1,5 @@
 <mat-card>
-    <mat-card-content>
-        {{ prompt }}
-    </mat-card-content>
+    <mat-card-content [innerText]="prompt" />
 
     <mat-card-actions>
         <button *ngFor="let action of actions"

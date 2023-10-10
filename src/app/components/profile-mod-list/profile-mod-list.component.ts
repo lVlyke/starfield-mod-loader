@@ -85,7 +85,7 @@ export class AppProfileModListComponent extends BaseComponent {
                 };
             });
 
-            if (showManualMods) {
+            if (showManualMods && !!profile.manualMods?.length) {
                 modDataSource.push("manual");
             }
 

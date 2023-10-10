@@ -11,6 +11,7 @@ import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
+import { GameDetails } from "../../models/game-details";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -30,6 +31,9 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.isModsActivated)
     public readonly isModsActivated$!: Observable<boolean>;
 
+    @Select(AppState.getActiveGameDetails)
+    public readonly gameDetails$!: Observable<GameDetails | undefined>;
+
     @AsyncState()
     public readonly profileNames!: AppProfile[];
 
@@ -39,17 +43,26 @@ export class AppModsOverviewPage extends BasePage {
     @AsyncState()
     public readonly isModsActivated!: boolean;
 
+    @AsyncState()
+    public readonly gameDetails?: GameDetails;
+
     @ViewChild("addModMenu", { read: CdkPortal })
     protected readonly addModMenuPortal!: CdkPortal;
 
     @ViewChild("profileMgmtMenu", { read: CdkPortal })
     protected readonly profileMgmtMenuPortal!: CdkPortal;
 
+    @ViewChild("gameConfigFileMenu", { read: CdkPortal })
+    protected readonly gameConfigFileMenuPortal!: CdkPortal;
+
     @DeclareState()
     protected addModMenuRef?: OverlayHelpersRef;
 
     @DeclareState()
     protected showProfileMgmtMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
+    protected gameConfigFileMenuRef?: OverlayHelpersRef;
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -78,6 +91,14 @@ export class AppModsOverviewPage extends BasePage {
 
     protected showProfileMgmtMenu($event: MouseEvent): void {
         this.showProfileMgmtMenuRef = this.overlayHelpers.createAttached(this.profileMgmtMenuPortal,
+            $event.target as HTMLElement,
+            OverlayHelpers.ConnectionPositions.contextMenu,
+            { managed: false }
+        );
+    }
+
+    protected showGameConfigFileMenu($event: MouseEvent): void {
+        this.gameConfigFileMenuRef = this.overlayHelpers.createAttached(this.gameConfigFileMenuPortal,
             $event.target as HTMLElement,
             OverlayHelpers.ConnectionPositions.contextMenu,
             { managed: false }
