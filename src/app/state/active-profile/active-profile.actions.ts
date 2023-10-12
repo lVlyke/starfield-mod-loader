@@ -1,6 +1,7 @@
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { AppProfile } from "../../models/app-profile";
 import { BasicAction } from "../basic-action";
+import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 
 export namespace ActiveProfileActions {
 
@@ -15,6 +16,10 @@ export namespace ActiveProfileActions {
     function createUpdateAction(property: keyof AppProfile): BasicAction.Constructor<AppProfile, keyof AppProfile> {
         return createBasicAction(property, "update");
     }
+
+    export type DeployedAction = BasicAction<AppProfile, "deployed">;
+
+    export const setDeployed = createUpdateAction("deployed");
 
     export class AddMod {
         public static readonly type = `[activeProfile] add mod`;
@@ -72,6 +77,26 @@ export namespace ActiveProfileActions {
 
         constructor(
             public modOrder: string[]
+        ) {}
+    }
+
+    export class ReconcilePluginList {
+        public static readonly type = `[activeProfile] reconcile plugin list`;
+    }
+
+    export class UpdatePlugins {
+        public static readonly type = `[activeProfile] update plugins`;
+
+        constructor(
+            public plugins: GamePluginProfileRef[]
+        ) {}
+    }
+
+    export class UpdatePlugin {
+        public static readonly type = `[activeProfile] update plugin`;
+
+        constructor(
+            public plugin: GamePluginProfileRef
         ) {}
     }
 }

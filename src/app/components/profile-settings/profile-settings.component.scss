@@ -1,6 +1,10 @@
 :host {
 
-    mat-form-field {
-        display: block;
+    form {
+        margin-top: 1.5rem;
+
+        mat-form-field {
+            display: block;
+        }
     }
 }

@@ -5,7 +5,7 @@ import { Select } from "@ngxs/store";
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { BehaviorSubject, EMPTY, Observable, combineLatest } from "rxjs";
-import { filter, map, switchMap, take } from "rxjs/operators";
+import { filter, map, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
@@ -13,6 +13,8 @@ import { AppProfile } from "../../models/app-profile";
 import { AppState } from "../../state";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
+import { DialogAction } from "../../services/dialog-manager.types";
+import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
 
 interface FileTreeNode {
     terminal: boolean;
@@ -49,6 +51,9 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
+    @Select(AppState.isPluginsEnabled)
+    public readonly isPluginsEnabled$!: Observable<boolean>;
+
     @Output("importRequestChange")
     public readonly importRequestChange$ = new EventEmitter<ModImportRequest>();
 
@@ -57,6 +62,9 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;
+
+    @AsyncState()
+    public readonly isPluginsEnabled!: boolean;
 
     @Input()
     public importRequest!: ModImportRequest;
@@ -101,7 +109,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModImportOptionsComponent>,
-        dialogManager: DialogManager
+        dialogManager: DialogManager,
+        appStateMgmt: AppStateBehaviorManager
     ) {
         super({ cdRef });
 
@@ -222,6 +231,47 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                 this.onFormSubmit$.next(this.form);
             }
         });
+
+        // Warn user if a mod uses a script extender they don't appear to be using
+        stateRef.get("importRequest").pipe(
+            filterDefined(),
+            take(1),
+            switchMap((importRequest) => {
+                if (importRequest.modPlugins.length > 0 && !this.isPluginsEnabled) {
+                    const ACTION_ENABLE_PLUGINS: DialogAction = {
+                        label: "Enable",
+                        accent: true,
+                        tooltip: "Enable plugins"
+                    };
+                    const ACTION_IGNORE: DialogAction = {
+                        label: "Ignore",
+                        tooltip: "Ignore warning (NOTE: This mod will likely not work correctly!)"
+                    };
+                    
+                    return dialogManager.createDefault(
+                        `This mod has plugins, but plugins are not currently enabled.`,
+                        [ACTION_ENABLE_PLUGINS, DialogManager.CANCEL_ACTION_ACCENT, ACTION_IGNORE],
+                        { hasBackdrop: true, disposeOnBackdropClick: false }
+                    ).pipe(
+                        tap((action) => {
+                            switch (action) {
+                                case ACTION_ENABLE_PLUGINS: {
+                                    appStateMgmt.setPluginsEnabled(true);
+                                    break;
+                                }
+                                case DialogManager.CANCEL_ACTION_ACCENT: {
+                                    this.importRequest.importStatus = "CANCELED";
+                                    this.onFormSubmit$.next(this.form);
+                                    break;
+                                }
+                            }
+                        })
+                    );
+                } else {
+                    return EMPTY;
+                }
+            })
+        ).subscribe();
     }
 
     public get detectedScriptExtender(): GameDetails.ScriptExtender | undefined {

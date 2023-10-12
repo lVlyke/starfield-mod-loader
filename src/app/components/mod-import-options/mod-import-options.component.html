@@ -11,7 +11,7 @@
                 (ngModelChange)="importRequestChange$.emit(importRequest)">
         </mat-form-field>
 
-        <mat-label>Mod Files</mat-label>
+        <mat-label class="files-label">Mod Files</mat-label>
         
         <div class="mod-file-tree-container">
             <mat-tree class="file-tree" [dataSource]="filesDataSource" [treeControl]="treeControl">

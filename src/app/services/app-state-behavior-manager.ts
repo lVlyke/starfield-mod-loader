@@ -57,6 +57,10 @@ export class AppStateBehaviorManager {
         });
     }
 
+    public setPluginsEnabled(pluginsEnabled: boolean): Observable<void> {
+        return this.store.dispatch(new AppActions.setPluginsEnabled(pluginsEnabled));
+    }
+
     public showLoadingIndicator(loadingMsg: string): OverlayHelpersRef {
         return this.overlayHelpers.createFullScreen(AppModSyncIndicatorModal, {
             width: "auto",

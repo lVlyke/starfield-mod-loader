@@ -8,11 +8,13 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { MatSelectModule } from "@angular/material/select";
 import { MatListModule } from "@angular/material/list";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatButtonModule } from "@angular/material/button";
+import { MatExpansionModule } from "@angular/material/expansion";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
-import { MatButtonModule } from "@angular/material/button";
+import { AppProfilePluginListComponentModule } from "../../components/profile-plugin-list";
 import { AppPipesModule } from "../../pipes";
-import { MatFormFieldModule } from "@angular/material/form-field";
 
 const routes: Routes = [
     {
@@ -42,10 +44,12 @@ const routes: Routes = [
         MatSelectModule,
         MatFormFieldModule,
         MatListModule,
+        MatExpansionModule,
 
         AppPipesModule,
 
-        AppProfileModListComponentModule
+        AppProfileModListComponentModule,
+        AppProfilePluginListComponentModule
     ],
     providers: []
 })

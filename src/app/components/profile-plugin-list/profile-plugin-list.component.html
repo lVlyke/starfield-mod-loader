@@ -1,0 +1,44 @@
+<table mat-table [dataSource]="pluginDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
+    <ng-container matColumnDef="enabled">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let pluginEntry" class="plugin-enabled">
+            <ng-container>
+                <mat-checkbox [checked]="pluginEntry.pluginRef.enabled"
+                              [disabled]="!!pluginEntry.pluginRef.verificationError"
+                              (change)="pluginChange$.emit(assign({}, pluginEntry, { pluginRef: assign({}, pluginEntry.pluginRef, { enabled: $event.checked }) }))" />
+            </ng-container>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Plugin</th>
+        <td mat-cell *matCellDef="let pluginEntry" class="plugin-title">
+            <ng-container>
+                <span>{{ pluginEntry.pluginRef.plugin }}</span>
+                        
+                <mat-icon *ngIf="!!pluginEntry.pluginRef.verificationError"
+                            class="plugin-verification-error-icon"
+                            matTooltip="This plugin has a verification error">
+                    error
+                </mat-icon>
+            </ng-container>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="order">
+        <th mat-header-cell *matHeaderCellDef>Load Order</th>
+        <td mat-cell *matCellDef="let pluginEntry" class="plugin-load-order">
+            <ng-container>
+                <div>{{ pluginEntry.order ?? "--" }}</div>
+            </ng-container>
+        </td>
+    </ng-container>
+
+    <tr *matHeaderRowDef="displayedColumns" mat-header-row></tr>
+
+    <tr *matRowDef="let pluginEntry; columns: displayedColumns;"
+        mat-row
+        cdkDrag
+        [attr.li-theme]="themeContainer.theme"
+        [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"></tr>
+</table>

@@ -1,35 +1,44 @@
 :host {
 
-    mat-form-field {
-        display: block;
-    }
+    form {
+        margin-top: 1.5rem;
 
-    mat-tree {
+        mat-form-field {
+            display: block;
+        }
 
-        [mod-enabled] {
+        mat-tree {
 
-            &:not(:hover) > .root-dir-action {
-                display: none;
+            [mod-enabled] {
+
+                &:not(:hover) > .root-dir-action {
+                    display: none;
+                }
+
+                > .path-info-badge {
+                    margin-left: 0.5rem;
+                    font-size: 0.8em;
+                }
+
+                > .root-dir-clear-action {
+                    margin-left: 0.25rem;
+                    font-size: 0.9rem;
+                    width: 0.9rem;
+                    height: 0.9rem;
+                    cursor: pointer;
+                }
             }
 
-            > .path-info-badge {
-                margin-left: 0.5rem;
-                font-size: 0.8em;
-            }
-
-            > .root-dir-clear-action {
-                margin-left: 0.25rem;
-                font-size: 0.9rem;
-                width: 0.9rem;
-                height: 0.9rem;
-                cursor: pointer;
+            [mod-enabled="false"] > .mod-path-part {
+                font-style: italic;
+                opacity: 0.75;
+                transition: opacity linear 0.5s;
             }
         }
 
-        [mod-enabled="false"] > .mod-path-part {
-            font-style: italic;
-            opacity: 0.75;
-            transition: opacity linear 0.5s;
+        .files-label {
+            display: block;
+            margin-bottom: 0.5rem;
         }
     }
 }

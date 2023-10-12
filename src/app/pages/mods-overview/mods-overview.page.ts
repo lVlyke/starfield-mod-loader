@@ -1,17 +1,19 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
-import { ComponentState, AsyncState, DeclareState } from "@lithiumjs/angular";
+import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
+import { MatExpansionPanel } from "@angular/material/expansion";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
-import { Observable } from "rxjs";
-import { filter } from "rxjs/operators";
+import { Observable, combineLatest } from "rxjs";
+import { filter, skip, switchMap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
+import { filterFalse } from "../../core/operators";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -31,6 +33,9 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.isModsActivated)
     public readonly isModsActivated$!: Observable<boolean>;
 
+    @Select(AppState.isPluginsEnabled)
+    public readonly isPluginsEnabled$!: Observable<boolean>;
+
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
@@ -44,6 +49,9 @@ export class AppModsOverviewPage extends BasePage {
     public readonly isModsActivated!: boolean;
 
     @AsyncState()
+    public readonly isPluginsEnabled!: boolean;
+
+    @AsyncState()
     public readonly gameDetails?: GameDetails;
 
     @ViewChild("addModMenu", { read: CdkPortal })
@@ -55,6 +63,9 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("gameConfigFileMenu", { read: CdkPortal })
     protected readonly gameConfigFileMenuPortal!: CdkPortal;
 
+    @ViewChild("profileActionsPanel")
+    protected readonly profileActionsPanel!: MatExpansionPanel;
+
     @DeclareState()
     protected addModMenuRef?: OverlayHelpersRef;
 
@@ -64,13 +75,32 @@ export class AppModsOverviewPage extends BasePage {
     @DeclareState()
     protected gameConfigFileMenuRef?: OverlayHelpersRef;
 
+    @AfterViewInit()
+    private readonly afterViewInit$!: Observable<void>;
+
+    protected showPluginList = false;
+
     constructor(
         cdRef: ChangeDetectorRef,
+        stateRef: ComponentStateRef<AppModsOverviewPage>,
         protected readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogManager: DialogManager
     ) {
         super({ cdRef });
+
+        this.afterViewInit$.pipe(
+            switchMap(() => this.isPluginsEnabled$),
+            skip(1),
+            filterFalse(),
+        ).subscribe(() => this.profileActionsPanel.expanded = true);
+
+        combineLatest(stateRef.getAll(
+            "isPluginsEnabled",
+            "activeProfile"
+        )).subscribe(([isPluginsEnabled, activeProfile]) => {
+            this.showPluginList = isPluginsEnabled && !!activeProfile && activeProfile.plugins.length > 0;
+        });
     }
 
     protected registerModUpdate(name: string, mod: ModProfileRef): Observable<void> {

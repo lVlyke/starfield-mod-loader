@@ -8,6 +8,7 @@ export interface AppData {
     theme: AppTheme;
     gameDb: GameDatabase;
     modsActivated: boolean;
+    pluginsEnabled: boolean;
     modListColumns?: string[];
     deployInProgress?: boolean;
 }

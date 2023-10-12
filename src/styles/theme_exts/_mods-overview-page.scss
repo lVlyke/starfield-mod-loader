@@ -11,5 +11,12 @@
             border-bottom-style: solid;
             border-color: var(--mdc-filled-text-field-active-indicator-color);
         }
+
+        #profile-actions {
+            mat-panel-title {
+                font-size: 1.25rem;
+                color: mixins.theme-foreground-color(text, $is-dark);
+            }
+        }
     }
 }

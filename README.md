@@ -6,9 +6,10 @@ A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) 
 
 ## Features
 
-* **Add**, **re-order**, **rename**, **disable** and **remove** your mods
-* Support for switching between **multiple profiles**
 * Support for **Steam** and **UWP (Game Pass)** versions of Starfield
+* **Add**, **re-order**, **rename**, **disable** and **remove** your mods
+* **Multiple profiles** enable quick switching between different mod loadouts
+* Support for ESP/ESM plugins __**[*](#espesm-plugins)**__
 
 # Releases
 
@@ -66,6 +67,14 @@ The mod you have added will appear in your mods list with the load order of that
 
 Any mod files that you have manually copied to your **Mod Base Directory** outside of the app will show up in the UI as **Manually installed mods**. These mods cannot be managed by Starfield Mod Loader and will not be removed or overwritten. This means that **any manually copied mods in your Mod Base Directory folder will override the mods in Starfield Mod Loader.**
 
+### ESP/ESM plugins
+
+**IMPORTANT NOTE**: Starfield Mod Loader supports ESP/ESM plugins, however please note that support is currently still considered **experimental** as the official Starfield Creation Kit modding tools have not yet been released. You will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
+
+By default, plugin support is disabled. Plugins can be enabled by going to **File > Preferences** and enabling plugins. Alternatively, you will be prompted to enable plugins when adding a mod with a plugin file.
+
+Once plugins are enabled and at least one plugin has been installed, you will see your plugins listed along with their load order. Plugins can be disabled or re-ordered by dragging and dropping them.
+
 ## Activate your mods
 
 To enable mods in the game you must first activate them. Press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
@@ -84,4 +93,4 @@ If you run into a problem, please check the [issues page](https://github.com/lVl
 
 # Devs - Building and testing
 
-To build and run the app for testing and development, simply ensure you have `npm` installed on your machine and run `npm install` and `npm run start`.
+To build and run the app for testing and development, ensure you have Node and NPM installed on your machine and run `npm install` and `npm run start`.

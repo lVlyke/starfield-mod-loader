@@ -4,7 +4,8 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: "",
-    redirectTo: "mods-overview"
+    redirectTo: "mods-overview",
+    pathMatch: "full"
   },
   {
       path: "mods-overview",

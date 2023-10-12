@@ -351,8 +351,8 @@ class ElectronLoader {
             await fs.move(modCurDir, modNewDir);
         });
 
-        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ { profile }) => {
-            return this.deployProfile(profile);
+        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ { profile, deployPlugins }) => {
+            return this.deployProfile(profile, deployPlugins);
         });
 
         ipcMain.handle("profile:undeploy", async (_event, /** @type {AppMessageData<"profile:undeploy">} */ { profile }) => {
@@ -669,8 +669,22 @@ class ElectronLoader {
         /** @type {string[]} */ modFilePaths,
         /** @type {boolean} */ externalImport
     ) {
+        const gameDb = this.loadGameDatabase();
+        const gameDetails = gameDb[profile.gameId];
+        const gamePluginFormats = gameDetails?.pluginFormats ?? [];
         const modDataDirs = ["Data", "data"];
         const modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
+        const modPreparedFilePaths = modFilePaths.map(filePath => ({
+            filePath: filePath.replace(/[\\/]/g, path.sep),
+            enabled: true
+        }));
+
+        const modPlugins = [];
+        modPreparedFilePaths.forEach(({ filePath }) => {
+            if (gamePluginFormats.some(pluginFormat => filePath.toLowerCase().endsWith(pluginFormat))) {
+                modPlugins.push(filePath);
+            }
+        });
 
         return {
             profile,
@@ -678,10 +692,8 @@ class ElectronLoader {
             externalImport,
             importStatus: "PENDING",
             mergeStrategy: "REPLACE",
-            modFilePaths: modFilePaths.map(filePath => ({
-                filePath: filePath.replace(/[\\/]/g, path.sep),
-                enabled: true
-            })),
+            modPlugins,
+            modFilePaths: modPreparedFilePaths,
             modPath: modImportPath,
             filePathSeparator: path.sep,
             modSubdirRoot
@@ -698,7 +710,8 @@ class ElectronLoader {
             importStatus,
             mergeStrategy,
             modFilePaths,
-            modSubdirRoot
+            modSubdirRoot,
+            modPlugins
         }
     ) {
         try {
@@ -707,37 +720,52 @@ class ElectronLoader {
                 return undefined;
             }
 
+            // Collect all enabled mod files
+            const enabledModFiles =  modFilePaths
+                .filter(({ enabled, filePath }) => enabled && filePath.startsWith(modSubdirRoot));
+
+            // Collect all enabled plugins normalized to the data subdir
+            const enabledPlugins = modPlugins
+                .filter(plugin => enabledModFiles.find(({ filePath }) => plugin === filePath))
+                .map(filePath => filePath.replace(`${modSubdirRoot}${path.sep}`, ""));
+
             const modProfilePath = this.getProfileModDir(profile.name, modName);
-            const enabledModFiles =  modFilePaths.filter(({ enabled, filePath }) => {
-                return enabled && filePath.startsWith(modSubdirRoot);
-            });
 
             if (mergeStrategy === "REPLACE") {
                 // Clear the mod dir for the profile
                 fs.rmSync(modProfilePath, { recursive: true, force: true });
             }
 
-            // Copy all enabled files to the final mod folder
-            enabledModFiles.map(({ filePath }) => fs.copySync(
-                path.join(modPath, filePath),
-                path.join(modProfilePath, filePath.replace(modSubdirRoot, "")), {
-                    errorOnExist: false,
-                    overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
-                }));
+            enabledModFiles.map(({ filePath }) => {
+                const srcFilePath = path.join(modPath, filePath);
+
+                if (!fs.lstatSync(srcFilePath).isDirectory()) {
+                    // Normalize path to the data subdir
+                    const rootFilePath = filePath.replace(`${modSubdirRoot}${path.sep}`, "");
+                    const destFilePath = path.join(modProfilePath, rootFilePath);
+
+                    // Copy all enabled files to the final mod folder
+                    fs.copySync(srcFilePath, destFilePath, {
+                        errorOnExist: false,
+                        overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
+                    });
+                }
+            });
+
+            return {
+                modName,
+                modRef: {
+                    enabled: true,
+                    updatedDate: new Date().toISOString(),
+                    plugins: enabledPlugins
+                }
+            };
         } finally {
             if (!externalImport) {
                 // Erase the staging data if this was added via archive
                 await fs.remove(modPath);
             }
         }
-
-        return {
-            modName,
-            modRef: {
-                enabled: true,
-                updatedDate: new Date().toISOString()
-            }
-        };
     }
 
     /** @returns {AppProfileModVerificationResult} */
@@ -832,7 +860,7 @@ class ElectronLoader {
     }
 
     /** @returns {Promise<void>} */
-    async deployProfile(/** @type {AppProfile} */ profile) {
+    async deployProfile(/** @type {AppProfile} */ profile, /** @type {boolean} */ deployPlugins) {
         const profileModFiles = [];
 
         // Ensure the mod base dir exists
@@ -844,6 +872,53 @@ class ElectronLoader {
 
         log.info("Deploying profile", profile.name);
 
+        const gameDb = this.loadGameDatabase();
+        const gameDetails = gameDb[profile.gameId];
+
+        // Deploy plugin list
+        if (deployPlugins && profile.plugins.length > 0) {
+            const pluginListPaths = gameDetails?.pluginListPaths ?? [];
+            let wrotePluginList = false;
+            
+            for (let pluginListPath of pluginListPaths) {
+                pluginListPath = path.resolve(this.#resolveWindowsEnvironmentVariables(pluginListPath));
+
+                if (fs.existsSync(path.dirname(pluginListPath))) {
+                    // Backup any existing plugins file
+                    if (fs.existsSync(pluginListPath)) {
+                        const backupFile = `${pluginListPath}.sml_bak`;
+                        if (fs.existsSync(backupFile)) {
+                            fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
+                        }
+
+                        fs.copyFileSync(pluginListPath, backupFile);
+                    }
+
+                    // TODO - Allow customization of this logic per-gameid
+                    const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
+                    const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
+                        if (pluginRef.enabled) {
+                            data += "*";
+                        }
+
+                        data += pluginRef.plugin;
+                        data += "\n";
+                        return data;
+                    }, header);
+
+                    fs.writeFileSync(pluginListPath, pluginsListData);
+
+                    wrotePluginList = true;
+                    profileModFiles.push(pluginListPath);
+                    break;
+                }
+            }
+
+            if (!wrotePluginList) {
+                throw new Error("Unable to write plugins list.");
+            }
+        }
+
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
         const deployableModFiles = Array.from(profile.mods.entries()).reverse();
@@ -852,6 +927,7 @@ class ElectronLoader {
                 const modDirPath = this.getProfileModDir(profile.name, modName);
 
                 try {
+                    // Copy data files to mod base dir
                     fs.copySync(path.resolve(modDirPath), path.resolve(profile.modBaseDir), {
                         overwrite: false,
                         errorOnExist: false,
@@ -901,7 +977,9 @@ class ElectronLoader {
 
         // Only remove files managed by this profile
         const undeployJobs = profileModFiles.map(async (existingFile) => {
-            const fullExistingPath = path.join(profile.modBaseDir, existingFile);
+            const fullExistingPath = path.isAbsolute(existingFile)
+                ? existingFile
+                : path.join(profile.modBaseDir, existingFile);
 
             if (fs.existsSync(fullExistingPath)) {
                 await fsPromises.rm(fullExistingPath, { force: true, recursive: true });

@@ -97,15 +97,19 @@ export namespace DialogManager {
 
     export const YES_ACTION = { label: "Yes" };
     export const YES_ACTION_PRIMARY = { ...YES_ACTION, primary: true };
+    export const YES_ACTION_ACCENT = { ...YES_ACTION, accent: true };
 
     export const NO_ACTION = { label: "No" };
     export const NO_ACTION_PRIMARY = { ...NO_ACTION, primary: true };
+    export const NO_ACTION_ACCENT = { ...NO_ACTION, accent: true };
 
     export const OK_ACTION = { label: "Ok" };
     export const OK_ACTION_PRIMARY = { ...OK_ACTION, primary: true };
+    export const OK_ACTION_ACCENT = { ...OK_ACTION, accent: true };
 
     export const CANCEL_ACTION = { label: "Cancel" };
     export const CANCEL_ACTION_PRIMARY = { ...CANCEL_ACTION, primary: true };
+    export const CANCEL_ACTION_ACCENT = { ...CANCEL_ACTION, accent: true };
 
     export const DEFAULT_ACTIONS: DialogAction[] = [OK_ACTION_PRIMARY, CANCEL_ACTION];
 }

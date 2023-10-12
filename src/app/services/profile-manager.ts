@@ -14,10 +14,11 @@ import {
     switchMap,
     take,
     tap,
+    throttleTime,
     toArray,
     withLatestFrom
 } from "rxjs/operators";
-import { EMPTY, Observable, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
+import { EMPTY, Observable, asyncScheduler, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
@@ -40,6 +41,7 @@ import { DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
 import { AppStateBehaviorManager } from "./app-state-behavior-manager";
 import { moveItemInArray } from "@angular/cdk/drag-drop";
+import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -123,24 +125,43 @@ export class ProfileManager {
                 ))
             ).subscribe();
 
-            // Deploy/undeploy mods when activated/deactivated
+            // Monitor mod changes for new/removed plugins and update the plugins list
+            this.activeProfile$.pipe(
+                filterDefined(),
+                map(profile => _.pick(profile, "mods")),
+                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+                switchMap(() => this.reconcileActivePluginList())
+            ).subscribe();
+
+            // Handle automatic mod deploy/undeploy
             combineLatest([
+                // Deploy/undeploy mods if mod activation setting changed
+                this.isModsActivated$.pipe(
+                    distinctUntilChanged()
+                ),
+                // Redeploy mods if profile changes
                 this.activeProfile$.pipe(
                     filterDefined(),
                     // Monitor only the following profile properties for state changes:
                     map(profile => _.pick(profile,
                         "name",
                         "modBaseDir",
-                        "mods"
+                        "mods",
+                        "plugins"
                     )),
                     distinctUntilChanged((a, b) => LangUtils.isEqual(a, b))
                 ),
-                this.isModsActivated$.pipe(
+                // Redeploy mods if app plugin settings change
+                this.appState$.pipe(
+                    filterDefined(),
+                    map(({ pluginsEnabled }) => pluginsEnabled),
                     distinctUntilChanged()
-                ),
+                )
             ]).pipe(
                 skip(1),
-                switchMap(([, activated]) => {
+                // Queue update requests for 250ms to avoid back-to-back updates
+                throttleTime(250, asyncScheduler, { leading: false, trailing: true }),
+                switchMap(([activated]) => {
                     if (activated) {
                         return this.deployActiveMods().pipe(
                             catchError((err) => (console.error("Deployment error: ", err), EMPTY))
@@ -182,7 +203,8 @@ export class ProfileManager {
             switchMap((settings) => {
                 return this.store.dispatch([
                     new AppActions.SetProfiles(settings?.profiles),
-                    new AppActions.updateModListColumns(settings?.modListColumns)
+                    new AppActions.updateModListColumns(settings?.modListColumns),
+                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false)
                 ]).pipe(
                     switchMap(() => this.updateGameDatabase()),
                     switchMap(() => {
@@ -737,6 +759,50 @@ export class ProfileManager {
         ));
     }
 
+    public updatePlugin(pluginRef: GamePluginProfileRef): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.UpdatePlugin(pluginRef));
+    }
+
+    public reorderPlugins(pluginOrder: GamePluginProfileRef[]): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.UpdatePlugins(pluginOrder));
+    }
+
+    public reorderPlugin(plugin: GamePluginProfileRef, newIndex: number): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                if (activeProfile) {
+                    const pluginOrder = _.clone(activeProfile.plugins);
+                    moveItemInArray(
+                        pluginOrder,
+                        pluginOrder.findIndex(curPlugin => plugin.plugin === curPlugin.plugin),
+                        newIndex
+                    );
+                    return this.reorderPlugins(pluginOrder);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public movePluginToTopOfOrder(plugin: GamePluginProfileRef): Observable<void> {
+        return this.reorderPlugin(plugin, 0);
+    }
+
+    public movePluginToBottomOfOrder(plugin: GamePluginProfileRef): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                if (activeProfile) {
+                    return this.reorderPlugin(plugin, activeProfile.plugins.length - 1);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
     public showModInFileExplorer(modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
@@ -790,12 +856,19 @@ export class ProfileManager {
                 if (verified) {
                     return this.activeProfile$.pipe(
                         take(1),
-                        switchMap((activeProfile) => {
+                        withLatestFrom(this.appState$),
+                        switchMap(([activeProfile, appState]) => {
                             // Deploy the active profile
                             if (activeProfile) {
                                 return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
-                                    switchMap(() => ElectronUtils.invoke("profile:deploy", { profile: activeProfile })),
-                                    switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
+                                    switchMap(() => ElectronUtils.invoke("profile:deploy", {
+                                        profile: activeProfile,
+                                        deployPlugins: appState.pluginsEnabled
+                                    })),
+                                    switchMap(() => this.store.dispatch([
+                                        new AppActions.setDeployInProgress(false),
+                                        new ActiveProfileActions.setDeployed(true)
+                                    ])),
                                     switchMap(() => this.updateActiveProfileManualMods()), // Update the manual mod list
                                     map(() => true) // Success
                                 );
@@ -819,11 +892,14 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
-                // Undeploy the active profile
-                if (activeProfile) {
+                // Undeploy the active profile if it's deployed
+                if (activeProfile?.deployed) {
                     return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
                         switchMap(() => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile })),
-                        switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
+                        switchMap(() => this.store.dispatch([
+                            new AppActions.setDeployInProgress(false),
+                            new ActiveProfileActions.setDeployed(false)
+                        ])),
                         switchMap(() => this.updateActiveProfileManualMods()),
                         map(() => true) // Success
                     );
@@ -845,11 +921,16 @@ export class ProfileManager {
         ));
     }
 
+    private reconcileActivePluginList(): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.ReconcilePluginList());
+    }
+
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
             profiles: appData.profileNames,
             activeProfile: appData.activeProfile?.name,
             modsActivated: appData.modsActivated,
+            pluginsEnabled: appData.pluginsEnabled,
             modListColumns: appData.modListColumns
         };
     }

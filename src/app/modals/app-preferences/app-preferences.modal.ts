@@ -4,6 +4,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule, NgForm } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
+import { MatDividerModule } from "@angular/material/divider";
 import { Observable } from "rxjs";
 import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -25,6 +26,7 @@ import { AppPreferencesComponent, AppPreferencesComponentModule } from "../../co
 
         MatCardModule,
         MatButtonModule,
+        MatDividerModule,
         
         AppPreferencesComponentModule
     ]

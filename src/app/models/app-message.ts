@@ -210,6 +210,7 @@ export namespace AppMessage {
         id: `${ProfileMessage.Prefix}:deploy`;
         data: {
             profile: AppProfile;
+            deployPlugins: boolean;
         };
     }
 

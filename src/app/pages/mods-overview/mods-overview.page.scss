@@ -7,15 +7,9 @@
     #profile-controls {
         display: flex;
         flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
         padding: 1.5rem;
+        gap: 1.5rem;
         flex-grow: 1;
-
-        > * {
-            flex: 1 1 100%;
-            height: 100%;
-        }
 
         .control-card {
             width: 100%;
@@ -30,6 +24,7 @@
         }
 
         #profile-mod-list {
+            flex: 1 1 75%;
 
             > #profile-mgmt-controls {
                 display: flex;
@@ -70,14 +65,78 @@
             }
         }
 
-        #profile-actions {
-            flex-basis: 64%;
-            margin-left: 1.5rem;
-            max-width: 768px;
+        #right-pane-actions {
+            flex: 1 1 content;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        #plugin-actions {
+            flex: 1 0 content;
 
             > mat-card-content {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                overflow-y: auto;
+            }
+        }
+
+        #profile-actions {
+            flex: 0 1 content;
+            display: flex;
+            flex-direction: column;
+
+            &[fixed] {
+                flex-grow: 1;
+            }
+
+            &.mat-expanded {
+                ::ng-deep {
+                    .mat-expansion-panel-content {
+                        flex-grow: 1;
+                        flex-basis: 100%;
+                        overflow: auto;
+
+                        .mat-expansion-panel-body {
+                            height: 100%;
+                        }
+                    }
+                }
+            }
+
+            mat-expansion-panel-header {
+                flex-shrink: 0;
+            }
+
+            mat-panel-description {
+                display: flex;
                 align-items: center;
                 justify-content: space-between;
+
+                > * {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    gap: 1rem;
+
+                    button.no-label {
+                        min-width: auto !important;
+
+                        mat-icon {
+                            margin: 0 !important;
+                        }
+                    }
+                }
+            }
+
+            #profile-actions-panel-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: space-between;
+                height: 100%;
 
                 > .actions {
                     display: flex;
@@ -93,6 +152,7 @@
 
                 .spacer {
                     flex: 1 1 auto;
+                    min-height: 3rem;
                 }
             }
         }

@@ -17,6 +17,11 @@ export class ActiveProfileState {
         return state.manualMods ?? [];
     }
 
+    @Selector()
+    public static isDeployed(state: AppProfile): boolean {
+        return !!state.deployed;
+    }
+
     @Action(ActiveProfileActions.AddMod)
     public addMod(context: ActiveProfileState.Context, { name, mod }: ActiveProfileActions.AddMod): void {
         const state = _.cloneDeep(context.getState()!);
@@ -88,6 +93,65 @@ export class ActiveProfileState {
         });
 
         context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.ReconcilePluginList)
+    public reconcilePluginList(context: ActiveProfileState.Context): void {
+        const state = _.cloneDeep(context.getState()!);
+        const modList = Array.from(state.mods.entries());
+
+        // BC:<v0.4.0
+        if (!state.plugins) {
+            state.plugins = [];
+        }
+
+        // Add missing plugins
+        modList.forEach(([modId, { enabled, plugins }]) => plugins?.forEach((plugin) => {
+            if (enabled) {
+                const existingPlugin = _.find(state.plugins, { plugin });
+
+                if (!existingPlugin) {
+                    // Add a new plugin entry
+                    state.plugins.push({ modId, plugin, enabled: true });
+                } else {
+                    // Update the modId of the plugin to the last mod in the load order
+                    existingPlugin.modId = modId;
+                }
+            }
+        }));
+
+        // Remove deleted plugins
+        state.plugins.forEach((pluginRef) => {
+            if (!modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin))) {
+                _.remove(state.plugins, pluginRef);
+            }
+        });
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.UpdatePlugins)
+    public updatePlugins(context: ActiveProfileState.Context, state: ActiveProfileActions.UpdatePlugins): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(ActiveProfileActions.UpdatePlugin)
+    public updatePlugin(context: ActiveProfileState.Context, { plugin }: ActiveProfileActions.UpdatePlugin): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        const existingPlugin = state.plugins.find((curPlugin) => curPlugin.plugin === plugin.plugin);
+        if (existingPlugin) {
+            Object.assign(existingPlugin, plugin);
+        } else {
+            state.plugins.push(plugin);
+        }
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.setDeployed)
+    public setDeployed(context: ActiveProfileState.Context, state: ActiveProfileActions.DeployedAction): void {
+        context.patchState(state);
     }
 
     private _updateModVerifications(

@@ -17,6 +17,7 @@ import { GameDetails } from "../models/game-details";
         theme: AppTheme.Dark,
         gameDb: {},
         modsActivated: false,
+        pluginsEnabled: false // TODO - Enable by default once plugins are officially supported
     },
     children: [ActiveProfileState]
 })
@@ -50,6 +51,11 @@ export class AppState {
     @Selector()
     public static isModsActivated(state: AppData): boolean {
         return state.modsActivated;
+    }
+
+    @Selector()
+    public static isPluginsEnabled(state: AppData): boolean {
+        return state.pluginsEnabled;
     }
 
     @Selector()
@@ -105,6 +111,11 @@ export class AppState {
 
     @Action(AppActions.setDeployInProgress)
     public setDeployInProgress(context: AppState.Context, state: AppActions.DeployInProgressAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.setPluginsEnabled)
+    public setPluginsEnabled(context: AppState.Context, state: AppActions.PluginsEnabledAction): void {
         context.patchState(_.cloneDeep(state));
     }
 

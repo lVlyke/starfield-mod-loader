@@ -1,0 +1,78 @@
+:host {
+
+    table {
+        padding: 0;
+    }
+
+    tr {
+        cursor: pointer;
+
+        &.plugin-unverified {
+            font-style: italic;
+        }
+
+        &:not(.cdk-drag-placeholder) {
+            transition: transform 250ms ease-in;
+        }
+
+        > td, th {
+            padding: 0;
+        }
+
+         > th {
+            font-size: 0.9em;
+            opacity: 0.8;
+         }
+
+        > .plugin-title {
+            font-size: 1rem;
+
+            .plugin-verification-error-icon {
+                margin-left: 1rem;
+            }
+        }
+
+        > .plugin-enabled {
+            width: 3rem;
+        }
+
+        > .plugin-load-order {
+            width: 4rem;
+
+            > * {
+                text-align: center;
+                font-family: monospace;
+                font-size: 1rem;
+                opacity: 0.6;
+                min-width: 1rem;
+            }
+        }
+    }
+
+    .cdk-drag-placeholder {
+        opacity: 0;
+    }
+
+    @at-root .cdk-drag-animating {
+        transition: transform 100ms ease-out;
+    }
+
+    @at-root .cdk-drag-preview {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        .plugin-enabled {
+            flex: 0 1 auto;
+            padding: 0;
+        }
+
+        .plugin-title {
+            flex-grow: 1;
+        }
+
+        .plugin-load-order {
+            visibility: hidden;
+        }
+    }
+}

@@ -22,6 +22,11 @@
             "C:\\XboxGames\\Starfield\\Content\\Starfield.exe",
             "/home/deck/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
         ],
+        "pluginListPaths": [
+            "%LOCALAPPDATA%\\Starfield\\plugins.txt",
+            "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
+        ],
+        "pluginFormats": ["esm", "esl", "esp"],
         "scriptExtenders": [
             {
                 "name": "SFSE",

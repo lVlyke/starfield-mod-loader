@@ -1,4 +1,5 @@
 import { ModProfileRef } from "./mod-profile-ref";
+import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { GameId } from "./game-id";
 
 export interface AppProfile {
@@ -8,7 +9,9 @@ export interface AppProfile {
     modBaseDir: string;
     gameBinaryPath: string;
     mods: Map<string, ModProfileRef>;
+    plugins: GamePluginProfileRef[];
     manualMods?: string[];
+    deployed: boolean;
 }
 
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
@@ -27,6 +30,7 @@ export namespace AppProfile {
     };
 
     export type ModVerificationResult = VerificationResults["mods"];
+    export type PluginVerificationResult = VerificationResults["plugins"];
 
     export function create(name: string, gameId: GameId): AppProfile {
         return {
@@ -35,7 +39,9 @@ export namespace AppProfile {
             gameBaseDir: "",
             modBaseDir: "",
             gameBinaryPath: "",
-            mods: new Map()
+            mods: new Map(),
+            plugins: [],
+            deployed: false
         };
     }
 }

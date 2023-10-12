@@ -1,6 +1,17 @@
 :host {
 
-    mat-form-field {
-        display: block;
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 0.5rem;
+
+        mat-form-field {
+            display: block;
+        }
+
+        mat-checkbox {
+            margin-left: -0.5rem;
+        }
     }
 }

@@ -1,5 +1,10 @@
 <form #preferencesForm="ngForm" id="preferences-form" (ngSubmit)="onFormSubmit$.next(preferencesForm)">
     <ng-container *ngIf="!!formModel">
+        <span>
+            <mat-checkbox name="pluginsEnabled" [(ngModel)]="formModel.pluginsEnabled" />
+            <mat-label>Plugins Enabled</mat-label>
+        </span>
+
         <mat-form-field appearance="fill">
             <mat-label>App Theme</mat-label>
             <mat-select name="theme" [(ngModel)]="formModel.theme">

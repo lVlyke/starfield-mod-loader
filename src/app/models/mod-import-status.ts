@@ -12,6 +12,7 @@ export interface ModImportRequest {
     externalImport: boolean;
     modPath: string;
     modFilePaths: ModImportRequest.ModPathReference[];
+    modPlugins: string[];
     filePathSeparator: string;
     modSubdirRoot: string;
 }

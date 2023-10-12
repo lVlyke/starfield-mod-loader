@@ -14,7 +14,8 @@ execSync(
 const buildTask = spawn("npx", [
     "ng",
     "build",
-    ...RELEASE_MODE ? ["--configuration", "production"] : [],
+    "--configuration",
+    RELEASE_MODE ? "production" : "development",
     "--watch",
     "--poll", 
     "1000"
