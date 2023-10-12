@@ -10,6 +10,7 @@ A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) 
 * **Add**, **re-order**, **rename**, **disable** and **remove** your mods
 * **Multiple profiles** enable quick switching between different mod loadouts
 * Support for ESP/ESM plugins __**[*](#espesm-plugins)**__
+* Native Linux version (including Steam Deck)
 
 # Releases
 

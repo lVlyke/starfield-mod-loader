@@ -209,123 +209,14 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath }
         ) => {
-            if (!modPath) {
-                const pickedFile = (await dialog.showOpenDialog({
-                    filters: [
-                        { 
-                            name: "Mod", extensions: [
-                                "zip",
-                                "rar",
-                                "7z",
-                                "7zip",
-                            ]
-                        }
-                    ]
-                }));
-                
-                modPath = pickedFile?.filePaths[0];
-            }
-            
-            const filePath = modPath ?? "";
-            if (!!filePath) {
-                const fileType = path.extname(filePath);
-                const modName = path.basename(filePath, fileType);
-                const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
-                const modFilePaths = [];
-                /** @type Promise */ let decompressOperation;
-
-                switch (fileType.toLowerCase()) {
-                    case ".7z":
-                    case ".7zip":
-                    case ".zip":
-                    case ".rar": {
-                        decompressOperation = new Promise((resolve, _reject) => {
-                            // Look for 7-Zip installed on system
-                            const _7zBinaries = [
-                                "7zzs",
-                                "7zz",
-                                "7z.exe"
-                            ];
-
-                            const _7zBinaryLocations = [
-                                "C:\\Program Files\\7-Zip\\7z.exe",
-                                "C:\\Program Files (x86)\\7-Zip\\7z.exe"
-                            ];
-
-                            let _7zBinaryPath = _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath));
-                            
-                            if (!_7zBinaryPath) {
-                                _7zBinaryPath = _7zBinaries.reduce((_7zBinaryPath, _7zBinaryPathGuess) => {
-                                    try {
-                                        _7zBinaryPath = which.sync(_7zBinaryPathGuess);
-                                    } catch (_err) {}
-
-                                    return _7zBinaryPath;
-                                }, _7zBinaryPath);
-                            }
-
-                            if (!_7zBinaryPath) {
-                                // Fall back to bundled 7-Zip binary if it's not found on system
-                                // TODO - Warn user about opening RARs if 7-Zip not installed on machine
-                                _7zBinaryPath = sevenBin.path7za;
-                            }
-
-                            const decompressStream = Seven.extractFull(filePath, modDirStagingPath, { $bin: _7zBinaryPath });
-
-                            decompressStream.on("data", ({ file }) => {
-                                modFilePaths.push(file);
-                            });
-                            decompressStream.on("end", () => resolve(true));
-                            decompressStream.on("error", (e) => {
-                                log.error(e);
-                                resolve(false);
-                            });
-                        });
-                    } break;
-                    default: {
-                        log.error("Unrecognized mod format", fileType);
-                        decompressOperation = Promise.resolve(false);
-                    } break;
-                }
-
-                if (await decompressOperation) {
-                    try {
-                        return this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
-                    } catch (err) {
-                        log.error(`Error occurred while adding mod ${modName}: `, err);
-
-                        // Erase the staging data
-                        await fsPromises.rm(modDirStagingPath, { force: true });
-
-                        throw err;
-                    }
-                }
-            }
-
-            return null;
+            return this.beginModAdd(profile, modPath);
         });
 
         ipcMain.handle("profile:beginModExternalImport", async (
             _event,
             /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath }
         ) => {
-            if (!modPath) {
-                const pickedModFolder = await dialog.showOpenDialog({
-                    properties: ["openDirectory"]
-                });
-                
-                modPath = pickedModFolder?.filePaths[0];
-            }
-
-            const folderPath = modPath ?? "";
-            if (!!folderPath) {
-                const modName = path.basename(folderPath);
-                const modFilePaths = (await recursiveReaddir(folderPath)).map((filePath) => {
-                    return filePath.replace(`${folderPath}${path.sep}`, "");
-                });
-
-                return this.beginModImport(profile, modName, folderPath, modFilePaths, true);
-            }
+            return this.beginModExternalImport(profile, modPath);
         });
 
         ipcMain.handle("profile:completeModImport", async (
@@ -661,6 +552,141 @@ class ElectronLoader {
         return fs.rmdirSync(profileDir, { recursive: true });
     }
 
+    /** @returns {Promise<ModImportRequest | undefined>} */
+    async beginModAdd(
+        /** @type {AppProfile} */ profile,
+        /** @type {string | undefined} */ modPath,
+    ) {
+        if (!modPath) {
+            const pickedFile = (await dialog.showOpenDialog({
+                filters: [
+                    { 
+                        name: "Mod", extensions: [
+                            "zip",
+                            "rar",
+                            "7z",
+                            "7zip",
+                        ]
+                    }
+                ]
+            }));
+            
+            modPath = pickedFile?.filePaths[0];
+        }
+        
+        const filePath = modPath ?? "";
+        if (!!filePath) {
+            if (fs.lstatSync(filePath).isDirectory()) {
+                return this.beginModExternalImport(profile, filePath);
+            }
+
+            const fileType = path.extname(filePath);
+            const modName = path.basename(filePath, fileType);
+            const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
+            const modFilePaths = [];
+            /** @type Promise */ let decompressOperation;
+
+            switch (fileType.toLowerCase()) {
+                case ".7z":
+                case ".7zip":
+                case ".zip":
+                case ".rar": {
+                    decompressOperation = new Promise((resolve, _reject) => {
+                        // Look for 7-Zip installed on system
+                        const _7zBinaries = [
+                            "7zzs",
+                            "7zz",
+                            "7z.exe"
+                        ];
+
+                        const _7zBinaryLocations = [
+                            "C:\\Program Files\\7-Zip\\7z.exe",
+                            "C:\\Program Files (x86)\\7-Zip\\7z.exe"
+                        ];
+
+                        let _7zBinaryPath = _7zBinaryLocations.find(_7zPath => fs.existsSync(_7zPath));
+                        
+                        if (!_7zBinaryPath) {
+                            _7zBinaryPath = _7zBinaries.reduce((_7zBinaryPath, _7zBinaryPathGuess) => {
+                                try {
+                                    _7zBinaryPath = which.sync(_7zBinaryPathGuess);
+                                } catch (_err) {}
+
+                                return _7zBinaryPath;
+                            }, _7zBinaryPath);
+                        }
+
+                        if (!_7zBinaryPath) {
+                            // Fall back to bundled 7-Zip binary if it's not found on system
+                            // TODO - Warn user about opening RARs if 7-Zip not installed on machine
+                            _7zBinaryPath = sevenBin.path7za;
+                        }
+
+                        const decompressStream = Seven.extractFull(filePath, modDirStagingPath, { $bin: _7zBinaryPath });
+
+                        decompressStream.on("data", ({ file }) => {
+                            modFilePaths.push(file);
+                        });
+                        decompressStream.on("end", () => resolve(true));
+                        decompressStream.on("error", (e) => {
+                            log.error(e);
+                            resolve(false);
+                        });
+                    });
+                } break;
+                default: {
+                    log.error("Unrecognized mod format", fileType);
+                    decompressOperation = Promise.resolve(false);
+                } break;
+            }
+
+            if (await decompressOperation) {
+                try {
+                    return this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
+                } catch (err) {
+                    log.error(`Error occurred while adding mod ${modName}: `, err);
+
+                    // Erase the staging data
+                    await fsPromises.rm(modDirStagingPath, { force: true });
+
+                    throw err;
+                }
+            }
+        }
+
+        return undefined;
+    }
+
+    /** @returns {Promise<ModImportRequest | undefined>} */
+    async beginModExternalImport(
+        /** @type {AppProfile} */ profile,
+        /** @type {string | undefined} */ modPath,
+    ) {
+        if (!modPath) {
+            const pickedModFolder = await dialog.showOpenDialog({
+                properties: ["openDirectory"]
+            });
+            
+            modPath = pickedModFolder?.filePaths[0];
+        }
+
+        const folderPath = modPath ?? "";
+        if (!!folderPath) {
+            if (fs.lstatSync(folderPath).isFile()) {
+                return this.beginModAdd(profile, folderPath);
+            }
+
+            const modName = path.basename(folderPath);
+            const modFilePaths = (await recursiveReaddir(folderPath)).map((filePath) => {
+                return filePath.replace(`${folderPath}${path.sep}`, "");
+            });
+
+            return this.beginModImport(profile, modName, folderPath, modFilePaths, true);
+        }
+
+        return undefined;
+    }
+
     /** @returns {ModImportRequest} */
     beginModImport(
         /** @type {AppProfile} */ profile,
@@ -674,10 +700,12 @@ class ElectronLoader {
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
         const modDataDirs = ["Data", "data"];
         const modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
-        const modPreparedFilePaths = modFilePaths.map(filePath => ({
-            filePath: filePath.replace(/[\\/]/g, path.sep),
-            enabled: true
-        }));
+        const modPreparedFilePaths = modFilePaths
+            .filter(filePath => !fs.lstatSync(path.join(modImportPath, filePath)).isDirectory())
+            .map(filePath => ({
+                filePath: filePath.replace(/[\\/]/g, path.sep),
+                enabled: true
+            }));
 
         const modPlugins = [];
         modPreparedFilePaths.forEach(({ filePath }) => {
@@ -727,7 +755,7 @@ class ElectronLoader {
             // Collect all enabled plugins normalized to the data subdir
             const enabledPlugins = modPlugins
                 .filter(plugin => enabledModFiles.find(({ filePath }) => plugin === filePath))
-                .map(filePath => filePath.replace(`${modSubdirRoot}${path.sep}`, ""));
+                .map(filePath => modSubdirRoot ? filePath.replace(`${modSubdirRoot}${path.sep}`, "") : filePath);
 
             const modProfilePath = this.getProfileModDir(profile.name, modName);
 
@@ -741,7 +769,7 @@ class ElectronLoader {
 
                 if (!fs.lstatSync(srcFilePath).isDirectory()) {
                     // Normalize path to the data subdir
-                    const rootFilePath = filePath.replace(`${modSubdirRoot}${path.sep}`, "");
+                    const rootFilePath = modSubdirRoot ? filePath.replace(`${modSubdirRoot}${path.sep}`, "") : filePath;
                     const destFilePath = path.join(modProfilePath, rootFilePath);
 
                     // Copy all enabled files to the final mod folder
@@ -1000,8 +1028,16 @@ class ElectronLoader {
     }
 
     showAppAboutInfo() {
-        const depsLicenseText = fs.readFileSync(ElectronLoader.APP_DEPS_LICENSES_FILE).toString("utf-8");
-        const depsInfo = JSON.parse(fs.readFileSync(ElectronLoader.APP_DEPS_INFO_FILE).toString("utf-8"));
+        let depsLicenseText = "";
+        let depsInfo = "";
+
+        try {
+            depsLicenseText = fs.readFileSync(ElectronLoader.APP_DEPS_LICENSES_FILE).toString("utf-8");
+        } catch (_err) {}
+
+        try {
+            depsInfo = JSON.parse(fs.readFileSync(ElectronLoader.APP_DEPS_INFO_FILE).toString("utf-8"));
+        } catch (_err) {}
 
         this.mainWindow.webContents.send("app:showAboutInfo", {
             depsLicenseText,
@@ -1014,7 +1050,14 @@ class ElectronLoader {
         for (const cfgPath of cfgPaths) {
             try {
                 const preparedPath = path.resolve(this.#resolveWindowsEnvironmentVariables(cfgPath));
-                return await shell.openPath(preparedPath);
+
+                if (fs.existsSync(preparedPath)) {
+                    const result = await shell.openPath(preparedPath);
+
+                    if (!result) {
+                        return result;
+                    }
+                }
             } catch (_e) {}
         }
 

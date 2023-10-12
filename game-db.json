@@ -20,6 +20,7 @@
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "C:\\XboxGames\\Starfield\\Content\\Starfield.exe",
+            "/home/deck/.local/share/Steam/steamapps/common/Starfield/sfse_loader.exe",
             "/home/deck/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
         ],
         "pluginListPaths": [
