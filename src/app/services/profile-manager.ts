@@ -42,6 +42,8 @@ import { DialogAction } from "./dialog-manager.types";
 import { AppStateBehaviorManager } from "./app-state-behavior-manager";
 import { moveItemInArray } from "@angular/cdk/drag-drop";
 import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
+import { filterTrue } from "../core/operators";
+import { GameDetails } from "../models/game-details";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -52,8 +54,14 @@ export class ProfileManager {
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
 
+    @Select(AppState.getActiveGameDetails)
+    public readonly activeGameDetails$!: Observable<GameDetails | undefined>;
+
     @Select(AppState.isModsActivated)
     public readonly isModsActivated$!: Observable<boolean>;
+
+    @Select(AppState.isPluginsEnabled)
+    public readonly isPluginsEnabled$!: Observable<boolean>; 
 
     constructor(
         messageHandler: AppMessageHandler,
@@ -131,6 +139,28 @@ export class ProfileManager {
                 map(profile => _.pick(profile, "mods")),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
                 switchMap(() => this.reconcileActivePluginList())
+            ).subscribe();
+
+            // When plugins are enabled, make sure the active profile gets a valid `pluginListPath`
+            combineLatest([
+                this.isPluginsEnabled$,
+                this.activeProfile$
+            ]).pipe(
+                map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.pluginListPath),
+                distinctUntilChanged(),
+                filterTrue(),
+                withLatestFrom(this.activeGameDetails$),
+                switchMap(([, activeGameDetails]) => ElectronUtils.invoke("app:verifyPathExists", {
+                    path: activeGameDetails?.pluginListPaths ?? [],
+                    dirname: true
+                })),
+                switchMap((pluginListPath) => {
+                    if (!!pluginListPath) {
+                        return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
+                    } else {
+                        return this.showProfileSettings({ remedy: "pluginListPath" });
+                    }
+                })
             ).subscribe();
 
             // Handle automatic mod deploy/undeploy
@@ -516,7 +546,9 @@ export class ProfileManager {
         ));
     }
 
-    public showProfileSettings(): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
+    public showProfileSettings(
+        options?: { remedy?: boolean | (keyof AppProfile) }
+    ): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             map((activeProfile) => {
@@ -525,10 +557,14 @@ export class ProfileManager {
                     hasBackdrop: true,
                     disposeOnBackdropClick: false,
                     minWidth: "24rem",
-                    width: "40%",
-                    height: "75%",
+                    width: "70%",
+                    height: "90%",
                     panelClass: "mat-app-background"
                 });
+
+                if (!!options?.remedy) {
+                    modContextMenuRef.component.instance.remedyMode = options.remedy;
+                }
 
                 modContextMenuRef.component.instance.profile = activeProfile;
                 return modContextMenuRef;

@@ -50,6 +50,14 @@ export namespace AppMessage {
         }
     }
 
+    export interface VerifyPathExists extends Base {
+        id: `${Prefix}:verifyPathExists`;
+        data: {
+            path: string | string[];
+            dirname?: boolean;
+        }
+    }
+
     export interface LoadSettings extends Base {
         id: `${Prefix}:loadSettings`;
     }
@@ -136,6 +144,7 @@ export namespace AppMessage {
     export type AppMessage = SyncUiState
                            | ChooseDirectory
                            | ChooseFilePath
+                           | VerifyPathExists
                            | LoadSettings
                            | SaveSettings
                            | NewProfile
@@ -301,6 +310,7 @@ export namespace AppMessage {
         "app:syncUiState",
         "app:chooseDirectory",
         "app:chooseFilePath",
+        "app:verifyPathExists",
         "app:loadSettings",
         "app:saveSettings",
         "app:newProfile",

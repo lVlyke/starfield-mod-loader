@@ -19,6 +19,7 @@
 
         > mat-card-content {
             flex-grow: 1;
+            overflow-y: auto;
         }
 
         > mat-card-actions {

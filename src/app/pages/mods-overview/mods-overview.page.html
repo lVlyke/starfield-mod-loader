@@ -174,7 +174,8 @@
                             Game Folder
                         </button>
         
-                        <button mat-stroked-button
+                        <button *ngIf="'app:verifyPathExists' | appSendElectronMsg$:{ path: gameDetails?.gameConfigFiles | appValues | appFlatten } | async"
+                                mat-stroked-button
                                 id="game-config-button"
                                 (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
                             <mat-icon>settings_app</mat-icon>
@@ -255,13 +256,15 @@
     <mat-card class="mat-elevation-z3">
         <mat-card-content>
             <mat-action-list>
-                <button *ngFor="let gameConfigFile of gameDetails!.gameConfigFiles | keyvalue"
-                        class="game-config-button"
-                        mat-list-item
-                        (click)="profileManager.openGameConfigFile(gameConfigFile.value); gameConfigFileMenuRef?.close()">
-                    <mat-icon matListIcon>data_array</mat-icon>
-                    <span matLine>{{ gameConfigFile.key }}</span>
-                </button>
+                <ng-container *ngFor="let gameConfigFile of gameDetails!.gameConfigFiles | keyvalue">
+                    <button *ngIf="'app:verifyPathExists' | appSendElectronMsg$:{ path: gameConfigFile.value } | async"
+                            class="game-config-button"
+                            mat-list-item
+                            (click)="profileManager.openGameConfigFile(gameConfigFile.value); gameConfigFileMenuRef?.close()">
+                        <mat-icon matListIcon>data_array</mat-icon>
+                        <span matLine>{{ gameConfigFile.key }}</span>
+                    </button>
+                </ng-container>
             </mat-action-list>
         </mat-card-content>
     </mat-card>

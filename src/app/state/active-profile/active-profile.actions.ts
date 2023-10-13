@@ -18,8 +18,10 @@ export namespace ActiveProfileActions {
     }
 
     export type DeployedAction = BasicAction<AppProfile, "deployed">;
+    export type PluginListPathAction = BasicAction<AppProfile, "pluginListPath">;
 
     export const setDeployed = createUpdateAction("deployed");
+    export const setPluginListPath = createUpdateAction("pluginListPath");
 
     export class AddMod {
         public static readonly type = `[activeProfile] add mod`;

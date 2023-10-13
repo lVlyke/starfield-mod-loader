@@ -5,14 +5,14 @@
             "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Data",
-            "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data",
-            "/home/deck/.local/share/Steam/steamapps/common/Starfield/Data"
+            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data",
+            "~/.local/share/Steam/steamapps/common/Starfield/Data"
         ],
         "gameBaseDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
             "C:\\XboxGames\\Starfield\\Content",
-            "/home/deck/.local/share/Steam/steamapps/common/Starfield"
+            "~/.local/share/Steam/steamapps/common/Starfield"
         ],
         "gameBinaryPaths": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
@@ -20,12 +20,12 @@
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
             "C:\\XboxGames\\Starfield\\Content\\Starfield.exe",
-            "/home/deck/.local/share/Steam/steamapps/common/Starfield/sfse_loader.exe",
-            "/home/deck/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
+            "~/.local/share/Steam/steamapps/common/Starfield/sfse_loader.exe",
+            "~/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
         ],
         "pluginListPaths": [
             "%LOCALAPPDATA%\\Starfield\\plugins.txt",
-            "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
+            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
         ],
         "pluginFormats": ["esm", "esl", "esp"],
         "scriptExtenders": [
@@ -38,11 +38,11 @@
         "gameConfigFiles": {
             "StarfieldCustom.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldCustom.ini",
-                "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldCustom.ini"
+                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldCustom.ini"
             ],
             "StarfieldPrefs.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldPrefs.ini",
-                "/home/deck/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
+                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
             ]
         }
     }

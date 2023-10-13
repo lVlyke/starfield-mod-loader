@@ -18,7 +18,8 @@
                 type="text"
                 name="modBaseDir"
                 [required]="true"
-                [(ngModel)]="formModel.modBaseDir">
+                [(ngModel)]="formModel.modBaseDir"
+                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === modBaseDirModel.name">
 
             <button mat-icon-button 
                     matSuffix
@@ -36,7 +37,8 @@
                 type="text" 
                 name="gameBaseDir"
                 [required]="true"
-                [(ngModel)]="formModel.gameBaseDir">
+                [(ngModel)]="formModel.gameBaseDir"
+                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === gameBaseDirModel.name">
 
             <button mat-icon-button 
                     matSuffix
@@ -54,13 +56,33 @@
                 type="text" 
                 name="gameBinaryPath"
                 [required]="true"
-                [(ngModel)]="formModel.gameBinaryPath">
+                [(ngModel)]="formModel.gameBinaryPath"
+                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === gameBinaryPathModel.name">
 
             <button mat-icon-button 
                     matSuffix
                     type="button"
                     color="accent"
                     (click)="chooseFile(gameBinaryPathModel)">
+                <mat-icon>folder</mat-icon>
+            </button>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="isPluginsEnabled" appearance="fill">
+            <mat-label>Plugin List Path</mat-label>
+            <input #pluginListPathModel="ngModel"
+                matInput
+                type="text" 
+                name="pluginListPath"
+                [required]="isPluginsEnabled"
+                [(ngModel)]="formModel.pluginListPath"
+                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === pluginListPathModel.name">
+
+            <button mat-icon-button 
+                    matSuffix
+                    type="button"
+                    color="accent"
+                    (click)="chooseFile(pluginListPathModel)">
                 <mat-icon>folder</mat-icon>
             </button>
         </mat-form-field>

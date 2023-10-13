@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild
 import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
-import { Observable } from "rxjs";
+import { Observable, combineLatest } from "rxjs";
 import { filter, map, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
@@ -30,14 +30,23 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @Select(AppState.getGameDb)
     public readonly gameDb$!: Observable<GameDatabase>;
 
+    @Select(AppState.isPluginsEnabled)
+    public readonly isPluginsEnabled$!: Observable<boolean>;
+
     @AsyncState()
     public readonly gameDb!: GameDatabase;
+
+    @AsyncState()
+    public readonly isPluginsEnabled!: boolean;
 
     @Input()
     public profile!: AppProfile;
 
     @Input()
     public createMode = false;
+
+    @Input()
+    public remedyMode: (keyof AppProfile) | boolean = false;
 
     @ViewChild(NgForm)
     public readonly form!: NgForm;
@@ -57,8 +66,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
             this._formModel = _.cloneDeep(profile);
         });
 
-        // If `createMode` is set, try to find relevant defaults for the current game title
-        stateRef.get("createMode").pipe(
+        // If `createMode` or `remedyMode` is set, try to find relevant defaults for the current game title
+        combineLatest(stateRef.getAll("createMode", "remedyMode")).pipe(
+            map(([createMode, remedyMode]) => !!createMode || !!remedyMode),
             filterTrue(),
             switchMap(() => stateRef.get("profile")),
             take(1),
@@ -67,7 +77,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(gameDetails => ElectronUtils.invoke("app:findBestProfileDefaults", { gameDetails }))
         ).subscribe((profileDefaults: Partial<AppProfile>) => {
             Object.entries(profileDefaults).forEach(([profileProp, profileDefaultVal]) => {
-                if (!_.isNil(profileDefaultVal) && !_.isEmpty(profileDefaultVal)) {
+                if (_.isEmpty(this._formModel[profileProp as keyof AppProfile]) && !_.isNil(profileDefaultVal) && !_.isEmpty(profileDefaultVal)) {
                     this._formModel = { ...this._formModel, [profileProp]: profileDefaultVal };
                 }
             });

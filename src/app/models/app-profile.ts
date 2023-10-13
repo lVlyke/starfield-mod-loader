@@ -8,6 +8,7 @@ export interface AppProfile {
     gameBaseDir: string;
     modBaseDir: string;
     gameBinaryPath: string;
+    pluginListPath?: string;
     mods: Map<string, ModProfileRef>;
     plugins: GamePluginProfileRef[];
     manualMods?: string[];

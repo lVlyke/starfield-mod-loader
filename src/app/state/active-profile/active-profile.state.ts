@@ -154,6 +154,11 @@ export class ActiveProfileState {
         context.patchState(state);
     }
 
+    @Action(ActiveProfileActions.setPluginListPath)
+    public setPluginListPath(context: ActiveProfileState.Context, state: ActiveProfileActions.PluginListPathAction): void {
+        context.patchState(state);
+    }
+
     private _updateModVerifications(
         context: ActiveProfileState.Context,
         modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>

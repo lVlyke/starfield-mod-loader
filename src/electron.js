@@ -5,6 +5,7 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron")
 const log = require("electron-log");
 const url = require("url");
 const path = require("path");
+const os = require("os");
 const { spawn } = require("child_process");
 const fs = require("fs-extra");
 const fsPromises = require("fs").promises;
@@ -115,6 +116,14 @@ class ElectronLoader {
             return result?.filePaths?.[0];
         });
 
+        ipcMain.handle("app:verifyPathExists", async (
+            _event,
+            /** @type {AppMessageData<"app:verifyPathExists">} */ data
+        ) => {
+            const paths = Array.isArray(data.path) ? data.path : [data.path]
+            return this.#firstValidPath(paths, data.dirname ? curPath => path.dirname(curPath) : undefined);
+        });
+
         ipcMain.handle("app:loadSettings", async (_event, /** @type {AppMessageData<"app:loadSettings">} */ _data) => {
             try {
                 return this.loadSettings();
@@ -181,21 +190,19 @@ class ElectronLoader {
             const result = {};
 
             if (gameDetails.modBaseDirs) {
-                result.modBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.modBaseDirs.find((modBaseDir) => {
-                    return fs.existsSync(modBaseDir);
-                }) ?? "");
+                result.modBaseDir = this.#firstValidPath(gameDetails.modBaseDirs);
             }
 
             if (gameDetails.gameBaseDirs) {
-                result.gameBaseDir = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBaseDirs.find((gameBaseDir) => {
-                    return fs.existsSync(gameBaseDir);
-                }) ?? "");
+                result.gameBaseDir = this.#firstValidPath(gameDetails.gameBaseDirs);
             }
 
             if (gameDetails.gameBinaryPaths) {
-                result.gameBinaryPath = this.#resolveWindowsEnvironmentVariables(gameDetails.gameBinaryPaths.find((gameBinaryPath) => {
-                    return fs.existsSync(gameBinaryPath);
-                }) ?? "");
+                result.gameBinaryPath = this.#firstValidPath(gameDetails.gameBinaryPaths);
+            }
+
+            if (gameDetails.pluginListPaths) {
+                result.pluginListPath = this.#firstValidPath(gameDetails.pluginListPaths, listPath => path.dirname(listPath));
             }
 
             return result;
@@ -909,7 +916,7 @@ class ElectronLoader {
             let wrotePluginList = false;
             
             for (let pluginListPath of pluginListPaths) {
-                pluginListPath = path.resolve(this.#resolveWindowsEnvironmentVariables(pluginListPath));
+                pluginListPath = path.resolve(this.#expandPath(pluginListPath));
 
                 if (fs.existsSync(path.dirname(pluginListPath))) {
                     // Backup any existing plugins file
@@ -1049,7 +1056,7 @@ class ElectronLoader {
     async openGameConfigFile(/** @type {string[]} */ cfgPaths) {
         for (const cfgPath of cfgPaths) {
             try {
-                const preparedPath = path.resolve(this.#resolveWindowsEnvironmentVariables(cfgPath));
+                const preparedPath = path.resolve(this.#expandPath(cfgPath));
 
                 if (fs.existsSync(preparedPath)) {
                     const result = await shell.openPath(preparedPath);
@@ -1062,6 +1069,31 @@ class ElectronLoader {
         }
 
         throw new Error("Unable to open config file.");
+    }
+
+    /** @returns {string} */
+    #expandPath(/** @type {string} */ _path) {
+
+        // Normalize separators for the current platform
+        _path = _path.replace(/[\\/]/g, path.sep);
+
+        // Expand home dir
+        if (_path[0] === "~") {
+            _path = _path.replace(/~/, os.homedir());
+        }
+
+        // Expand Windows env vars
+        return this.#resolveWindowsEnvironmentVariables(_path);
+    }
+
+    /** @returns {string | undefined} */
+    #firstValidPath(
+        /** @type {string[]} */ paths,
+        /** @type {((path: string) => string) | undefined} */ pathCheckTransformer
+    ) {
+        return paths
+                .map(_path => this.#expandPath(_path))
+                .find(_path => fs.existsSync(pathCheckTransformer ? pathCheckTransformer(_path) : _path));
     }
 
     // Credit: https://stackoverflow.com/a/57253723

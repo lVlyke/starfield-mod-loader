@@ -8,7 +8,8 @@
     <mat-card-content>
         <mat-divider />
         <app-profile-settings [profile]="profile"
-                              [createMode]="createMode" />
+                              [createMode]="createMode"
+                              [remedyMode]="remedyMode" />
     </mat-card-content>
 
     <mat-card-actions *ngIf="!!profileSettingsComponent">
@@ -20,7 +21,7 @@
                 {{ createMode ? "Create" : "Save" }}
         </button>
 
-        <button mat-raised-button (click)="overlayRef.close()">
+        <button *ngIf="!remedyMode" mat-raised-button (click)="overlayRef.close()">
             Cancel
         </button>
     </mat-card-actions>

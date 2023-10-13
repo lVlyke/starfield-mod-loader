@@ -41,6 +41,9 @@ export class AppProfileSettingsModal extends BaseComponent {
     @DeclareState()
     public createMode = false;
 
+    @DeclareState()
+    public remedyMode: (keyof AppProfile) | boolean = false;
+
     @ViewChild(AppProfileSettingsComponent)
     public readonly profileSettingsComponent!: AppProfileSettingsComponent;
 
