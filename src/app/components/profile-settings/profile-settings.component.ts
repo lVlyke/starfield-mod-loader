@@ -112,10 +112,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ));
     }
 
-    protected chooseFile<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
+    protected chooseFile<K extends keyof AppProfile>(
+        ngModel: NgModel,
+        fileTypes: string[]
+    ): Observable<any> {
         const formModelName = ngModel.name as K;
 
-        return ObservableUtils.hotResult$(ElectronUtils.chooseFilePath(ngModel.value, ["exe", "bat", "cmd", "lnk"]).pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.chooseFilePath(ngModel.value, fileTypes).pipe(
             filterDefined(),
             tap((filePath) => {
                 this._formModel = Object.assign(this.formModel, { [formModelName]: filePath as AppProfile[K] });

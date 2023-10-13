@@ -63,7 +63,7 @@
                     matSuffix
                     type="button"
                     color="accent"
-                    (click)="chooseFile(gameBinaryPathModel)">
+                    (click)="chooseFile(gameBinaryPathModel, ['exe', 'bat', 'cmd', 'lnk'])">
                 <mat-icon>folder</mat-icon>
             </button>
         </mat-form-field>
@@ -82,7 +82,7 @@
                     matSuffix
                     type="button"
                     color="accent"
-                    (click)="chooseFile(pluginListPathModel)">
+                    (click)="chooseFile(pluginListPathModel, ['txt'])">
                 <mat-icon>folder</mat-icon>
             </button>
         </mat-form-field>
