@@ -162,6 +162,7 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"app:copyProfileMods">} */ { srcProfile, destProfile }
         ) => {
+            log.info("Copying profile src: ", srcProfile.name, " dest: ", destProfile.name);
             const srcModsDir = this.getProfileModsDir(srcProfile.name);
             const destModsDir = this.getProfileModsDir(destProfile.name);
 
@@ -216,6 +217,7 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath }
         ) => {
+            log.info("Adding mod: ", modPath);
             return this.beginModAdd(profile, modPath);
         });
 
@@ -223,6 +225,7 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath }
         ) => {
+            log.info("Importing mod: ", modPath);
             return this.beginModExternalImport(profile, modPath);
         });
 
@@ -235,6 +238,7 @@ class ElectronLoader {
 
         ipcMain.handle("profile:deleteMod", async (_event, /** @type {AppMessageData<"profile:deleteMod">} */ { profile, modName }) => {
             const modDirPath = this.getProfileModDir(profile.name, modName);
+            log.info("Deleting mod: ", modDirPath);
 
             await fs.remove(modDirPath);
         });
