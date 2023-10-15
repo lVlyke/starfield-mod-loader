@@ -20,6 +20,7 @@ export namespace AppActions {
     export type ModsActivatedAction = BasicAction<AppData, "modsActivated">;
     export type DeployInProgressAction = BasicAction<AppData, "deployInProgress">;
     export type PluginsEnabledAction = BasicAction<AppData, "pluginsEnabled">;
+    export type NormalizePathCasingAction = BasicAction<AppData, "normalizePathCasing">;
     export type GameDbAction = BasicAction<AppData, "gameDb">;
     export type ModListColumnsAction = BasicAction<AppData, "modListColumns">;
 
@@ -27,6 +28,7 @@ export namespace AppActions {
     export const activateMods = createUpdateAction("modsActivated");
     export const setDeployInProgress = createUpdateAction("deployInProgress");
     export const setPluginsEnabled = createUpdateAction("pluginsEnabled");
+    export const setNormalizePathCasing = createUpdateAction("normalizePathCasing");
     export const updateGameDb = createUpdateAction("gameDb");
     export const updateModListColumns = createUpdateAction("modListColumns");
 

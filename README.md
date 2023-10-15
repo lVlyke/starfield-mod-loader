@@ -84,11 +84,45 @@ Mods will now remain active until you press the **Deactivate Mods** button, even
 
 **Important Note:** If you update any mod files externally (i.e. in a text editor), make sure to press the **Refresh Files** button, otherwise your changes will not be deployed to the **Mod Base Directory**.
 
+**Tip (Linux):** It is recommended to enable the **Normalize path case** option under **File > Preferences** when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
+
 ## Launch the game
 
 Click the **Start Game** button or launch the game directly from Steam or Game Pass. Your mods should now be active!
 
 # Troubleshooting
+
+## Common issues
+
+### My mods are not loading
+
+First, make sure you have added the following lines to your `StarfieldCustom.ini` file:
+
+```ini
+[Archive]
+bInvalidateOlderFiles=1
+sResourceDataDirsFinal=
+```
+
+If mods still are not working, you may also need to also add these lines to your `StarfieldPrefs.ini` file.
+
+If you are using the game's installation `Data` folder as your **Mod Base Directory**, make sure you delete the `Data` folder at `Documents/My Games/Starfield`, otherwise your mods will not be detected by the game. The game will automatically create this folder on game start and when you take in-game screenshots. To change this behavior, you can add the following lines to your `StarfieldCustom.ini` and `StarfieldPrefs.ini` files to disable MotD and change your screenshots folder:
+
+```ini
+[General]
+bEnableMessageOfTheDay=0
+```
+
+```ini
+[Display]
+sPhotoModeFolder=Photos
+```
+
+### **(Linux)** Some mods are not loading/strange behavior when loading some mods <a name="normalizePathCase"></a>
+
+Some mods may use different casing for their files/folders (i.e. `Interface` vs `interface`) and this can cause issues on case-sensitive file systems, which are often used on Linux. To prevent this issue, you can enable the **Normalize path case** option under **File > Preferences**. When this setting is enabled, Starfield Mod Loader will automatically convert all activated mod files and folders to lowercase.
+
+## Report an issue
 
 If you run into a problem, please check the [issues page](https://github.com/lVlyke/starfield-mod-loader/issues) to see if your question has been answered or create a new issue if you have a bug to report.
 

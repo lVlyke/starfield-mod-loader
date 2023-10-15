@@ -17,7 +17,8 @@ import { GameDetails } from "../models/game-details";
         theme: AppTheme.Dark,
         gameDb: {},
         modsActivated: false,
-        pluginsEnabled: false // TODO - Enable by default once plugins are officially supported
+        pluginsEnabled: false, // TODO - Enable by default once plugins are officially supported
+        normalizePathCasing: false
     },
     children: [ActiveProfileState]
 })
@@ -116,6 +117,11 @@ export class AppState {
 
     @Action(AppActions.setPluginsEnabled)
     public setPluginsEnabled(context: AppState.Context, state: AppActions.PluginsEnabledAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.setNormalizePathCasing)
+    public setNormalizePathCasing(context: AppState.Context, state: AppActions.NormalizePathCasingAction): void {
         context.patchState(_.cloneDeep(state));
     }
 

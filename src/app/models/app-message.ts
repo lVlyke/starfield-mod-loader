@@ -220,6 +220,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             deployPlugins: boolean;
+            normalizePathCasing: boolean;
         };
     }
 

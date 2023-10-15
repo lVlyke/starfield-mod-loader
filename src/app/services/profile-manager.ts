@@ -184,8 +184,11 @@ export class ProfileManager {
                 // Redeploy mods if app plugin settings change
                 this.appState$.pipe(
                     filterDefined(),
-                    map(({ pluginsEnabled }) => pluginsEnabled),
-                    distinctUntilChanged()
+                    map(appState => _.pick(appState,
+                        "pluginsEnabled",
+                        "normalizePathCasing"
+                    )),
+                    distinctUntilChanged((a, b) => LangUtils.isEqual(a, b))
                 )
             ]).pipe(
                 skip(1),
@@ -234,7 +237,8 @@ export class ProfileManager {
                 return this.store.dispatch([
                     new AppActions.SetProfiles(settings?.profiles),
                     new AppActions.updateModListColumns(settings?.modListColumns),
-                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false)
+                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
+                    new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
                 ]).pipe(
                     switchMap(() => this.updateGameDatabase()),
                     switchMap(() => {
@@ -899,7 +903,8 @@ export class ProfileManager {
                                 return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
                                     switchMap(() => ElectronUtils.invoke("profile:deploy", {
                                         profile: activeProfile,
-                                        deployPlugins: appState.pluginsEnabled
+                                        deployPlugins: appState.pluginsEnabled,
+                                        normalizePathCasing: appState.normalizePathCasing
                                     })),
                                     switchMap(() => this.store.dispatch([
                                         new AppActions.setDeployInProgress(false),
@@ -967,6 +972,7 @@ export class ProfileManager {
             activeProfile: appData.activeProfile?.name,
             modsActivated: appData.modsActivated,
             pluginsEnabled: appData.pluginsEnabled,
+            normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns
         };
     }

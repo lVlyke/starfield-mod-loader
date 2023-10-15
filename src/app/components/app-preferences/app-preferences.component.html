@@ -5,6 +5,11 @@
             <mat-label>Plugins Enabled</mat-label>
         </span>
 
+        <span>
+            <mat-checkbox name="normalizePathCasing" [(ngModel)]="formModel.normalizePathCasing" />
+            <mat-label>Normalize Mod File Path Case</mat-label>
+        </span>
+
         <mat-form-field appearance="fill">
             <mat-label>App Theme</mat-label>
             <mat-select name="theme" [(ngModel)]="formModel.theme">

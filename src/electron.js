@@ -253,8 +253,10 @@ class ElectronLoader {
             await fs.move(modCurDir, modNewDir);
         });
 
-        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ { profile, deployPlugins }) => {
-            return this.deployProfile(profile, deployPlugins);
+        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ {
+            profile, deployPlugins, normalizePathCasing
+        }) => {
+            return this.deployProfile(profile, deployPlugins, normalizePathCasing);
         });
 
         ipcMain.handle("profile:undeploy", async (_event, /** @type {AppMessageData<"profile:undeploy">} */ { profile }) => {
@@ -879,7 +881,7 @@ class ElectronLoader {
         }
 
         let modDirFiles = (await recursiveReaddir(profile.modBaseDir)).map((filePath) => {
-            return filePath.replace(`${profile.modBaseDir}${path.sep}`, "").toLowerCase();
+            return filePath.replace(`${profile.modBaseDir}${path.sep}`, "");
         });
 
         if (this.isProfileDeployed(profile)) {
@@ -891,15 +893,19 @@ class ElectronLoader {
                 throw new Error("Unable to read deployment metadata.");
             }
             
-            modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file));
+            modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file.toLowerCase()));
         }
 
         // Filter out directories
-        return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file.toString())).isDirectory());
+        return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file)).isDirectory());
     }
 
     /** @returns {Promise<void>} */
-    async deployProfile(/** @type {AppProfile} */ profile, /** @type {boolean} */ deployPlugins) {
+    async deployProfile(
+        /** @type {AppProfile} */ profile,
+        /** @type {boolean} */ deployPlugins,
+        /** @type {boolean} */ normalizePathCasing
+    ) {
         const profileModFiles = [];
 
         // Ensure the mod base dir exists
@@ -958,38 +964,46 @@ class ElectronLoader {
             }
         }
 
+        const modBaseDir = path.resolve(profile.modBaseDir);
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
         const deployableModFiles = Array.from(profile.mods.entries()).reverse();
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
-                const modDirPath = this.getProfileModDir(profile.name, modName);
+                const copyTasks = [];
+                const modDirPath = path.resolve(this.getProfileModDir(profile.name, modName));
 
                 try {
+                    const modFilesToCopy = await recursiveReaddir(modDirPath);
+
                     // Copy data files to mod base dir
-                    fs.copySync(path.resolve(modDirPath), path.resolve(profile.modBaseDir), {
-                        overwrite: false,
-                        errorOnExist: false,
-                        filter: (src, dest) => {
-                            const modRelPath = dest.replace(`${profile.modBaseDir}${path.sep}`, "");
-                            const isModSubDir = fs.lstatSync(path.resolve(src)).isDirectory();
-                            const shouldCopy = isModSubDir
-                                // Don't copy empty directories
-                                ? fs.readdirSync(path.resolve(src)).length > 0
-                                : true;
+                    for (const srcFilePath of modFilesToCopy) {
+                        let modFile = srcFilePath.replace(`${modDirPath}${path.sep}`, "");
 
-                            // Record mod files written from profile
-                            if (shouldCopy && !isModSubDir && modRelPath.length > 0) {
-                                profileModFiles.push(modRelPath);
-                            }
-
-                            return shouldCopy;
+                        // Normalize path case to lower if enabled (helpful for case-sensitive file systems)
+                        if (normalizePathCasing) {
+                            modFile = modFile.toLowerCase();
                         }
-                    });
+
+                        const destFilePath = path.join(modBaseDir, modFile);
+                        // Only copy files that don't exist on the dest
+                        const shouldCopy = !fs.existsSync(destFilePath) && !fs.lstatSync(srcFilePath).isDirectory();
+                        
+                        if (shouldCopy && modFile.length > 0) {
+                            // Record mod files written from profile
+                            profileModFiles.push(modFile);
+                        }
+    
+                        if (shouldCopy) {
+                            copyTasks.push(fs.copy(srcFilePath, destFilePath, { overwrite: false }));
+                        }
+                    }
                 } catch (err) {
                     log.error("Mod deployment failed: ", err);
                     throw err;
                 }
+
+                await Promise.all(copyTasks);
             }
         }
 

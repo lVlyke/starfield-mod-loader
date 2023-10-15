@@ -9,6 +9,7 @@ export interface AppData {
     gameDb: GameDatabase;
     modsActivated: boolean;
     pluginsEnabled: boolean;
+    normalizePathCasing: boolean;
     modListColumns?: string[];
     deployInProgress?: boolean;
 }

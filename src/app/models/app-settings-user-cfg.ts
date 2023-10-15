@@ -3,5 +3,6 @@ export interface AppSettingsUserCfg {
     activeProfile?: string;
     modsActivated: boolean;
     pluginsEnabled: boolean;
+    normalizePathCasing: boolean;
     modListColumns?: string[];
 }
