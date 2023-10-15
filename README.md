@@ -122,6 +122,23 @@ sPhotoModeFolder=Photos
 
 Some mods may use different casing for their files/folders (i.e. `Interface` vs `interface`) and this can cause issues on case-sensitive file systems, which are often used on Linux. To prevent this issue, you can enable the **Normalize path case** option under **File > Preferences**. When this setting is enabled, Starfield Mod Loader will automatically convert all activated mod files and folders to lowercase.
 
+### **(Linux)** Mods are not loading when using SFSE
+
+When running SFSE via Proton, Steam will create a new virtual C drive for SFSE that's different from the virtual C drive used for Starfield. This means that when running SFSE, your `StarfieldCustom.ini` and `StarfieldPrefs.ini` files will not be loaded, and instead new ones will be created on the new virtual C drive.
+
+To avoid having two separate copies of these files, the easiest solution is to create a symlink on the new virtual C drive to the `Documents/My Games/Starfield` directory on the original Starfield virtual C drive. This way, both virtual C drives will point to the same `Documents/My Games/Starfield` directory.
+
+You will first need to figure out the new virtual C drive directory for SFSE, which will be located in `~/.local/share/Steam/steamapps/compatdata`. You will see a number of directories in here with numerical IDs. One of these directories corresponds to the game ID that Steam assigned to SFSE. To determine which game ID is the correct one, you can look at the folder's "Date modified" timestamp to figure out which virtual drive directories were created recently. Assuming you added SFSE recently, it should have a Date modified field that matches when SFSE was added.
+
+Once you have figured out the game ID for SFSE, navigate to `<game_id>/pfx/drive_c/users/steamuser/Documents/My Games`. Delete the existing `Starfield` directory inside of this directory and then open a terminal at this directory and run the following command:
+
+```sh
+# Starfield's game ID is 1716740
+ln -s "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield" "./Starfield"
+```
+
+This will create a symlink to Starfield's `Documents/My Games/Starfield` directory, ensuring that SFSE is using the same ini files as the base game.
+
 ## Report an issue
 
 If you run into a problem, please check the [issues page](https://github.com/lVlyke/starfield-mod-loader/issues) to see if your question has been answered or create a new issue if you have a bug to report.
