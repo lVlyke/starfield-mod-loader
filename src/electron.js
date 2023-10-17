@@ -14,9 +14,6 @@ const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
 const which = require("which");
 
-// TODO - Replace this with fs.readdir(..., { recursive: true }) when electron uses Node v18.17.0+
-const recursiveReaddir = require("recursive-readdir");
-
 const DEBUG_MODE = !app.isPackaged;
 
 class ElectronLoader {
@@ -690,9 +687,7 @@ class ElectronLoader {
             }
 
             const modName = path.basename(folderPath);
-            const modFilePaths = (await recursiveReaddir(folderPath)).map((filePath) => {
-                return filePath.replace(`${folderPath}${path.sep}`, "");
-            });
+            const modFilePaths = await fs.readdir(folderPath, { encoding: "utf-8", recursive: true });
 
             return this.beginModImport(profile, modName, folderPath, modFilePaths, true);
         }
@@ -880,9 +875,7 @@ class ElectronLoader {
             return [];
         }
 
-        let modDirFiles = (await recursiveReaddir(profile.modBaseDir)).map((filePath) => {
-            return filePath.replace(`${profile.modBaseDir}${path.sep}`, "");
-        });
+        let modDirFiles = await fs.readdir(profile.modBaseDir, { encoding: "utf-8", recursive: true });
 
         if (this.isProfileDeployed(profile)) {
             const profileModFiles = this.readProfileDeploymentMetadata(profile)?.profileModFiles.map((filePath) => {
@@ -971,14 +964,14 @@ class ElectronLoader {
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
                 const copyTasks = [];
-                const modDirPath = path.resolve(this.getProfileModDir(profile.name, modName));
+                const modDirPath = this.getProfileModDir(profile.name, modName);
 
                 try {
-                    const modFilesToCopy = await recursiveReaddir(modDirPath);
+                    const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
 
                     // Copy data files to mod base dir
-                    for (const srcFilePath of modFilesToCopy) {
-                        let modFile = srcFilePath.replace(`${modDirPath}${path.sep}`, "");
+                    for (let modFile of modFilesToCopy) {
+                        let srcFilePath = path.resolve(path.join(modDirPath, modFile.toString()));
 
                         // Normalize path case to lower if enabled (helpful for case-sensitive file systems)
                         if (normalizePathCasing) {
@@ -995,7 +988,7 @@ class ElectronLoader {
                         }
     
                         if (shouldCopy) {
-                            copyTasks.push(fs.copy(srcFilePath, destFilePath, { overwrite: false }));
+                            copyTasks.push(fs.copy(srcFilePath.toString(), destFilePath, { overwrite: false }));
                         }
                     }
                 } catch (err) {

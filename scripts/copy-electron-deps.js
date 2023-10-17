@@ -23,11 +23,6 @@ const DEPENDENCIES = [
     "ms",
     "normalize-path",
     "7zip-bin",
-    "recursive-readdir",
-    "minimatch",
-    "brace-expansion",
-    "balanced-match",
-    "concat-map",
     "which",
     "isexe"
 ];
