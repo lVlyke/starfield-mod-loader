@@ -1,0 +1,137 @@
+
+<form #modInstallerForm="ngForm" id="mod-installer-form" (ngSubmit)="onFormSubmit$.next(modInstallerForm)">
+    <mat-form-field appearance="fill">
+        <mat-label>Mod Name</mat-label>
+        <input matInput
+               name="name"
+               type="text"
+               [required]="true"
+               [(ngModel)]="importRequest.modName"
+               (ngModelChange)="importRequestChange$.emit(importRequest)">
+    </mat-form-field>
+
+    <div class="view-controls">
+        <mat-slide-toggle labelPosition="before" [checked]="compactView" (change)="compactView = $event.checked">
+            Compact View
+        </mat-slide-toggle>
+    </div>
+
+    <div class="install-step-container">
+        <!-- Plugin preview panel -->
+        <div *ngIf="!compactView" class="info-panel">
+            <div *ngIf="previewPlugin?.pluginInfo?.name?.[0] as pluginPreviewName"
+                 class="plugin-preview-name">
+                 <ng-container *ngIf="previewPlugin?.pluginGroup?.name?.[0] as pluginPreviewGroupName">
+                    {{ pluginPreviewGroupName }}
+                 </ng-container>
+                 &dash;
+                 {{ pluginPreviewName }}
+            </div>
+
+            <div *ngIf="previewPlugin?.pluginInfo?.image?.[0]?.path?.[0] as pluginPreviewImgPath"
+                 class="plugin-preview-img-container">
+                <div *ngIf="pluginPreviewImgPath | appModImportRequestImage$:importRequest | async as previewPluginImg"
+                        class="preview-plugin-img"
+                        [style.background-image]="'url(' + previewPluginImg.url + ')'">
+                </div>
+            </div>
+
+            <div *ngIf="previewPlugin?.pluginInfo?.description?.[0] as pluginPreviewDesc"
+                 class="plugin-preview-desc"
+                 [innerText]="pluginPreviewDesc">
+            </div>
+        </div>
+
+        <!-- Install stepper -->
+        <mat-vertical-stepper #installStepper
+                              class="install-stepper"
+                              [linear]="true"
+                              [attr.header-disabled]="_installSteps.length === 1"
+                              [attr.fixed-scroll]="true"
+                              (selectedIndexChange)="previewPlugin = undefined">
+            <mat-step *ngFor="let installStep of _installSteps">
+                <ng-template matStepLabel>{{ installStep.name }}</ng-template>
+
+                <div class="install-step-content">
+                    <fieldset *ngFor="let pluginGroup of installStep.pluginGroups" class="plugin-group">
+                        <ng-container [ngSwitch]="pluginGroup.type">
+                            <!-- Single select -->
+                            <ng-container *ngSwitchCase="PluginGroupType.SelectExactlyOne">
+                                <ng-container *ngTemplateOutlet="pluginGroupLegend; context: { $implicit: pluginGroup, ngModel: pluginGroupModel }" />
+
+                                <mat-radio-group #pluginGroupModel="ngModel"
+                                                [appPluginGroupValidator]="pluginGroup"
+                                                [name]="installStep.name + '.' + pluginGroup.name"
+                                                [required]="true"
+                                                [ngModel]="pluginGroup | appResolveDefaultModInstallerPlugin"
+                                                (ngModelChange)="updateFiles()">
+                                    <mat-radio-button #pluginRadio
+                                                    *ngFor="let plugin of pluginGroup.plugins"
+                                                    class="plugin"
+                                                    [value]="plugin"
+                                                    [disabled]="[PluginType.NotUsable].includes(plugin.type)"
+                                                    [required]="[PluginType.Required].includes(plugin.type)"
+                                                    (mouseenter)="previewPlugin = plugin"
+                                                    (change)="pluginRadio.checked ? previewPlugin = plugin : null">
+                                        {{ plugin.name }}
+
+                                        <ng-container *ngTemplateOutlet="pluginControls; context: { $implicit: plugin }" />
+                                    </mat-radio-button>
+                                </mat-radio-group>
+                            </ng-container>
+
+                            <!-- Multi select -->
+                            <ng-container *ngSwitchDefault>
+                                <ng-container *ngTemplateOutlet="pluginGroupLegend; context: { $implicit: pluginGroup, ngModel: pluginGroupModel }" />
+
+                                <mat-label *ngIf="pluginGroup.type === PluginGroupType.SelectAtLeastOne" class="plugin-group-hint">
+                                    Choose at least one:
+                                </mat-label>
+
+                                <mat-label *ngIf="pluginGroup.type === PluginGroupType.SelectAtMostOne" class="plugin-group-hint">
+                                    Choose only one:
+                                </mat-label>
+
+                                <app-value-checkbox-group #pluginGroupModel="ngModel"
+                                                        [appPluginGroupValidator]="pluginGroup"
+                                                        [name]="installStep.name + '.' + pluginGroup.name"
+                                                        [ngModel]="pluginGroup | appResolveDefaultModInstallerPlugins"
+                                                        (ngModelChange)="updateFiles()">
+                                    <div *ngFor="let plugin of pluginGroup.plugins"
+                                         class="plugin"
+                                         (mouseenter)="previewPlugin = plugin">
+                                        <app-value-checkbox #pluginCheckbox
+                                                    [name]="installStep.name + '.' + pluginGroup.name + '.' + plugin.name"
+                                                    [ngModel]="[plugin, pluginGroup.type === PluginGroupType.SelectAll || [PluginType.Required, PluginType.Recommended].includes(plugin.type)]"
+                                                    [disabled]="pluginGroup.type === PluginGroupType.SelectAll || [PluginType.Required, PluginType.NotUsable].includes(plugin.type)"
+                                                    [required]="pluginGroup.type === PluginGroupType.SelectAll || [PluginType.Required].includes(plugin.type)"
+                                                    (change)="pluginCheckbox.checked ? previewPlugin = plugin : null" />
+                                        <mat-label>{{ plugin.name }}</mat-label>
+                                        
+                                        <ng-container *ngTemplateOutlet="pluginControls; context: { $implicit: plugin }" />
+                                    </div>
+                                </app-value-checkbox-group>
+                            </ng-container>
+                        </ng-container>
+                    </fieldset>
+                </div>
+            </mat-step>
+        </mat-vertical-stepper>
+    </div>
+</form>
+
+<!-- Templates: -->
+
+<!-- Plugin group fieldset legend -->
+<ng-template #pluginGroupLegend let-pluginGroup let-ngModel="ngModel">
+    <legend [attr.matColor]="ngModel.valid ? null : 'warn'">
+        {{ pluginGroup.name }}
+    </legend>
+</ng-template>
+
+<!-- Plugin controls -->
+<ng-template #pluginControls let-plugin>
+    <mat-icon *ngIf="compactView && plugin.description" [matTooltip]="plugin.description" class="plugin-desc">
+        help
+    </mat-icon>
+</ng-template>

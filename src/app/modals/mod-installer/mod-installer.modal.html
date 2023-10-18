@@ -1,0 +1,82 @@
+<mat-card *ngIf="!!importRequest">
+    <mat-card-header>
+        <mat-card-title>
+            <span>
+                Install {{ importRequest.installer!.info?.name ?? importRequest.installer!.config.moduleName._ ?? importRequest.modName }}
+            </span>
+            <span *ngIf="importRequest.installer!.info?.version as modVersion">
+                v{{ modVersion }}
+            </span>
+        </mat-card-title>
+        <mat-card-subtitle *ngIf="importRequest.installer!.info?.author as modAuthor">
+            <span>
+                By {{ modAuthor }}
+            </span>
+            <a *ngIf="importRequest.installer!.info!.website as modWebsite"
+                mat-icon-button
+                class="mod-website-button"
+                color="accent"
+                target="_blank"
+                [href]="modWebsite">
+                <mat-icon>launch</mat-icon>
+            </a>
+        </mat-card-subtitle>
+
+        <ng-container *ngIf="importRequest.installer!.config.moduleImage?.path?.[0] as modHeaderImgPath">
+            <img *ngIf="modHeaderImgPath | appModImportRequestImage$:importRequest | async as modHeaderImg"
+                 mat-card-md-image
+                 [src]="modHeaderImg.url">
+        </ng-container>
+        
+    </mat-card-header>
+
+    <mat-card-content>
+        <mat-divider />
+        <app-mod-installer [(importRequest)]="importRequest" />
+    </mat-card-content>
+
+    <mat-card-actions *ngIf="!!installerComponent">
+        <span class="actions-left actions">
+            <button mat-raised-button (click)="cancelAndManuallyInstall()">
+                <mat-icon>create_new_folder</mat-icon>
+                Manual Install
+            </button>
+        </span>
+
+        <span *ngIf="installerComponent.installSteps.length > 1"
+               class="actions-center actions">
+            <button [disabled]="installerComponent.installStepper.selectedIndex === 0"
+                    mat-raised-button
+                    type="button"
+                    color="primary"
+                    (click)="installerComponent.installStepper.previous()">
+                <mat-icon>arrow_back_ios</mat-icon>
+                Previous
+            </button>
+
+            <button [disabled]="installerComponent.installStepper.selectedIndex === installerComponent.installSteps.length - 1"
+                    mat-raised-button
+                    color="primary"
+                    type="button"
+                    (click)="installerComponent.installStepper.next()">
+                Next
+                <mat-icon>arrow_forward_ios</mat-icon>
+            </button>
+        </span>
+
+        <span class="actions-right actions">
+            <button mat-raised-button (click)="overlayRef.close()">
+                Cancel
+            </button>
+
+            <button [disabled]="(installerComponent.form.statusChanges | async) === 'INVALID'"
+                    mat-raised-button
+                    type="submit"
+                    form="mod-installer-form"
+                    color="accent">
+                <mat-icon>check</mat-icon>
+                Install
+            </button>
+        </span>
+    </mat-card-actions>
+</mat-card>

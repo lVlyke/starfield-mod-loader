@@ -1,7 +1,8 @@
 import { AppProfile } from "./app-profile";
 import { ModProfileRef } from "./mod-profile-ref";
+import { ModInstaller } from "./mod-installer";
 
-export type ModImportStatus = "FAILED" | "PENDING" | "CANCELED";
+export type ModImportStatus = "FAILED" | "PENDING" | "MANUALINSTALL" | "CANCELED";
 export type ModImportMergeStrategy = "REPLACE" | "OVERWRITE" | "ADD";
 
 export interface ModImportRequest {
@@ -15,6 +16,8 @@ export interface ModImportRequest {
     modPlugins: string[];
     filePathSeparator: string;
     modSubdirRoot: string;
+    installer?: ModInstaller;
+    modFilePathMapFilter?: Record<string, string>;
 }
 
 export interface ModImportResult {
@@ -25,7 +28,8 @@ export interface ModImportResult {
 export namespace ModImportRequest {
 
     export interface ModPathReference {
-        filePath: string;
         enabled: boolean;
+        filePath: string;
+        mappedFilePath?: string;
     }
 }

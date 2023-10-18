@@ -19,4 +19,35 @@
             display: none !important;
         }
     }
+
+    mat-stepper, mat-vertical-stepper {
+
+        &[header-disabled=true] {
+
+            mat-step-header {
+                display: none !important;
+            }
+        }
+
+        &[fixed-scroll=true] {
+
+            .mat-horizontal-content-container {
+                flex-grow: 1;
+            }
+
+            .mat-horizontal-stepper-wrapper, .mat-horizontal-stepper-content:not(.mat-horizontal-stepper-content-inactive) {
+                overflow-y: hidden;
+                height: 100%;
+            }
+
+            .mat-horizontal-stepper-content {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+
+        mat-step-header.mat-horizontal-stepper-header  {
+            height: 64px !important;
+        }
+    }
 }

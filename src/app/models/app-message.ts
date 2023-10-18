@@ -58,6 +58,13 @@ export namespace AppMessage {
         }
     }
 
+    export interface OpenFile extends Base {
+        id: `${Prefix}:openFile`;
+        data: {
+            path: string;
+        }
+    }
+
     export interface LoadSettings extends Base {
         id: `${Prefix}:loadSettings`;
     }
@@ -145,6 +152,7 @@ export namespace AppMessage {
                            | ChooseDirectory
                            | ChooseFilePath
                            | VerifyPathExists
+                           | OpenFile
                            | LoadSettings
                            | SaveSettings
                            | NewProfile
@@ -212,6 +220,15 @@ export namespace AppMessage {
             profile: AppProfile;
             modCurName: string;
             modNewName: string;
+        };
+    }
+
+    export interface ReadProfileModFilePaths extends Base {
+        id: `${ProfileMessage.Prefix}:readModFilePaths`;
+        data: {
+            profile: AppProfile;
+            modName: string;
+            normalizePaths?: boolean;
         };
     }
 
@@ -294,6 +311,7 @@ export namespace AppMessage {
                                | CompleteModImport
                                | DeleteProfileMod
                                | RenameProfileMod
+                               | ReadProfileModFilePaths
                                | DeployProfile
                                | UndeployProfile
                                | FindManualProfileMods
@@ -312,6 +330,7 @@ export namespace AppMessage {
         "app:chooseDirectory",
         "app:chooseFilePath",
         "app:verifyPathExists",
+        "app:openFile",
         "app:loadSettings",
         "app:saveSettings",
         "app:newProfile",
@@ -332,6 +351,7 @@ export namespace AppMessage {
         "profile:completeModImport",
         "profile:deleteMod",
         "profile:renameMod",
+        "profile:readModFilePaths",
         "profile:deploy",
         "profile:undeploy",
         "profile:findManualMods",

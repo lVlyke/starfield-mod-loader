@@ -24,7 +24,13 @@ const DEPENDENCIES = [
     "normalize-path",
     "7zip-bin",
     "which",
-    "isexe"
+    "isexe",
+    "xml2js",
+    "sax",
+    "xmlbuilder",
+    "detect-file-encoding-and-language",
+    "mime-types",
+    "mime-db"
 ];
 
 execSync(

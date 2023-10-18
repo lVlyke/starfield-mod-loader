@@ -13,6 +13,12 @@ const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
 const which = require("which");
+const xml2js = require("xml2js");
+const mime = require("mime-types");
+// @ts-ignore
+const detectFileEncodingAndLanguage = /** @type {typeof import("detect-file-encoding-and-language").default} */ (
+    require("detect-file-encoding-and-language")
+);
 
 const DEBUG_MODE = !app.isPackaged;
 
@@ -119,6 +125,22 @@ class ElectronLoader {
         ) => {
             const paths = Array.isArray(data.path) ? data.path : [data.path]
             return this.#firstValidPath(paths, data.dirname ? curPath => path.dirname(curPath) : undefined);
+        });
+
+        ipcMain.handle("app:openFile", async (
+            _event,
+            /** @type {AppMessageData<"app:openFile">} */ data
+        ) => {
+            data.path = this.#expandPath(path.resolve(data.path));
+            const mimeType = mime.contentType(path.extname(data.path));
+
+            const fileData = fs.readFileSync(data.path);
+
+            return {
+                mimeType,
+                path: data.path,
+                data: fileData,
+            };
         });
 
         ipcMain.handle("app:loadSettings", async (_event, /** @type {AppMessageData<"app:loadSettings">} */ _data) => {
@@ -248,6 +270,13 @@ class ElectronLoader {
             const modNewDir = this.getProfileModDir(profile.name, modNewName);
 
             await fs.move(modCurDir, modNewDir);
+        });
+
+        ipcMain.handle("profile:readModFilePaths", async (
+            _event,
+            /** @type {AppMessageData<"profile:readModFilePaths">} */ { profile, modName, normalizePaths }
+        ) => {
+            return this.readModFilePaths(profile, modName, normalizePaths);
         });
 
         ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ {
@@ -596,6 +625,9 @@ class ElectronLoader {
             const modFilePaths = [];
             /** @type Promise */ let decompressOperation;
 
+            // Clear the staging dir
+            fs.rmSync(modDirStagingPath, { recursive: true, force: true });
+
             switch (fileType.toLowerCase()) {
                 case ".7z":
                 case ".7zip":
@@ -652,7 +684,7 @@ class ElectronLoader {
 
             if (await decompressOperation) {
                 try {
-                    return this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
+                    return await this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
                 } catch (err) {
                     log.error(`Error occurred while adding mod ${modName}: `, err);
 
@@ -695,8 +727,8 @@ class ElectronLoader {
         return undefined;
     }
 
-    /** @returns {ModImportRequest} */
-    beginModImport(
+    /** @returns {Promise<ModImportRequest>} */
+    async beginModImport(
         /** @type {AppProfile} */ profile,
         /** @type {string} */ modName,
         /** @type {string} */ modImportPath,
@@ -707,7 +739,7 @@ class ElectronLoader {
         const gameDetails = gameDb[profile.gameId];
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
         const modDataDirs = ["Data", "data"];
-        const modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
+        let modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
         const modPreparedFilePaths = modFilePaths
             .filter(filePath => !fs.lstatSync(path.join(modImportPath, filePath)).isDirectory())
             .map(filePath => ({
@@ -722,6 +754,98 @@ class ElectronLoader {
             }
         });
 
+        let installer = undefined;
+
+        // Check if this mod is packaged as a FOMOD installer
+        const fomodModuleConfigFile = modPreparedFilePaths.find(({ filePath }) => filePath.toLowerCase().endsWith(`fomod${path.sep}moduleconfig.xml`));
+        if (!!fomodModuleConfigFile) {
+            do {
+                const infoFile = modPreparedFilePaths.find(({ filePath }) => filePath.toLowerCase().endsWith(`fomod${path.sep}info.xml`));
+                const xmlParser = new xml2js.Parser({
+                    mergeAttrs: true,
+                    trim: true,
+                    emptyTag: undefined
+                });
+                /** @type {FomodModuleInfo | undefined} */ let fomodModuleInfo;
+                /** @type {FomodModuleConfig} */ let fomodModuleConfig;
+
+                // Parse info.xml (optional)
+                if (infoFile) {
+                    try {
+                        const fullInfoFilePath =  path.join(modImportPath, infoFile.filePath);
+                        const fileInfo = await detectFileEncodingAndLanguage(fullInfoFilePath);
+                        const fileEncoding = /** @type {BufferEncoding} */ (fileInfo.encoding?.toLowerCase() ?? "utf-8");
+                        const moduleInfoXml = fs.readFileSync(
+                            fullInfoFilePath,
+                            { encoding: fileEncoding }
+                        );
+                        fomodModuleInfo = await xmlParser.parseStringPromise(moduleInfoXml);
+                    } catch (err) {
+                        log.error(`${modName} - Failed to read FOMOD info.xml: `, err);
+                    }
+                }
+
+                // Parse ModuleConfig.xml
+                try {
+                    const fullConfigFilePath =  path.join(modImportPath, fomodModuleConfigFile.filePath);
+                    const fileInfo = await detectFileEncodingAndLanguage(fullConfigFilePath);
+                    const fileEncoding = /** @type {BufferEncoding} */ (fileInfo.encoding?.toLowerCase() ?? "utf-8");
+                    const moduleConfigXml = fs.readFileSync(
+                        fullConfigFilePath,
+                        { encoding: fileEncoding }
+                    );
+                    fomodModuleConfig = await xmlParser.parseStringPromise(moduleConfigXml);
+                } catch (err) {
+                    log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml: `, err);
+                    break;
+                }
+
+                if (!fomodModuleConfig) {
+                    log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml`);
+                    break;
+                }
+
+                // Map FOMOD installer to SML format
+                try {
+                    let moduleInfo = undefined;
+                    if (fomodModuleInfo) {
+                        moduleInfo = {
+                            name: fomodModuleInfo.fomod.Name?.[0],
+                            author: fomodModuleInfo.fomod.Author ?? [],
+                            version: fomodModuleInfo.fomod.Version?.[0]?._ ?? fomodModuleInfo.fomod.Version?.[0],
+                            description: fomodModuleInfo.fomod.Description?.[0],
+                            website: fomodModuleInfo.fomod.Website?.[0],
+                            id: fomodModuleInfo.fomod.Id?.[0],
+                            categoryId: fomodModuleInfo.fomod.CategoryId ?? []
+                        };
+                    }
+
+                    installer = {
+                        info: moduleInfo,
+                        config: {
+                            moduleName: fomodModuleConfig?.config.moduleName[0],
+                            moduleDependencies: fomodModuleConfig?.config.moduleDependencies ?? [],
+                            requiredInstallFiles: fomodModuleConfig?.config.requiredInstallFiles ?? [],
+                            installSteps: fomodModuleConfig?.config.installSteps?.[0],
+                            conditionalFileInstalls: fomodModuleConfig?.config.conditionalFileInstalls?.[0],
+                            moduleImage: fomodModuleConfig?.config.moduleImage?.[0]
+                        }
+                    };
+                }  catch (err) {
+                    log.error(`${modName} - Failed to parse FOMOD data: `, err);
+                    break;
+                }
+
+                log.info(`${installer.info?.name ?? modName} - Found FOMOD installer`);
+
+                // Update the root subdir to the parent dir of the `fomod` folder
+                modSubdirRoot = path.dirname(path.dirname(fomodModuleConfigFile.filePath));
+                if (modSubdirRoot === ".") {
+                    modSubdirRoot = "";
+                }
+            } while(false);
+        }
+
         return {
             profile,
             modName,
@@ -732,7 +856,8 @@ class ElectronLoader {
             modFilePaths: modPreparedFilePaths,
             modPath: modImportPath,
             filePathSeparator: path.sep,
-            modSubdirRoot
+            modSubdirRoot,
+            installer
         };
     }
 
@@ -747,7 +872,8 @@ class ElectronLoader {
             mergeStrategy,
             modFilePaths,
             modSubdirRoot,
-            modPlugins
+            modPlugins,
+            modFilePathMapFilter
         }
     ) {
         try {
@@ -757,13 +883,43 @@ class ElectronLoader {
             }
 
             // Collect all enabled mod files
-            const enabledModFiles =  modFilePaths
-                .filter(({ enabled, filePath }) => enabled && filePath.startsWith(modSubdirRoot));
+            const enabledModFiles = modFilePaths.filter((fileEntry) => {
+                fileEntry.filePath = this.#expandPath(fileEntry.filePath);
 
-            // Collect all enabled plugins normalized to the data subdir
-            const enabledPlugins = modPlugins
-                .filter(plugin => enabledModFiles.find(({ filePath }) => plugin === filePath))
-                .map(filePath => modSubdirRoot ? filePath.replace(`${modSubdirRoot}${path.sep}`, "") : filePath);
+                if (modFilePathMapFilter) {
+                    const mappedEntry = Object.entries(modFilePathMapFilter).find(([src]) => {
+                        return fileEntry.filePath.startsWith(path.join(modSubdirRoot, this.#expandPath(src)));
+                    });
+                    fileEntry.enabled = !!mappedEntry;
+
+                    if (mappedEntry) {
+                        fileEntry.mappedFilePath = fileEntry.filePath.replace(
+                            this.#expandPath(mappedEntry[0]),
+                            this.#expandPath(mappedEntry[1].replace(/^[Dd]ata[\\/]/, ""))
+                        );
+                    }
+                } else {
+                    fileEntry.enabled = fileEntry.enabled && fileEntry.filePath.startsWith(modSubdirRoot);
+                }
+
+                return fileEntry.enabled;
+            });
+            
+            const gameDb = this.loadGameDatabase();
+            const gameDetails = gameDb[profile.gameId];
+            const gamePluginFormats = gameDetails?.pluginFormats ?? [];
+
+            // Collect all enabled plugins
+            modPlugins = [];
+            modPlugins = enabledModFiles.reduce((enabledPlugins, { filePath, mappedFilePath }) => {
+                const resolvedPath = mappedFilePath ?? filePath;
+                const rootFilePath = modSubdirRoot ? resolvedPath.replace(`${modSubdirRoot}${path.sep}`, "") : resolvedPath;
+                if (gamePluginFormats.some(pluginFormat => resolvedPath.toLowerCase().endsWith(pluginFormat))) {
+                    enabledPlugins.push(rootFilePath);
+                }
+
+                return enabledPlugins;
+            }, modPlugins);
 
             const modProfilePath = this.getProfileModDir(profile.name, modName);
 
@@ -772,28 +928,33 @@ class ElectronLoader {
                 fs.rmSync(modProfilePath, { recursive: true, force: true });
             }
 
-            enabledModFiles.map(({ filePath }) => {
-                const srcFilePath = path.join(modPath, filePath);
+            if (enabledModFiles.length > 0) {
+                enabledModFiles.map(({ filePath, mappedFilePath }) => {
+                    const srcFilePath = path.join(modPath, filePath);
 
-                if (!fs.lstatSync(srcFilePath).isDirectory()) {
-                    // Normalize path to the data subdir
-                    const rootFilePath = modSubdirRoot ? filePath.replace(`${modSubdirRoot}${path.sep}`, "") : filePath;
-                    const destFilePath = path.join(modProfilePath, rootFilePath);
+                    if (!fs.lstatSync(srcFilePath).isDirectory()) {
+                        // Normalize path to the data subdir
+                        const destBasePath = mappedFilePath ?? filePath;
+                        const rootFilePath = modSubdirRoot ? destBasePath.replace(`${modSubdirRoot}${path.sep}`, "") : destBasePath;
+                        const destFilePath = path.join(modProfilePath, rootFilePath);
 
-                    // Copy all enabled files to the final mod folder
-                    fs.copySync(srcFilePath, destFilePath, {
-                        errorOnExist: false,
-                        overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
-                    });
-                }
-            });
+                        // Copy all enabled files to the final mod folder
+                        fs.copySync(srcFilePath, destFilePath, {
+                            errorOnExist: false,
+                            overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
+                        });
+                    }
+                });
+            } else {
+                fs.mkdirpSync(modProfilePath);
+            }
 
             return {
                 modName,
                 modRef: {
                     enabled: true,
                     updatedDate: new Date().toISOString(),
-                    plugins: enabledPlugins
+                    plugins: modPlugins
                 }
             };
         } finally {
@@ -808,8 +969,7 @@ class ElectronLoader {
     verifyProfileModsExist(/** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile.name);
 
-        // @ts-ignore
-        return Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
+        return /** @type {AppProfileModVerificationResult} */ (Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
             const modExists = fs.existsSync(path.join(modsDir, modName));
 
             result = Object.assign(result, {
@@ -820,7 +980,7 @@ class ElectronLoader {
             });
 
             return result;
-        }, {});
+        }, {}));
     }
 
     /** @returns {AppProfileVerificationResult} */
@@ -891,6 +1051,22 @@ class ElectronLoader {
 
         // Filter out directories
         return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file)).isDirectory());
+    }
+
+    /** @returns {Promise<string[]>} */
+    async readModFilePaths(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ modName,
+        /** @type {boolean | undefined} */ normalizePaths
+    ) {
+        const modDirPath = this.getProfileModDir(profile.name, modName);
+        let files = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
+
+        if (normalizePaths) {
+            files = files.map(file => this.#expandPath(file));
+        }
+
+        return files;
     }
 
     /** @returns {Promise<void>} */
@@ -1018,8 +1194,7 @@ class ElectronLoader {
 
         log.info("Undeploying profile", profile.name);
 
-        // @ts-ignore
-        const { profileModFiles } = this.readProfileDeploymentMetadata(profile);
+        const { profileModFiles } = /** @type {ModDeploymentMetadata} */ (this.readProfileDeploymentMetadata(profile));
 
         // Only remove files managed by this profile
         const undeployJobs = profileModFiles.map(async (existingFile) => {

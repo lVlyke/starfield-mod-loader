@@ -34,6 +34,7 @@ import { AppDialogs } from "../services/app-dialogs";
 import { LangUtils } from "../util/lang-utils";
 import { AppPreferencesModal } from "../modals/app-preferences";
 import { AppModImportOptionsModal } from "../modals/mod-import-options";
+import { AppModInstallerModal } from "../modals/mod-installer";
 import { GameId } from "../models/game-id";
 import { GameDatabase } from "../models/game-database";
 import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
@@ -44,6 +45,7 @@ import { moveItemInArray } from "@angular/cdk/drag-drop";
 import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
 import { filterTrue } from "../core/operators";
 import { GameDetails } from "../models/game-details";
+import { NgForm } from "@angular/forms";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -609,29 +611,23 @@ export class ProfileManager {
             tap(() => loadingIndicatorRef?.close()),
             switchMap((importRequest) => {
                 if (!importRequest || importRequest.importStatus === "FAILED") {
-                    alert("Failed to add mod."); // TODO - Dialog w/ error
-                    return throwError(() => "Failed to add mod.");
+                    // TODO - Show error
+                    return this.dialogManager.createDefault("Failed to add mod.", [
+                        DialogManager.OK_ACTION
+                    ]).pipe(
+                        switchMap(() => throwError(() => "Failed to add mod."))
+                    );
                 }
 
-                // Show the `AppModImportOptionsModal` to the user
-                const modImportOptionsRef = this.overlayHelpers.createFullScreen(AppModImportOptionsModal, {
-                    center: true,
-                    hasBackdrop: true,
-                    disposeOnBackdropClick: false,
-                    minWidth: "24rem",
-                    width: "40%",
-                    height: "auto",
-                    maxHeight: "75%",
-                    panelClass: "mat-app-background"
-                });
-
-                modImportOptionsRef.component.instance.importRequest = importRequest;
-
-                // Wait for the user to finish making changes
-                return merge(
-                    modImportOptionsRef.component.instance.onFormSubmit$,
-                    modImportOptionsRef.onClose$
-                ).pipe(
+                return (() => {
+                    if (importRequest.installer) {
+                        // Show the `AppModInstallerModal` to the user
+                        return this.createModInstallerModal(importRequest);
+                    } else {
+                        // Show the `AppModImportOptionsModal` to the user
+                        return this.createModImportOptionsModal(importRequest);
+                    }
+                })().pipe(
                     take(1),
                     switchMap((userResult) => {
                         if (!userResult) {
@@ -799,6 +795,17 @@ export class ProfileManager {
         ));
     }
 
+    public readModFilePaths(modName: string, normalizePaths?: boolean): Observable<string[]> {
+        return this.activeProfile$.pipe(
+            take(1),
+            switchMap(activeProfile => ElectronUtils.invoke("profile:readModFilePaths", {
+                modName,
+                profile: activeProfile,
+                normalizePaths
+            }))
+        );
+    }
+
     public updatePlugin(pluginRef: GamePluginProfileRef): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.UpdatePlugin(pluginRef));
     }
@@ -964,6 +971,58 @@ export class ProfileManager {
 
     private reconcileActivePluginList(): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.ReconcilePluginList());
+    }
+
+    private createModImportOptionsModal(importRequest: ModImportRequest): Observable<NgForm | void> {
+        const modImportOptionsRef = this.overlayHelpers.createFullScreen(AppModImportOptionsModal, {
+            center: true,
+            hasBackdrop: true,
+            disposeOnBackdropClick: false,
+            minWidth: "24rem",
+            width: "40%",
+            height: "auto",
+            maxHeight: "75%",
+            panelClass: "mat-app-background"
+        });
+
+        modImportOptionsRef.component.instance.importRequest = importRequest;
+
+        // Wait for the user to finish making changes
+        return merge(
+            modImportOptionsRef.component.instance.onFormSubmit$,
+            modImportOptionsRef.onClose$
+        );
+    }
+
+    private createModInstallerModal(importRequest: ModImportRequest): Observable<NgForm | void> {
+        const modInstallerRef = this.overlayHelpers.createFullScreen(AppModInstallerModal, {
+            center: true,
+            hasBackdrop: true,
+            disposeOnBackdropClick: false,
+            minWidth: "62rem",
+            maxWidth: "75%",
+            width: "fit-content",
+            height: "auto",
+            maxHeight: "80%",
+            panelClass: "mat-app-background"
+        });
+
+        modInstallerRef.component.instance.importRequest = importRequest;
+
+        // Wait for the user to finish making changes
+        return merge(
+            modInstallerRef.component.instance.onFormSubmit$,
+            modInstallerRef.onClose$
+        ).pipe(
+            switchMap((userResult) => {
+                if (!userResult && importRequest.importStatus === "MANUALINSTALL") {
+                    importRequest.importStatus = "PENDING";
+                    return this.createModImportOptionsModal(importRequest);
+                }
+
+                return of(userResult);
+            })
+        );
     }
 
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {

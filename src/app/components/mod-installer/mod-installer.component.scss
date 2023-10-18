@@ -1,0 +1,96 @@
+:host {
+
+    form {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        mat-form-field {
+            display: block;
+        }
+
+        .plugin-group-hint {
+            font-size: 0.9em;
+        }
+
+        .view-controls {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+        }
+    }
+
+    .install-step-container {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        overflow-y: hidden;
+
+        > * {
+            flex: 1 0 50%;
+        }
+
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1rem;
+            overflow: auto;
+            max-width: 50%;
+
+            .plugin-preview-img-container {
+                flex-grow: 1;
+
+                .preview-plugin-img {
+                    background-size: contain;
+                    background-repeat: no-repeat;
+                    background-position-x: center;
+                    width: 100%;
+                    height: 100%;
+                    filter: drop-shadow(0px 10px 5px #333);
+                }
+            }
+
+            .plugin-preview-desc {
+                text-align: center;
+                align-self: center;
+                width: 30rem;
+            }
+
+            .plugin-preview-name {
+                text-align: center;
+                font-size: 1.1em;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .install-stepper {
+        overflow: auto;
+
+        .install-step-content {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: baseline;
+            flex-grow: 1;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+
+            fieldset {
+                border-radius: 0.8rem;
+            }
+        }
+
+        .plugin {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+
+            mat-icon.plugin-desc {
+                margin-left: 0.5rem;
+            }
+        }
+    }
+}

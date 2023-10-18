@@ -1,0 +1,6 @@
+<mat-checkbox [indeterminate]="indeterminate"
+              [disabled]="disabled ?? false"
+              [ngModel]="value[1]"
+              (ngModelChange)="value = [value[0], $event]">
+    <ng-content></ng-content>
+</mat-checkbox>

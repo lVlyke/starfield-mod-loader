@@ -1,13 +1,15 @@
 import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
 import { EMPTY, Observable } from "rxjs";
-import { distinctUntilChanged, filter, switchMap } from "rxjs/operators";
+import { distinctUntilChanged, filter, map, switchMap } from "rxjs/operators";
 import { AppMessageData } from "../models/app-message";
 import { AppActions, AppState } from "../state";
 import { AppMessageHandler } from "./app-message-handler";
 import { OverlayHelpers, OverlayHelpersRef } from "./overlay-helpers";
 import { AppModSyncIndicatorModal, LOADING_MSG_TOKEN } from "../modals/loading-indicator";
 import { AppAboutInfoModal, DEPS_INFO_TOKEN } from "../modals/app-about-info";
+import { ElectronUtils } from "../util/electron-utils";
+import { ExternalFile } from "../models/external-file";
 
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
@@ -55,6 +57,19 @@ export class AppStateBehaviorManager {
                 deployInProgressOverlayRef.close();
             }
         });
+    }
+
+    public openFile(path: string): Observable<ExternalFile> {
+        return ElectronUtils.invoke<Pick<ExternalFile, "data" | "path" | "mimeType">>("app:openFile", { path }).pipe(
+            map((fileSource) => {
+                const blob = new Blob([fileSource.data], { type: fileSource.mimeType });
+                return {
+                    ...fileSource,
+                    blob,
+                    url: URL.createObjectURL(blob)
+                };
+            })
+        );
     }
 
     public setPluginsEnabled(pluginsEnabled: boolean): Observable<void> {

@@ -13,3 +13,5 @@ declare type AppSettingsUserCfg = import("./app/models/app-settings-user-cfg").A
 declare type GameDatabase = import("./app/models/game-database").GameDatabase;
 declare type ModProfileRef = import("./app/models/mod-profile-ref").ModProfileRef;
 declare type ModDeploymentMetadata = import("./app/models/mod-deployment-metadata").ModDeploymentMetadata;
+declare type FomodModuleInfo = import("./app/models/fomod").Fomod.ModuleInfo;
+declare type FomodModuleConfig = import("./app/models/fomod").Fomod.ModuleConfig;

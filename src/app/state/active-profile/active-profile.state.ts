@@ -121,10 +121,8 @@ export class ActiveProfileState {
         }));
 
         // Remove deleted plugins
-        state.plugins.forEach((pluginRef) => {
-            if (!modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin))) {
-                _.remove(state.plugins, pluginRef);
-            }
+        state.plugins = state.plugins.filter((pluginRef) => {
+            return modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin));
         });
 
         context.setState(state);
