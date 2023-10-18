@@ -45,20 +45,20 @@
 
         <span *ngIf="installerComponent.installSteps.length > 1"
                class="actions-center actions">
-            <button [disabled]="installerComponent.installStepper.selectedIndex === 0"
+            <button [disabled]="!installerComponent.hasPreviousStep"
                     mat-raised-button
                     type="button"
                     color="primary"
-                    (click)="installerComponent.installStepper.previous()">
+                    (click)="installerComponent.previousStep()">
                 <mat-icon>arrow_back_ios</mat-icon>
                 Previous
             </button>
 
-            <button [disabled]="installerComponent.installStepper.selectedIndex === installerComponent.installSteps.length - 1"
+            <button [disabled]="!installerComponent.hasNextStep"
                     mat-raised-button
                     color="primary"
                     type="button"
-                    (click)="installerComponent.installStepper.next()">
+                    (click)="installerComponent.nextStep()">
                 Next
                 <mat-icon>arrow_forward_ios</mat-icon>
             </button>

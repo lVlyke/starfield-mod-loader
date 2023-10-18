@@ -10,6 +10,7 @@ A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) 
 * **Add**, **re-order**, **rename**, **disable** and **remove** your mods
 * **Multiple profiles** enable quick switching between different mod loadouts
 * Support for ESP/ESM plugins __**[*](#espesm-plugins)**__
+* Support for FOMOD installers
 * Native Linux version (including Steam Deck)
 
 # Releases
@@ -50,27 +51,49 @@ You can create additional profiles at any time by pressing the **Create Profile*
 
 Once your profile is set up you can begin adding and managing mods. To add a new mod, click the **+** icon in the **Mod List** section and select **Add Mod**, or select **Profile > Mods > Add Mod** from the menu bar. Choose the mod you want to install.
 
+**Note:** You can also import existing mods by clicking the **+** icon in the **Mod List** section and select **Import Mod**, or select **Profile > Mods > Import Mod** from the menu bar. This will allow you to add a mod from a folder, which can be useful for importing mods from other profiles.
+
 **Tip:** You can also add mods by dragging and dropping them into the app. This will allow you to install multiple mods at a time.
 
-Upon choosing a mod to add, you will be shown a form with options to rename the mod and select which files from the mod to add. By default, all files will be added. However some mods, such as those in the FOMOD format, may have a directory structure with multiple install options like in the example below:
+After choosing a mod to add you will be shown either a [FOMOD installer](#fomod-installers), or the default installation options.
+
+### Default mod installation
+
+The default installation allows you to rename the mod and select which files from the mod to add. By default, all files from the mod will be added. However, some mods may occasionally contain a non-standard directory structure that can require changing the **root data dir**, like in the following example:
 
 ![Add Mod Example 1](/docs/mod-add-1.png)
 
-In this example, each subdirectory represents a different option of installation for the mod. To choose one of these install options, we need to pick one and manually mark its `Data` directory the **root data dir**:
+This mod contains a single root directory called `standard` that contains an inner `Data` directory with all of the mod files. We need to mark this inner `Data` directory as the **root data dir** in order for the mod to be installed correctly:
 
 ![Add Mod Example 2](/docs/mod-add-2.png)
 
-Now, only the files in `120 FPS/Data` directory will be added for this mod.
+Now, only the files in `standard/Data` directory will be added for this mod.
 
-The mod you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. To rename or delete a mod, right click it and select the appropriate option.
+### FOMOD installers
 
-**Tip**: You can also import existing mods by clicking the **+** icon in the **Mod List** section and select **Import Mod**, or select **Profile > Mods > Import Mod** from the menu bar. This will allow you to add a mod from a folder, which can be useful for importing mods from other profiles.
+Some mods are packaged with special metadata known as FOMOD that allows for customizing the installation through a guided flow. Starfield Mod Loader supports FOMOD and will automatically show the installation wizard for FOMOD-compatible mods, as shown in the example below:
+
+![FOMOD Installer Example 1](/docs/fomod-1.png)
+
+The installer will guide you through the installation of the mod. Hovering over or selecting an option will show information about what it does. If you wish to install the mod manually instead, you can click the **Manual Install** button at the bottom left corner of the installer window.
+
+**Note**: Many mods will ask you if you are using Vortex or Mod Organizer 2. Starfield Mod Loader supports either option, but if you encounter any issues, select **Mod Organizer 2**.
+
+**Tip**: Click the preview image (or the **?** tooltip in compact view) to show a fullscreen view of the image.
+
+## Managing your mods
+
+Mods you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. To rename or delete a mod, right click it and select the appropriate option.
+
+You can customize which columns of the mods list are visible under the **View > Mod List Columns** section of the app menu bar.
 
 Any mod files that you have manually copied to your **Mod Base Directory** outside of the app will show up in the UI as **Manually installed mods**. These mods cannot be managed by Starfield Mod Loader and will not be removed or overwritten. This means that **any manually copied mods in your Mod Base Directory folder will override the mods in Starfield Mod Loader.**
 
+**Tip:** You can change the app theme under **File > Preferences**.
+
 ### ESP/ESM plugins
 
-**IMPORTANT NOTE**: Starfield Mod Loader supports ESP/ESM plugins, however please note that support is currently still considered **experimental** as the official Starfield Creation Kit modding tools have not yet been released. You will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
+**IMPORTANT NOTE:** Starfield Mod Loader supports ESP/ESM plugins, however please note that support is currently still considered **experimental** as the official Starfield Creation Kit modding tools have not yet been released. You will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
 
 By default, plugin support is disabled. Plugins can be enabled by going to **File > Preferences** and enabling plugins. Alternatively, you will be prompted to enable plugins when adding a mod with a plugin file.
 
@@ -82,7 +105,7 @@ To enable mods in the game you must first activate them. Press the **Activate Mo
 
 Mods will now remain active until you press the **Deactivate Mods** button, even if you close the app or restart your PC.
 
-**Important Note:** If you update any mod files externally (i.e. in a text editor), make sure to press the **Refresh Files** button, otherwise your changes will not be deployed to the **Mod Base Directory**.
+**IMPORTANT NOTE:** If you update any mod files externally (i.e. in a text editor), make sure to press the **Refresh Files** button, otherwise your changes will not be deployed to the **Mod Base Directory**.
 
 **Tip (Linux):** It is recommended to enable the **Normalize path case** option under **File > Preferences** when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
 

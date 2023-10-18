@@ -10,6 +10,7 @@ import { AppModImportRequestImagePipe } from "./mod-import-request-image.pipe";
 import { AppDelayPipe } from "./delay.pipe";
 import { AppFilterDefinedPipe } from "./filter-defined.pipe";
 import { AppAsObservablePipe } from "./as-observable.pipe";
+import { AppIsDebugPipe } from "./is-debug.pipe";
 
 const PIPES = [
     AppProfileActiveModCountPipe,
@@ -21,7 +22,8 @@ const PIPES = [
     AppModImportRequestImagePipe,
     AppDelayPipe,
     AppFilterDefinedPipe,
-    AppAsObservablePipe
+    AppAsObservablePipe,
+    AppIsDebugPipe
 ];
 
 @NgModule({

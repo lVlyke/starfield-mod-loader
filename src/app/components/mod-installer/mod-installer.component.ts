@@ -10,12 +10,13 @@ import {
     ViewChildren,
     QueryList
 } from "@angular/core";
-import { NgForm, NgModel } from "@angular/forms";
-import { MatStepper } from "@angular/material/stepper";
+import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/forms";
+import { CdkPortal } from "@angular/cdk/portal";
+import { MatStep, MatStepper } from "@angular/material/stepper";
 import { Select } from "@ngxs/store";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
-import { concatMap, delay, distinctUntilChanged, finalize, map, mergeMap, switchMap, tap, toArray } from "rxjs/operators";
+import { concatMap, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, tap, toArray } from "rxjs/operators";
 import { AppModInstaller } from "./mod-installer.types";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined, filterTrue } from "../../core/operators";
@@ -26,6 +27,7 @@ import { DialogManager } from "../../services/dialog-manager";
 import { AppState } from "../../state";
 import { ProfileManager } from "../../services/profile-manager";
 import { ObservableUtils } from "../../util/observable-utils";
+import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 
 @Component({
     selector: "app-mod-installer",
@@ -41,6 +43,7 @@ import { ObservableUtils } from "../../util/observable-utils";
 })
 export class AppModInstallerComponent extends BaseComponent {
 
+    public readonly STEP_DISABLED_COLOR = "warn"; // TODO - Find a better way of doing this
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
 
     @Select(AppState.getActiveProfile)
@@ -64,6 +67,9 @@ export class AppModInstallerComponent extends BaseComponent {
     @ViewChildren("pluginGroupModel", { read: NgModel })
     public readonly pluginGroupNgModels!: QueryList<NgModel>;
 
+    @ViewChild("fullscreenPluginPreview", { read: CdkPortal })
+    protected readonly fullscreenPluginPreviewPortal!: CdkPortal;
+
     @AsyncState()
     public readonly activeProfile!: AppProfile;
 
@@ -72,21 +78,34 @@ export class AppModInstallerComponent extends BaseComponent {
 
     @DeclareState("installSteps")
     protected _installSteps: AppModInstaller.InstallStep[] = [];
+
+    @DeclareState("installerFlags")
+    private _installerFlags: AppModInstaller.Flags = {};
     
     protected previewPlugin: AppModInstaller.Plugin | undefined;
+    protected fullscreenPluginPreviewRef: OverlayHelpersRef | undefined;
+
+    private _validateStepsVisited = (_control: AbstractControl): ValidationErrors | null => {
+        return (!this.hasNextStep || this.installStepper.steps.toArray()
+            .filter(step => this.installStepIsEnabled(step))
+            .every(step => step.interacted))
+                ? null
+                : { installSteps: true };
+    };
 
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModInstallerComponent>,
         dialogManager: DialogManager,
-        private readonly profileManager: ProfileManager
+        private readonly profileManager: ProfileManager,
+        private readonly overlayHelpers: OverlayHelpers
     ) {
         super({ cdRef });
 
         // Check if this mod has all required dependencies
         stateRef.get("importRequest").pipe(
             filterDefined(),
-            switchMap(importRequest => this.resolveCompositeDependencies(importRequest.installer!.config.moduleDependencies).pipe(
+            switchMap(importRequest => this.resolveCompositeDependencies(importRequest.installer!.config.moduleDependencies, {}).pipe(
                 switchMap(result => result ? EMPTY : of(importRequest))
             )),
             switchMap((importRequest) => {
@@ -125,30 +144,148 @@ export class AppModInstallerComponent extends BaseComponent {
         // Create the list of install steps
         stateRef.get("importRequest").pipe(
             distinctUntilChanged(),
-            switchMap(importRequest => this.createInstallSteps(importRequest.installer!, false))
+            switchMap(importRequest => this.createInstallSteps(importRequest.installer!))
         ).subscribe(installSteps => this._installSteps = installSteps);
 
-        // Trigger initial model updates on form load
+        // Trigger file updates on changes to the plugin group controls
         stateRef.get("pluginGroupNgModels").pipe(
             filterDefined(),
+            switchMap(pluginGroupModels => pluginGroupModels.changes),
             delay(0),
-            switchMap(() => this.updateFiles())
+            switchMap(() => this.updateFilesAndFlags())
         ).subscribe();
+
+        // Add a validator for ensuring all steps have been visited
+        stateRef.get("form").pipe(
+            filterDefined()
+        ).subscribe(({ form }) => form.addValidators([this._validateStepsVisited]));
+
+        // Run form validation on install step changes
+        stateRef.get("form").pipe(
+            filterDefined(),
+            switchMap(() => this.installStepper.selectedIndexChange)
+        ).subscribe(() => this.form.form.updateValueAndValidity());
+
+        // Update the plugin preview to the first plugin in the first plugin group of a newly selected step
+        stateRef.get("installStepper").pipe(
+            filterDefined(),
+            switchMap(installStepper => installStepper.selectedIndexChange.pipe(
+                startWith(installStepper.selectedIndex)
+            )),
+            distinctUntilChanged(),
+            map(index => this._installSteps[index]),
+            map(selectedInstallStep => _.first(_.first(selectedInstallStep.pluginGroups)?.plugins ?? [])),
+            filterDefined()
+        ).subscribe(firstPlugin => this.previewPlugin = firstPlugin);
     }
 
     public get installSteps(): AppModInstaller.InstallStep[] {
         return this._installSteps;
     }
 
-    protected updateFiles(): Observable<unknown> {
-        this.importRequest.modFilePathMapFilter = {};
+    public get installerFlags(): AppModInstaller.Flags {
+        return this._installerFlags;
+    }
 
+    public get hasNextStep(): boolean {
+        if (this.installStepper.steps.length === 0) {
+            return false;
+        }
+
+        let stepIndex = this.installStepper.selectedIndex;
+
+        do {
+            ++stepIndex;
+
+            if (stepIndex >= this.installStepper.steps.length) {
+                return false;
+            }
+        } while (!this.installStepIsEnabled(this.installStepper.steps.get(stepIndex)));
+
+        return true;
+    }
+
+    public get hasPreviousStep(): boolean {
+        if (this.installStepper.steps.length === 0) {
+            return false;
+        }
+
+        let stepIndex = this.installStepper.selectedIndex;
+
+        do {
+            --stepIndex;
+
+            if (stepIndex < 0) {
+                return false;
+            }
+        } while (!this.installStepIsEnabled(this.installStepper.steps.get(stepIndex)));
+
+        return true;
+    }
+
+    public nextStep(): void {
+        if (this.installStepper.steps.length === 0) {
+            return;
+        }
+
+        let stepIndex = this.installStepper.selectedIndex;
+
+        do {
+            ++stepIndex;
+
+            if (stepIndex >= this.installStepper.steps.length) {
+                return;
+            }
+        } while (!this.installStepIsEnabled(this.installStepper.steps.get(stepIndex)));
+
+        this.installStepper.selectedIndex = stepIndex;
+    }
+
+    public previousStep(): void {
+        if (this.installStepper.steps.length === 0) {
+            return;
+        }
+
+        let stepIndex = this.installStepper.selectedIndex;
+
+        do {
+            --stepIndex;
+
+            if (stepIndex < 0) {
+                return;
+            }
+        } while (!this.installStepIsEnabled(this.installStepper.steps.get(stepIndex)));
+
+        this.installStepper.selectedIndex = stepIndex;
+    }
+
+    public showFullscreenPluginPreview(): void {
+        if (!!this.previewPlugin) {
+            this.fullscreenPluginPreviewRef?.close();
+
+            this.fullscreenPluginPreviewRef = this.overlayHelpers.createFullScreen(this.fullscreenPluginPreviewPortal, {
+                hasBackdrop: true,
+                disposeOnBackdropClick: true,
+                width: "85%",
+                height: "90%",
+                panelClass: "mat-app-background",
+                backdropClass: "backdrop-clear"
+            });
+        }
+    }
+
+    protected updateFilesAndFlags(): Observable<unknown> {
+        // Clear previous active files
+        this.importRequest.modFilePathMapFilter = {};
+        // Update installer flags
+        this._installerFlags = this.calculateInstallerFlags();
+
+        // Update active files
         this.updatePluginGroupFiles();
-        return ObservableUtils.hotResult$(this.updateConditionalFiles().pipe(
+        return ObservableUtils.hotResult$(this.updateConditionalFiles(this._installerFlags).pipe(
             finalize(() => {
                 this.updateRequiredFiles();
 
-                console.log(this.importRequest.modFilePathMapFilter, this.calculateInstallerFlags());
                 this.importRequestChange$.emit(this.importRequest);
             })
         ));
@@ -189,7 +326,7 @@ export class AppModInstallerComponent extends BaseComponent {
         });
     }
 
-    private updateConditionalFiles(): Observable<unknown> {
+    private updateConditionalFiles(installerFlags: AppModInstaller.Flags): Observable<unknown> {
         const patterns = this.importRequest.installer!.config.conditionalFileInstalls?.patterns?.[0]?.pattern ?? [];
 
         if (patterns.length === 0) {
@@ -197,7 +334,7 @@ export class AppModInstallerComponent extends BaseComponent {
         }
 
         return from(patterns).pipe(
-            concatMap(({ dependencies, files }) => this.resolveCompositeDependencies(dependencies).pipe(
+            concatMap(({ dependencies, files }) => this.resolveCompositeDependencies(dependencies, installerFlags).pipe(
                 filterTrue(),
                 tap(() => this.updateFilePathMap(files[0]))
             )),
@@ -221,9 +358,10 @@ export class AppModInstallerComponent extends BaseComponent {
         });
     }
 
-    protected resolveCompositeDependencies(dependencies: ModInstaller.CompositeDependency[]): Observable<boolean> {
-        const installerFlags = this.calculateInstallerFlags();
-
+    protected resolveCompositeDependencies(
+        dependencies: ModInstaller.CompositeDependency[],
+        installerFlags: AppModInstaller.Flags
+    ): Observable<boolean> {
         return from(dependencies).pipe(
             mergeMap(({
                 operator,
@@ -241,7 +379,7 @@ export class AppModInstallerComponent extends BaseComponent {
                 }
     
                 if (dependencies && dependencies.length > 0) {
-                    conditions.push(this.resolveCompositeDependencies(dependencies));
+                    conditions.push(this.resolveCompositeDependencies(dependencies, installerFlags));
                 }
     
                 if (flagDependency && flagDependency.length > 0) {
@@ -318,9 +456,10 @@ export class AppModInstallerComponent extends BaseComponent {
         );
     }
 
-    private createInstallSteps(installer: ModInstaller, filterVisible: boolean): Observable<AppModInstaller.InstallStep[]> {
-        console.log(installer);
-
+    private createInstallSteps(
+        installer: ModInstaller,
+        flags?: AppModInstaller.Flags
+    ): Observable<AppModInstaller.InstallStep[]> {
         const installSteps = installer.config.installSteps;
 
         if (!installSteps) {
@@ -329,7 +468,8 @@ export class AppModInstallerComponent extends BaseComponent {
 
         return from(installSteps.installStep).pipe(
             concatMap(installStep => this.resolveCompositeDependencies(
-                filterVisible && installStep.visible ? installStep.visible : []
+                !!flags && installStep.visible ? installStep.visible : [],
+                flags ?? {}
             ).pipe(
                 switchMap(visible => visible ? of({
                     stepInfo: installStep,
@@ -385,6 +525,10 @@ export class AppModInstallerComponent extends BaseComponent {
             name: flag.name[0],
             value: flag._
         })) ?? [];
+    }
+
+    private installStepIsEnabled(step?: MatStep): boolean {
+        return !!step && step.color !== this.STEP_DISABLED_COLOR;
     }
 
     private orderedSort<T extends { name: string }>(

@@ -1,3 +1,36 @@
+%_plugin-preview {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+    overflow: auto;
+
+    .plugin-preview-img-container {
+        flex-grow: 1;
+
+        .preview-plugin-img {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position-x: center;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0px 10px 5px #333);
+        }
+    }
+
+    .plugin-preview-desc {
+        text-align: center;
+        align-self: center;
+        width: 30rem;
+    }
+
+    .plugin-preview-name {
+        text-align: center;
+        font-size: 1.1em;
+        font-weight: 500;
+    }
+}
+
 :host {
 
     form {
@@ -31,43 +64,23 @@
             flex: 1 0 50%;
         }
 
-        .info-panel {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 1rem;
-            overflow: auto;
+        .plugin-info-panel {
             max-width: 50%;
 
-            .plugin-preview-img-container {
-                flex-grow: 1;
-
-                .preview-plugin-img {
-                    background-size: contain;
-                    background-repeat: no-repeat;
-                    background-position-x: center;
-                    width: 100%;
-                    height: 100%;
-                    filter: drop-shadow(0px 10px 5px #333);
-                }
-            }
-
-            .plugin-preview-desc {
-                text-align: center;
-                align-self: center;
-                width: 30rem;
-            }
-
-            .plugin-preview-name {
-                text-align: center;
-                font-size: 1.1em;
-                font-weight: 500;
+            .preview-plugin-img {
+                @extend %_plugin-preview;
+                cursor: pointer;
             }
         }
     }
 
     .install-stepper {
         overflow: auto;
+
+        .install-step-label[step-enabled=false] {
+            font-style: italic;
+            opacity: 0.8;
+        }
 
         .install-step-content {
             display: flex;
@@ -93,4 +106,20 @@
             }
         }
     }
+
+    @at-root .plugin-preview {
+        @extend %_plugin-preview;
+
+        &.fullscreen-plugin-preview {
+            flex-grow: 1;
+            position: relative;
+
+            .plugin-preview-close {
+                position: absolute;
+                top: 0.25rem;
+                right: 0.25rem;
+            }
+        }
+    }
 }
+

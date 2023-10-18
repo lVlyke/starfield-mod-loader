@@ -46,6 +46,26 @@
             }
         }
 
+        &[disable-completed-steps=true] {
+
+            mat-step-header {
+
+                // Use .mat-warn to signify a disabled step
+                // TODO - Find a better way to do this
+                &.mat-warn {
+                    pointer-events: none;
+                }
+
+                > *.mat-step-icon.mat-step-icon-state-done {
+                    background: grey;
+    
+                    mat-icon {
+                        display: none;
+                    }
+                }
+            }
+        }
+
         mat-step-header.mat-horizontal-stepper-header  {
             height: 64px !important;
         }

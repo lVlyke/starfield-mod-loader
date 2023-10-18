@@ -24,7 +24,7 @@ export namespace Fomod {
 
     export interface ConditionFlag {
         name: [string];
-        _?: DependencyState;
+        _?: string;
     }
 
     export namespace ConditionFlag {

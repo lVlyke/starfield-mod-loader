@@ -2,11 +2,11 @@ import { ModInstaller } from "../../models/mod-installer";
 
 export namespace AppModInstaller {
 
-    export type Flags = Record<string, ModInstaller.DependencyState | boolean>;
+    export type Flags = Record<string, string | boolean>;
 
     export interface Flag {
         name: string;
-        value?: ModInstaller.DependencyState;
+        value?: string;
     }
 
     export interface Plugin {
