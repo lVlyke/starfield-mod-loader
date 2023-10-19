@@ -19,7 +19,7 @@ const buildTask = spawn("npx", [
     "--watch",
     "--poll", 
     "1000"
-]);
+], { detached: true });
 
 let electronProcess;
 
@@ -44,6 +44,13 @@ buildTask.stdout.on("data", (data) => {
 
             electronProcess.on("close", () => {
                 console.log("Finished serving");
+
+                // Kill ng build process
+                if (buildTask.pid) {
+                    process.kill(-buildTask.pid);
+                    buildTask.kill();
+                }
+
                 exit();
             });
         }
