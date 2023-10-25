@@ -10,7 +10,7 @@
     "app:build-dist:all": "npm run build:release && npm run package:all",
     "app:build-release": "npm run app:build-dist && npm run prepare-packages",
     "app:build-release:all": "npm run app:build-dist:all && npm run prepare-packages",
-    "ng": "ng",
+    "ng": "./node_modules/.bin/ng",
     "build": "node ./scripts/build.js",
     "build:release": "npm run build -- --release",
     "serve": "node ./scripts/serve.js",
@@ -21,7 +21,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "start": "npm run serve",
-    "electron:start": "npx electron ./dist",
     "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^27.0.0 && unset npm_config_platform"
   },
   "private": true,
