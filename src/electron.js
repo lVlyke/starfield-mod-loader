@@ -331,7 +331,14 @@ class ElectronLoader {
         });
 
         ipcMain.handle("profile:launchGame", async (_event, /** @type {AppMessageData<"profile:launchGame">} */ { profile }) => {
-            spawn(path.resolve(profile.gameBinaryPath), {
+            let binaryPath = profile.gameBinaryPath;
+
+            // If binary path is relative, use the `gameBaseDir` as the binary dir
+            if (!path.isAbsolute(binaryPath)) {
+                binaryPath = path.join(profile.gameBaseDir, binaryPath);
+            }
+
+            spawn(path.resolve(binaryPath), {
                 detached: true,
                 cwd: profile.gameBaseDir
             });
@@ -1077,72 +1084,71 @@ class ElectronLoader {
     ) {
         const profileModFiles = [];
 
-        // Ensure the mod base dir exists
-        fs.mkdirpSync(profile.modBaseDir);
+        try {
+            // Ensure the mod base dir exists
+            fs.mkdirpSync(profile.modBaseDir);
 
-        if (this.isProfileDeployed(profile)) {
-            await this.undeployProfile(profile);
-        }
+            if (this.isProfileDeployed(profile)) {
+                await this.undeployProfile(profile);
+            }
 
-        log.info("Deploying profile", profile.name);
+            log.info("Deploying profile", profile.name);
 
-        const gameDb = this.loadGameDatabase();
-        const gameDetails = gameDb[profile.gameId];
+            const gameDb = this.loadGameDatabase();
+            const gameDetails = gameDb[profile.gameId];
 
-        // Deploy plugin list
-        if (deployPlugins && profile.plugins.length > 0) {
-            const pluginListPaths = gameDetails?.pluginListPaths ?? [];
-            let wrotePluginList = false;
-            
-            for (let pluginListPath of pluginListPaths) {
-                pluginListPath = path.resolve(this.#expandPath(pluginListPath));
+            // Deploy plugin list
+            if (deployPlugins && profile.plugins.length > 0) {
+                const pluginListPaths = gameDetails?.pluginListPaths ?? [];
+                let wrotePluginList = false;
+                
+                for (let pluginListPath of pluginListPaths) {
+                    pluginListPath = path.resolve(this.#expandPath(pluginListPath));
 
-                if (fs.existsSync(path.dirname(pluginListPath))) {
-                    // Backup any existing plugins file
-                    if (fs.existsSync(pluginListPath)) {
-                        const backupFile = `${pluginListPath}.sml_bak`;
-                        if (fs.existsSync(backupFile)) {
-                            fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
+                    if (fs.existsSync(path.dirname(pluginListPath))) {
+                        // Backup any existing plugins file
+                        if (fs.existsSync(pluginListPath)) {
+                            const backupFile = `${pluginListPath}.sml_bak`;
+                            if (fs.existsSync(backupFile)) {
+                                fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
+                            }
+
+                            fs.copyFileSync(pluginListPath, backupFile);
                         }
 
-                        fs.copyFileSync(pluginListPath, backupFile);
+                        // TODO - Allow customization of this logic per-gameid
+                        const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
+                        const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
+                            if (pluginRef.enabled) {
+                                data += "*";
+                            }
+
+                            data += pluginRef.plugin;
+                            data += "\n";
+                            return data;
+                        }, header);
+
+                        fs.writeFileSync(pluginListPath, pluginsListData);
+
+                        wrotePluginList = true;
+                        profileModFiles.push(pluginListPath);
+                        break;
                     }
+                }
 
-                    // TODO - Allow customization of this logic per-gameid
-                    const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
-                    const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
-                        if (pluginRef.enabled) {
-                            data += "*";
-                        }
-
-                        data += pluginRef.plugin;
-                        data += "\n";
-                        return data;
-                    }, header);
-
-                    fs.writeFileSync(pluginListPath, pluginsListData);
-
-                    wrotePluginList = true;
-                    profileModFiles.push(pluginListPath);
-                    break;
+                if (!wrotePluginList) {
+                    throw new Error("Unable to write plugins list.");
                 }
             }
 
-            if (!wrotePluginList) {
-                throw new Error("Unable to write plugins list.");
-            }
-        }
-
-        const modBaseDir = path.resolve(profile.modBaseDir);
-        // Copy all mods to the modBaseDir for this profile
-        // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
-        const deployableModFiles = Array.from(profile.mods.entries()).reverse();
-        for (const [modName, mod] of deployableModFiles) {
-            if (mod.enabled) {
-                const copyTasks = [];
-                const modDirPath = this.getProfileModDir(profile.name, modName);
-
-                try {
+            const modBaseDir = path.resolve(profile.modBaseDir);
+            // Copy all mods to the modBaseDir for this profile
+            // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
+            const deployableModFiles = Array.from(profile.mods.entries()).reverse();
+            for (const [modName, mod] of deployableModFiles) {
+                if (mod.enabled) {
+                    const copyTasks = [];
+                    const modDirPath = this.getProfileModDir(profile.name, modName);
                     const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
 
                     // Copy data files to mod base dir
@@ -1162,60 +1168,65 @@ class ElectronLoader {
                             // Record mod files written from profile
                             profileModFiles.push(modFile);
                         }
-    
+
                         if (shouldCopy) {
                             copyTasks.push(fs.copy(srcFilePath.toString(), destFilePath, { overwrite: false }));
                         }
                     }
-                } catch (err) {
-                    log.error("Mod deployment failed: ", err);
-                    throw err;
+
+                    await Promise.all(copyTasks);
                 }
-
-                await Promise.all(copyTasks);
             }
+
+            profileModFiles.push(ElectronLoader.PROFILE_METADATA_FILE);
+
+            this.writeProfileDeploymentMetadata(profile, {
+                profile: profile.name,
+                profileModFiles
+            });
+        } catch (err) {
+            log.error("Mod deployment failed: ", err);
+            throw err;
         }
-
-        profileModFiles.push(ElectronLoader.PROFILE_METADATA_FILE);
-
-        this.writeProfileDeploymentMetadata(profile, {
-            profile: profile.name,
-            profileModFiles
-        });
 
         log.info("Mod deployment succeeded");
     }
 
     /** @returns {Promise<void>} */
     async undeployProfile(/** @type {AppProfile} */ profile) {
-        if (!this.isProfileDeployed(profile)) {
-            return;
+        try {
+            if (!this.isProfileDeployed(profile)) {
+                return;
+            }
+
+            log.info("Undeploying profile", profile.name);
+
+            const { profileModFiles } = /** @type {ModDeploymentMetadata} */ (this.readProfileDeploymentMetadata(profile));
+
+            // Only remove files managed by this profile
+            const undeployJobs = profileModFiles.map(async (existingFile) => {
+                const fullExistingPath = path.isAbsolute(existingFile)
+                    ? existingFile
+                    : path.join(profile.modBaseDir, existingFile);
+
+                if (fs.existsSync(fullExistingPath)) {
+                    await fsPromises.rm(fullExistingPath, { force: true, recursive: true });
+                }
+
+                // Recursively remove empty parent directories
+                let existingDir = path.dirname(fullExistingPath);
+                while (existingDir !== profile.modBaseDir && fs.existsSync(existingDir) && fs.readdirSync(existingDir).length === 0) {
+                    fs.rmdirSync(existingDir);
+                    existingDir = path.dirname(existingDir);
+                }
+            });
+
+            // Wait for all files to be removed
+            await Promise.all(undeployJobs);
+        } catch (err) {
+            log.error("Mod undeployment failed: ", err);
+            throw err;
         }
-
-        log.info("Undeploying profile", profile.name);
-
-        const { profileModFiles } = /** @type {ModDeploymentMetadata} */ (this.readProfileDeploymentMetadata(profile));
-
-        // Only remove files managed by this profile
-        const undeployJobs = profileModFiles.map(async (existingFile) => {
-            const fullExistingPath = path.isAbsolute(existingFile)
-                ? existingFile
-                : path.join(profile.modBaseDir, existingFile);
-
-            if (fs.existsSync(fullExistingPath)) {
-                await fsPromises.rm(fullExistingPath, { force: true, recursive: true });
-            }
-
-            // Recursively remove empty parent directories
-            let existingDir = path.dirname(fullExistingPath);
-            while (existingDir !== profile.modBaseDir && fs.existsSync(existingDir) && fs.readdirSync(existingDir).length === 0) {
-                fs.rmdirSync(existingDir);
-                existingDir = path.dirname(existingDir);
-            }
-        });
-
-        // Wait for all files to be removed
-        await Promise.all(undeployJobs);
 
         log.info("Mod undeployment succeeded");
     }

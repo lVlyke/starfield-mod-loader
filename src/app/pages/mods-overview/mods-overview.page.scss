@@ -70,89 +70,97 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-        }
 
-        #plugin-actions {
-            flex: 1 0 content;
-
-            > mat-card-content {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                overflow-y: auto;
+            > * {
+                height: 1px;
             }
-        }
 
-        #profile-actions {
-            flex: 0 1 content;
-            display: flex;
-            flex-direction: column;
-
-            &[fixed] {
+            #plugin-actions {
                 flex-grow: 1;
-            }
+                min-height: 20rem;
 
-            &.mat-expanded {
-                ::ng-deep {
-                    .mat-expansion-panel-content {
-                        flex-grow: 1;
-                        flex-basis: 100%;
-                        overflow: auto;
-
-                        .mat-expansion-panel-body {
-                            height: 100%;
-                        }
-                    }
-                }
-            }
-
-            mat-expansion-panel-header {
-                flex-shrink: 0;
-            }
-
-            mat-panel-description {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-
-                > * {
+                > mat-card-content {
                     display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    gap: 1rem;
-
-                    button.no-label {
-                        min-width: auto !important;
-
-                        mat-icon {
-                            margin: 0 !important;
-                        }
-                    }
+                    flex-direction: column;
+                    height: 100%;
+                    overflow-y: auto;
                 }
             }
 
-            #profile-actions-panel-content {
+            #profile-actions {
+                flex-basis: min-content;
                 display: flex;
                 flex-direction: column;
-                align-items: center;
-                justify-content: space-between;
-                height: 100%;
 
-                > .actions {
-                    display: flex;
-                    flex-wrap: wrap;
-                    justify-content: center;
-                    row-gap: 1rem;
-                    margin-bottom: 1.25rem;
+                &[fixed] {
+                    flex-grow: 1;
+                }
 
-                    > button {
-                        margin-right: 1rem;
+                &.mat-expanded {
+                    min-height: 10rem;
+
+                    ::ng-deep {
+                        .mat-expansion-panel-content {
+                            flex-grow: 1;
+                            flex-basis: 100%;
+                            overflow: auto;
+                            
+
+                            .mat-expansion-panel-body {
+                                height: 100%;
+                            }
+                        }
                     }
                 }
 
-                .spacer {
-                    flex: 1 1 auto;
-                    min-height: 3rem;
+                mat-expansion-panel-header {
+                    flex-shrink: 0;
+                }
+
+                mat-panel-description {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+
+                    > * {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        gap: 1rem;
+
+                        button.no-label {
+                            min-width: auto !important;
+
+                            mat-icon {
+                                margin: 0 !important;
+                            }
+                        }
+                    }
+                }
+
+                #profile-actions-panel-content {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: space-between;
+                    height: 100%;
+
+                    > .actions {
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                        row-gap: 1rem;
+                        margin-bottom: 1.25rem;
+
+                        > button {
+                            margin-right: 1rem;
+                        }
+                    }
+
+                    .spacer {
+                        flex: 1 1 auto;
+                        min-height: 3rem;
+                    }
                 }
             }
         }
