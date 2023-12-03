@@ -1094,50 +1094,38 @@ class ElectronLoader {
 
             log.info("Deploying profile", profile.name);
 
-            const gameDb = this.loadGameDatabase();
-            const gameDetails = gameDb[profile.gameId];
-
             // Deploy plugin list
             if (deployPlugins && profile.plugins.length > 0) {
-                const pluginListPaths = gameDetails?.pluginListPaths ?? [];
-                let wrotePluginList = false;
-                
-                for (let pluginListPath of pluginListPaths) {
-                    pluginListPath = path.resolve(this.#expandPath(pluginListPath));
+                const pluginListPath = profile.pluginListPath ? path.resolve(this.#expandPath(profile.pluginListPath)) : "";
 
-                    if (fs.existsSync(path.dirname(pluginListPath))) {
-                        // Backup any existing plugins file
-                        if (fs.existsSync(pluginListPath)) {
-                            const backupFile = `${pluginListPath}.sml_bak`;
-                            if (fs.existsSync(backupFile)) {
-                                fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
-                            }
-
-                            fs.copyFileSync(pluginListPath, backupFile);
+                if (pluginListPath && fs.existsSync(path.dirname(pluginListPath))) {
+                    // Backup any existing plugins file
+                    if (fs.existsSync(pluginListPath)) {
+                        const backupFile = `${pluginListPath}.sml_bak`;
+                        if (fs.existsSync(backupFile)) {
+                            fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
                         }
 
-                        // TODO - Allow customization of this logic per-gameid
-                        const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
-                        const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
-                            if (pluginRef.enabled) {
-                                data += "*";
-                            }
-
-                            data += pluginRef.plugin;
-                            data += "\n";
-                            return data;
-                        }, header);
-
-                        fs.writeFileSync(pluginListPath, pluginsListData);
-
-                        wrotePluginList = true;
-                        profileModFiles.push(pluginListPath);
-                        break;
+                        fs.copyFileSync(pluginListPath, backupFile);
                     }
-                }
 
-                if (!wrotePluginList) {
-                    throw new Error("Unable to write plugins list.");
+                    // TODO - Allow customization of this logic per-gameid
+                    const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
+                    const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
+                        if (pluginRef.enabled) {
+                            data += "*";
+                        }
+
+                        data += pluginRef.plugin;
+                        data += "\n";
+                        return data;
+                    }, header);
+
+                    fs.writeFileSync(pluginListPath, pluginsListData);
+
+                    profileModFiles.push(pluginListPath);
+                } else {
+                    throw new Error(`Unable to write plugins list: path ${pluginListPath} does not exist.`);
                 }
             }
 
