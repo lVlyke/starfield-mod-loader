@@ -47,6 +47,7 @@ import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
 import { filterTrue } from "../core/operators";
 import { GameDetails } from "../models/game-details";
 import { NgForm } from "@angular/forms";
+import { ProfileUtils } from "../util/profile-utils";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -336,6 +337,8 @@ export class ProfileManager {
         }).pipe(
             // Reload the profile after restoring the backup
             switchMap((updateProfile) => this.setActiveProfile(updateProfile).pipe(
+                // Reconcile the plugin list
+                switchMap(() => this.reconcileActivePluginList()),
                 // Save the profile
                 switchMap(() => this.saveProfile(updateProfile))
             ))
@@ -888,6 +891,19 @@ export class ProfileManager {
         ));
     }
 
+    public resolvePluginTypeOrderIndex(pluginRef: GamePluginProfileRef): Observable<number> {
+        return this.activeGameDetails$.pipe(
+            take(1),
+            map((gameDetails) => {
+                if (gameDetails?.pluginFormats) {
+                    return ProfileUtils.getPluginTypeIndex(pluginRef, gameDetails.pluginFormats) ?? 0;
+                } else {
+                    return 0;
+                }
+            })
+        )
+    }
+
     public showModInFileExplorer(modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
@@ -1027,7 +1043,12 @@ export class ProfileManager {
     }
 
     private reconcileActivePluginList(): Observable<void> {
-        return this.store.dispatch(new ActiveProfileActions.ReconcilePluginList());
+        return ObservableUtils.hotResult$(this.activeGameDetails$.pipe(
+            take(1),
+            switchMap((gameDetails) => this.store.dispatch(new ActiveProfileActions.ReconcilePluginList(
+                gameDetails?.pluginFormats
+            )))
+        ))
     }
 
     private createModImportOptionsModal(importRequest: ModImportRequest): Observable<NgForm | void> {

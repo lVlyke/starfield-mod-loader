@@ -3,6 +3,7 @@ import { Injectable } from "@angular/core";
 import { Action, Selector, State, StateContext } from "@ngxs/store";
 import { AppProfile } from "../../models/app-profile";
 import { ActiveProfileActions } from "./active-profile.actions";
+import { ProfileUtils } from "../../util/profile-utils";
 
 @State<AppProfile | null>({
     name: "activeProfile",
@@ -96,7 +97,7 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.ReconcilePluginList)
-    public reconcilePluginList(context: ActiveProfileState.Context): void {
+    public reconcilePluginList(context: ActiveProfileState.Context, { pluginTypeOrder }: ActiveProfileActions.ReconcilePluginList): void {
         const state = _.cloneDeep(context.getState()!);
         const modList = Array.from(state.mods.entries());
 
@@ -124,6 +125,20 @@ export class ActiveProfileState {
         state.plugins = state.plugins.filter((pluginRef) => {
             return modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin));
         });
+
+        // Sort plugins by type order (if required)
+        if (pluginTypeOrder) {
+            state.plugins = state.plugins.sort((aRef, bRef) => {
+                const aIndex = ProfileUtils.getPluginTypeIndex(aRef, pluginTypeOrder!),
+                      bIndex = ProfileUtils.getPluginTypeIndex(bRef, pluginTypeOrder!);
+
+                if (aIndex !== undefined && bIndex !== undefined) {
+                    return aIndex - bIndex;
+                } else {
+                    return 0;
+                }
+            });
+        }
 
         context.setState(state);
     }

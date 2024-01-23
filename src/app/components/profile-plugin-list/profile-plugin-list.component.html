@@ -1,4 +1,8 @@
-<table mat-table [dataSource]="pluginDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
+<table mat-table
+       [dataSource]="pluginDataSource"
+       cdkDropList
+       [cdkDropListSortPredicate]="dropSortPredicate"
+       (cdkDropListDropped)="dropReorder($event)">
     <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-enabled">
@@ -25,7 +29,7 @@
                             error
                         </mat-icon>
                     </div>
-                    
+
                     <div class="plugin-line-mod-id">{{ pluginEntry.pluginRef.modId }}</div>
                 </span>
             </ng-container>
@@ -46,6 +50,7 @@
     <tr *matRowDef="let pluginEntry; columns: displayedColumns;"
         mat-row
         cdkDrag
+        [cdkDragData]="pluginEntry"
         [attr.li-theme]="themeContainer.theme"
         [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"></tr>
 </table>

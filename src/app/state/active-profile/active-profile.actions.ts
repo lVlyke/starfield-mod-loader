@@ -84,6 +84,10 @@ export namespace ActiveProfileActions {
 
     export class ReconcilePluginList {
         public static readonly type = `[activeProfile] reconcile plugin list`;
+
+        constructor(
+            public pluginTypeOrder?: string[]
+        ) {}
     }
 
     export class UpdatePlugins {
