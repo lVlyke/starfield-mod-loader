@@ -63,7 +63,7 @@
     "@types/node-7z": "^2.1.5",
     "@types/xml2js": "^0.4.12",
     "chokidar": "^3.5.3",
-    "electron": "^27.0.0",
+    "electron": "^27.2.4",
     "electron-packager": "^17.1.2",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",

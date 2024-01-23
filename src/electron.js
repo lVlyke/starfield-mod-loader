@@ -669,6 +669,10 @@ class ElectronLoader {
                             // Fall back to bundled 7-Zip binary if it's not found on system
                             // TODO - Warn user about opening RARs if 7-Zip not installed on machine
                             _7zBinaryPath = sevenBin.path7za;
+
+                            log.warn("7-Zip binary was not found on this machine. Falling back to bundled binary.");
+                        } else {
+                            log.info("Found 7-Zip binary: ", _7zBinaryPath);
                         }
 
                         const decompressStream = Seven.extractFull(filePath, modDirStagingPath, { $bin: _7zBinaryPath });
@@ -936,6 +940,9 @@ class ElectronLoader {
             }
 
             if (enabledModFiles.length > 0) {
+                const overwriteExistingFiles = mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE";
+                const modFileOperations = [];
+
                 enabledModFiles.map(({ filePath, mappedFilePath }) => {
                     const srcFilePath = path.join(modPath, filePath);
 
@@ -944,14 +951,24 @@ class ElectronLoader {
                         const destBasePath = mappedFilePath ?? filePath;
                         const rootFilePath = modSubdirRoot ? destBasePath.replace(`${modSubdirRoot}${path.sep}`, "") : destBasePath;
                         const destFilePath = path.join(modProfilePath, rootFilePath);
-
+                        
                         // Copy all enabled files to the final mod folder
-                        fs.copySync(srcFilePath, destFilePath, {
-                            errorOnExist: false,
-                            overwrite: mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE"
-                        });
+                        if (externalImport) {
+                            // Copy files from external imports
+                            modFileOperations.push(fs.copy(srcFilePath, destFilePath, {
+                                errorOnExist: false,
+                                overwrite: overwriteExistingFiles
+                            }));
+                        } else {
+                            // Move files from the temp staging path for non-external imports
+                            modFileOperations.push(fs.move(srcFilePath, destFilePath, {
+                                overwrite: overwriteExistingFiles
+                            }));
+                        }
                     }
                 });
+
+                await Promise.all(modFileOperations);
             } else {
                 fs.mkdirpSync(modProfilePath);
             }

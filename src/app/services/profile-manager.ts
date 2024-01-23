@@ -9,6 +9,7 @@ import {
     delay,
     distinctUntilChanged,
     filter,
+    finalize,
     map,
     skip,
     switchMap,
@@ -703,6 +704,8 @@ export class ProfileManager {
                 return of(importRequest);
             }),
             switchMap((importRequest) => {
+                const loadingIndicatorRef = this.appManager.showLoadingIndicator("Importing mod data...");
+
                 // Complete the mod import
                 return ElectronUtils.invoke<ModImportResult | undefined>("profile:completeModImport", { importRequest }).pipe(
                     switchMap((importResult) => {
@@ -713,7 +716,8 @@ export class ProfileManager {
                         } else {
                             return of(undefined);
                         }
-                    })
+                    }),
+                    finalize(() => loadingIndicatorRef.close())
                 );
             })
         ));
@@ -913,6 +917,12 @@ export class ProfileManager {
                                         deployPlugins: appState.pluginsEnabled,
                                         normalizePathCasing: appState.normalizePathCasing
                                     })),
+                                    catchError(() => {
+                                        // TODO - Show error
+                                        return this.store.dispatch(new AppActions.setDeployInProgress(false)).pipe(
+                                            switchMap(() => of(false))
+                                        );
+                                    }),
                                     switchMap(() => this.store.dispatch([
                                         new AppActions.setDeployInProgress(false),
                                         new ActiveProfileActions.setDeployed(true)
@@ -944,6 +954,12 @@ export class ProfileManager {
                 if (activeProfile?.deployed) {
                     return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
                         switchMap(() => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile })),
+                        catchError(() => {
+                            // TODO - Show error
+                            return this.store.dispatch(new AppActions.setDeployInProgress(false)).pipe(
+                                switchMap(() => of(false))
+                            );
+                        }),
                         switchMap(() => this.store.dispatch([
                             new AppActions.setDeployInProgress(false),
                             new ActiveProfileActions.setDeployed(false)

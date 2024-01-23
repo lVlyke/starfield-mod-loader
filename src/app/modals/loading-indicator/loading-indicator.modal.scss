@@ -18,11 +18,11 @@
 
         @keyframes sync-rotate {
             from {
-                transform: rotateZ(0)
+                transform: rotateZ(359deg)
             }
 
             to {
-                transform: rotateZ(359deg);
+                transform: rotateZ(0);
             }
         }
     }
