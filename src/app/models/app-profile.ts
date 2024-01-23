@@ -18,6 +18,7 @@ export interface AppProfile {
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfileModVerificationResult = AppProfile.ModVerificationResult;
+export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
 
 export namespace AppProfile {
 
@@ -32,6 +33,11 @@ export namespace AppProfile {
 
     export type ModVerificationResult = VerificationResults["mods"];
     export type PluginVerificationResult = VerificationResults["plugins"];
+
+    export interface PluginBackupEntry {
+        filePath: string;
+        backupDate: Date;
+    }
 
     export function create(name: string, gameId: GameId): AppProfile {
         return {

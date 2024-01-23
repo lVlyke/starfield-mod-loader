@@ -330,6 +330,40 @@ export class ProfileManager {
         );
     }
 
+    public importProfilePluginBackup(profile: AppProfile, backupPath: string): Observable<AppProfile | undefined> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke("profile:importPluginBackup", {
+            profile, backupPath
+        }).pipe(
+            // Reload the profile after restoring the backup
+            switchMap((updateProfile) => this.setActiveProfile(updateProfile).pipe(
+                // Save the profile
+                switchMap(() => this.saveProfile(updateProfile))
+            ))
+        ));
+    }
+
+    public createProfilePluginBackup(profile: AppProfile, backupName?: string): Observable<void> {
+        return ObservableUtils.hotResult$(
+            ElectronUtils.invoke("profile:createPluginBackup", { profile, backupName })
+        );
+    }
+
+    public deleteProfilePluginBackup(profile: AppProfile, backupFile: string): Observable<void> {
+        return ObservableUtils.hotResult$(
+            ElectronUtils.invoke("profile:deletePluginBackup", { profile, backupFile })
+        );
+    }
+
+    public readPluginBackups(profile: AppProfile): Observable<AppProfile.PluginBackupEntry[]> {
+        return ElectronUtils.invoke("profile:readPluginBackups", { profile });
+    }
+
+    public exportPluginList(profile: AppProfile): Observable<unknown> {
+        return ObservableUtils.hotResult$(
+            ElectronUtils.invoke("profile:exportPluginList", { profile })
+        );
+    }
+
     public verifyActiveProfile(options: {
         showSuccessMessage?: boolean;
         showErrorMessage?: boolean;
@@ -886,6 +920,13 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showGameBaseDirInFileExplorer", { profile })
+        )));
+    }
+
+    public showProfilePluginBackupsInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfilePluginBackupsInFileExplorer", { profile })
         )));
     }
 

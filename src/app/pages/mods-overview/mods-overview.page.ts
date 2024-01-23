@@ -5,15 +5,18 @@ import { CdkPortal } from "@angular/cdk/portal";
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
-import { Observable, combineLatest } from "rxjs";
-import { filter, skip, switchMap } from "rxjs/operators";
+import { Observable, combineLatest, of } from "rxjs";
+import { filter, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
-import { filterFalse } from "../../core/operators";
+import { filterDefined, filterFalse } from "../../core/operators";
+import { AppDialogs } from "../../services/app-dialogs";
+import { ObservableUtils } from "../../util/observable-utils";
+import { DialogAction } from "../../services/dialog-manager.types";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -63,6 +66,9 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("gameConfigFileMenu", { read: CdkPortal })
     protected readonly gameConfigFileMenuPortal!: CdkPortal;
 
+    @ViewChild("importPluginBackupMenu", { read: CdkPortal })
+    protected readonly ImportPluginBackupMenuPortal!: CdkPortal;
+
     @ViewChild("profileActionsPanel")
     protected readonly profileActionsPanel!: MatExpansionPanel;
 
@@ -75,17 +81,22 @@ export class AppModsOverviewPage extends BasePage {
     @DeclareState()
     protected gameConfigFileMenuRef?: OverlayHelpersRef;
 
+    @DeclareState()
+    protected importPluginBackupMenuRef?: OverlayHelpersRef;
+
     @AfterViewInit()
     private readonly afterViewInit$!: Observable<void>;
 
     protected showPluginList = false;
+    protected showedModExternalEditWarning = false;
 
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModsOverviewPage>,
         protected readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers,
-        private readonly dialogManager: DialogManager
+        private readonly dialogManager: DialogManager,
+        private readonly dialogs: AppDialogs
     ) {
         super({ cdRef });
 
@@ -109,6 +120,25 @@ export class AppModsOverviewPage extends BasePage {
 
     protected reorderMods(modOrder: string[]): Observable<void> {
         return this.profileManager.reorderMods(modOrder);
+    }
+
+    protected showProfileModsDirInFileExplorer(): Observable<unknown> {
+        let check$: Observable<DialogAction>;
+        if (this.showedModExternalEditWarning) {
+            check$ = of(DialogManager.OK_ACTION_PRIMARY);
+        } else {
+            check$ = this.dialogManager.createDefault(
+                "If you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the Refresh Files button after, otherwise your changes will not be applied.",
+                DialogManager.DEFAULT_ACTIONS,
+                { hasBackdrop: true }
+            );
+        }
+
+        return ObservableUtils.hotResult$(check$.pipe(
+            tap(() => this.showedModExternalEditWarning = true),
+            filter(result => result === DialogManager.OK_ACTION_PRIMARY),
+            switchMap(() => this.profileManager.showProfileModsDirInFileExplorer())
+        ));
     }
 
     protected showAddModMenu($event: MouseEvent): void {
@@ -135,6 +165,35 @@ export class AppModsOverviewPage extends BasePage {
         );
     }
 
+    protected showImportPluginBackupMenu($event: MouseEvent): void {
+        this.importPluginBackupMenuRef = this.overlayHelpers.createAttached(this.ImportPluginBackupMenuPortal,
+            $event.target as HTMLElement,
+            [
+                OverlayHelpers.fromDefaultConnectionPosition({
+                    originX: "end",
+                    overlayX: "end"
+                }), ...OverlayHelpers.ConnectionPositions.contextMenu
+            ],
+            {
+                managed: false,
+                panelClass: "mat-app-background"
+            }
+        );
+    }
+
+    protected showExportPluginBackupMenu(): Observable<unknown> {
+        return ObservableUtils.hotResult$(this.dialogs.showProfileBackupNameDialog().pipe(
+            filterDefined(),
+            switchMap((backupName) => this.profileManager.createProfilePluginBackup(this.activeProfile!, backupName))
+        ));
+    }
+
+    protected deleteProfilePluginBackup(backupFile: string): Observable<void> {
+        return ObservableUtils.hotResult$(
+            this.profileManager.deleteProfilePluginBackup(this.activeProfile!, backupFile)
+        );
+    }
+
     protected deleteActiveProfile(): void {
         this.dialogManager.createDefault("Are you sure you want to delete the current profile?", [
             DialogManager.YES_ACTION,
@@ -142,5 +201,9 @@ export class AppModsOverviewPage extends BasePage {
         ]).pipe(
             filter(choice => choice === DialogManager.YES_ACTION)
         ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
+    }
+
+    protected resolveBackupName(backupEntry: AppProfile.PluginBackupEntry): string {
+        return backupEntry.filePath.replace(/\.[^.]+$/g, "");
     }
 }

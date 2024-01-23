@@ -28,7 +28,7 @@
             </span>
         </div>
         
-        <mat-card-header>
+        <mat-card-header class="tool-header">
             <mat-card-title>Mod List</mat-card-title>
 
             <span id="mod-list-actions">
@@ -37,7 +37,7 @@
                     <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                 </button>
 
-                <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="profileManager.showProfileModsDirInFileExplorer()">
+                <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="showProfileModsDirInFileExplorer()">
                     <mat-icon>folder_open</mat-icon>
                 </button>
 
@@ -65,8 +65,32 @@
 
     <div id="right-pane-actions">
         <mat-card *ngIf="showPluginList" id="plugin-actions">
-            <mat-card-header>
+            <mat-card-header class="tool-header">
                 <mat-card-title>Plugins</mat-card-title>
+
+                <span id="plugin-list-actions">
+                    <button mat-icon-button
+                            color="accent"
+                            matTooltip="Restore Plugin Backup"
+                            (click)="showImportPluginBackupMenu($event)">
+                        <mat-icon>history</mat-icon>
+                        <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                    </button>
+
+                    <button mat-icon-button
+                            color="accent"
+                            matTooltip="Create Plugin Backup" 
+                            (click)="showExportPluginBackupMenu()">
+                        <mat-icon>file_copy</mat-icon>
+                    </button>
+
+                    <button mat-icon-button
+                            color="accent"
+                            matTooltip="Export Plugin List"
+                            (click)="profileManager.exportPluginList(activeProfile)">
+                        <mat-icon>ios_share</mat-icon>
+                    </button>
+                </span>
             </mat-card-header>
             <mat-card-content>
                 <app-profile-plugin-list
@@ -266,6 +290,46 @@
                     </button>
                 </ng-container>
             </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Import plugin list menu -->
+<ng-template #importPluginBackupMenu cdkPortal>
+    <mat-card class="import-plugin-backup-menu mat-elevation-z3">
+        <mat-card-content>
+            <ng-container *ngIf="'profile:readPluginBackups' | appSendElectronMsg$:{ profile: activeProfile } | async as backupFileEntries">
+                <mat-action-list *ngIf="backupFileEntries.length > 0; else noBackups">
+                    <button *ngFor="let backupFileEntry of backupFileEntries"
+                            mat-list-item
+                            class="backup-file-item"
+                            matTooltipPosition="before"
+                            [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
+                            (click)="profileManager.importProfilePluginBackup(activeProfile!, backupFileEntry.filePath); importPluginBackupMenuRef?.close()">
+                        <span matLine class="backup-file-item-line">
+                            <span>{{ resolveBackupName(backupFileEntry) }}</span>
+
+                            <button mat-icon-button (click)="deleteProfilePluginBackup(backupFileEntry.filePath); importPluginBackupMenuRef?.close(); $event.preventDefault()">
+                                <mat-icon color="warn">delete</mat-icon>
+                            </button>
+                        </span>
+                    </button>
+
+                    <mat-divider />
+
+                    <button mat-list-item (click)="profileManager.showProfilePluginBackupsInFileExplorer(); importPluginBackupMenuRef?.close()">
+                        <span matLine class="backup-file-item-line">
+                            <span>Explore backups</span>
+
+                            <mat-icon color="accent">folder</mat-icon>
+                        </span>
+                    </button>
+                </mat-action-list>
+
+                <ng-template #noBackups>
+                    No backups
+                </ng-template>
+            </ng-container>
         </mat-card-content>
     </mat-card>
 </ng-template>

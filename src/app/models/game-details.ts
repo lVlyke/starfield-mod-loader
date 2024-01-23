@@ -1,3 +1,5 @@
+import type { GamePluginListType } from "./game-plugin-list-type";
+
 export interface GameDetails {
     title: string;
     pluginFormats: string[];
@@ -5,6 +7,7 @@ export interface GameDetails {
     gameBaseDirs?: string[];
     gameBinaryPaths?: string[];
     pluginListPaths?: string[];
+    pluginListType?: GamePluginListType;
     gameConfigFiles?: Record<string, string[]>;
     scriptExtenders?: GameDetails.ScriptExtender[];
 }

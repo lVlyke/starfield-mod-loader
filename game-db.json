@@ -27,6 +27,7 @@
             "%LOCALAPPDATA%\\Starfield\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
         ],
+        "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
         "scriptExtenders": [
             {

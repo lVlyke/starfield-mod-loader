@@ -32,6 +32,8 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_SETTINGS_FILE = "profile.json";
     static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
     static /** @type {string} */ PROFILE_MODS_DIR = "mods";
+    static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
+    static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     
     /** @type {BrowserWindow} */ mainWindow;
@@ -279,6 +281,52 @@ class ElectronLoader {
             return this.readModFilePaths(profile, modName, normalizePaths);
         });
 
+        ipcMain.handle("profile:importPluginBackup", async (
+            _event,
+            /** @type {AppMessageData<"profile:importPluginBackup">} */ { profile, backupPath }
+        ) => {
+            return this.importProfilePluginBackup(profile, backupPath);
+        });
+
+        ipcMain.handle("profile:createPluginBackup", async (
+            _event,
+            /** @type {AppMessageData<"profile:createPluginBackup">} */ { profile, backupName }
+        ) => {
+            return this.createProfilePluginBackup(profile, backupName);
+        });
+
+        ipcMain.handle("profile:deletePluginBackup", async (
+            _event,
+            /** @type {AppMessageData<"profile:deletePluginBackup">} */ { profile, backupFile }
+        ) => {
+            return this.deleteProfilePluginBackup(profile, backupFile);
+        });
+
+        ipcMain.handle("profile:readPluginBackups", async (
+            _event,
+            /** @type {AppMessageData<"profile:readPluginBackups">} */ { profile }
+        ) => {
+            return this.readProfilePluginBackups(profile);
+        });
+
+        ipcMain.handle("profile:exportPluginList", async (
+            _event,
+            /** @type {AppMessageData<"profile:exportPluginList">} */ { profile }
+        ) => {
+            const pickedFile = await dialog.showSaveDialog({
+                filters: [
+                    { 
+                        name: "Plugin List", extensions: ["txt", "*"]
+                    }
+                ]
+            });
+            
+            const pluginListPath = pickedFile?.filePath;
+            if (pluginListPath) {
+                return this.exportProfilePluginList(profile, pluginListPath);
+            }
+        });
+
         ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ {
             profile, deployPlugins, normalizePathCasing
         }) => {
@@ -326,6 +374,15 @@ class ElectronLoader {
             /** @type {AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
         ) => {
             const profileModsDir = this.getProfileModsDir(profile.name);
+
+            shell.openPath(path.resolve(profileModsDir));
+        });
+
+        ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
+            _event,
+            /** @type {AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
+        ) => {
+            const profileModsDir = this.getProfilePluginBackupsDir(profile.name);
 
             shell.openPath(path.resolve(profileModsDir));
         });
@@ -554,6 +611,22 @@ class ElectronLoader {
         return path.join(this.getProfileModsDir(profileName), modName);
     }
 
+    /** @returns {string} */
+    getProfileBackupsDir(/** @type {string} */ profileName) {
+        return path.join(
+            this.getProfileDir(profileName), 
+            ElectronLoader.PROFILE_BACKUPS_DIR
+        );
+    }
+
+    /** @returns {string} */
+    getProfilePluginBackupsDir(/** @type {string} */ profileName) {
+        return path.join(
+            this.getProfileBackupsDir(profileName),
+            ElectronLoader.PROFILE_BACKUPS_PLUGINS_DIR
+        );
+    }
+
     /** @returns {AppProfile | null} */
     loadProfile(/** @type {string} */ name) {
         const profileDir = this.getProfileDir(name);
@@ -596,6 +669,89 @@ class ElectronLoader {
         const profileDir = this.getProfileDir(profile.name);
 
         return fs.rmdirSync(profileDir, { recursive: true });
+    }
+
+    /** @returns {AppProfile} */
+    importProfilePluginBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfilePluginBackupsDir(profile.name), backupPath);
+        }
+
+        /** @type {AppProfile["plugins"]} */ const pluginsBackup = fs.readJSONSync(backupPath);
+
+        if (!Array.isArray(pluginsBackup)) {
+            throw new Error("Invalid backup.");
+        }
+
+        // Only import plugins that already exist in the current plugin list
+        let restoredPlugins = pluginsBackup.filter((restoredPlugin) => profile.plugins.some((existingPlugin) => {
+            return existingPlugin.plugin == restoredPlugin.plugin && existingPlugin.modId == restoredPlugin.modId;
+        }));
+
+        // Move any existing plugins that weren't in the backup to the bottom of the load order
+        restoredPlugins.push(...profile.plugins.filter((existingPlugin) => !restoredPlugins.some((restoredPlugin) => {
+            return existingPlugin.plugin == restoredPlugin.plugin && existingPlugin.modId == restoredPlugin.modId;
+        })));
+        
+        // Return the updated profile
+        return Object.assign({}, profile, { plugins: restoredPlugins });
+    }
+
+    /** @returns {void} */
+    createProfilePluginBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupName
+    ) {
+        const backupsDir = this.getProfilePluginBackupsDir(profile.name);
+
+        fs.mkdirpSync(backupsDir);
+
+        fs.writeJSONSync(
+            path.join(backupsDir, `${this.#asFileName(backupName || this.#currentDateTimeAsFileName())}.json`),
+            profile.plugins,
+            { spaces: 4 }
+        );
+    }
+
+    /** @returns {void} */
+    deleteProfilePluginBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfilePluginBackupsDir(profile.name), backupPath);
+        }
+
+        fs.rmSync(backupPath);
+    }
+
+    /** @returns {AppProfilePluginBackupEntry[]} */
+    readProfilePluginBackups(
+        /** @type {AppProfile} */ profile
+    ) {
+        const backupsDir = this.getProfilePluginBackupsDir(profile.name);
+
+        if (!fs.existsSync(backupsDir)) {
+            return [];
+        }
+
+        return _.orderBy(fs.readdirSync(backupsDir)
+            .filter(filePath => filePath.endsWith(".json"))
+            .map((filePath) => ({
+                filePath,
+                backupDate: fs.lstatSync(path.join(backupsDir, filePath)).mtime
+            })), "backupDate", "desc");
+    }
+
+    /** @returns {void} */
+    exportProfilePluginList(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ pluginListPath
+    ) {
+        fs.writeFileSync(pluginListPath, this.#createProfilePluginList(profile));
     }
 
     /** @returns {Promise<ModImportRequest | undefined>} */
@@ -1120,25 +1276,18 @@ class ElectronLoader {
                     if (fs.existsSync(pluginListPath)) {
                         const backupFile = `${pluginListPath}.sml_bak`;
                         if (fs.existsSync(backupFile)) {
-                            fs.moveSync(backupFile, `${backupFile}_${new Date().toISOString().replace(/[:.]/g, "_")}`);
+                            fs.moveSync(backupFile, `${backupFile}_${this.#currentDateTimeAsFileName()}`);
                         }
 
                         fs.copyFileSync(pluginListPath, backupFile);
                     }
 
-                    // TODO - Allow customization of this logic per-gameid
-                    const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`
-                    const pluginsListData = profile.plugins.reduce((data, pluginRef) => {
-                        if (pluginRef.enabled) {
-                            data += "*";
-                        }
-
-                        data += pluginRef.plugin;
-                        data += "\n";
-                        return data;
-                    }, header);
-
-                    fs.writeFileSync(pluginListPath, pluginsListData);
+                    // Write the plugin list
+                    try {
+                        fs.writeFileSync(pluginListPath, this.#createProfilePluginList(profile));
+                    } catch (err) {
+                        throw new Error(`Unable to write plugins list: ${err.toString()}`);
+                    }
 
                     profileModFiles.push(pluginListPath);
                 } else {
@@ -1273,6 +1422,43 @@ class ElectronLoader {
         throw new Error("Unable to open config file.");
     }
 
+    /** @returns {GameDetails | undefined} */
+    #getGameDetails(/** @type {GameId} */ gameId) {
+        const gameDb = this.loadGameDatabase();
+        return gameDb[gameId];
+    }
+
+    /** @returns {string} */
+    #createProfilePluginList(
+        /** @type {AppProfile} */ profile,
+        /** @type {GamePluginListType | undefined} */ listType
+    ) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+
+        switch (listType ?? gameDetails?.pluginListType) {
+            case "CreationEngine":
+            case "Default": {
+                return this.#createProfilePluginListCreationEngine(profile);
+            }
+            default: throw new Error("Game has unknown plugin list type.");
+        }
+    }
+
+    /** @returns {string} */
+    #createProfilePluginListCreationEngine(/** @type {AppProfile} */ profile) {
+        const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`;
+
+        return profile.plugins.reduce((data, pluginRef) => {
+            if (pluginRef.enabled) {
+                data += "*";
+            }
+
+            data += pluginRef.plugin;
+            data += "\n";
+            return data;
+        }, header);
+    }
+
     /** @returns {string} */
     #expandPath(/** @type {string} */ _path) {
 
@@ -1320,6 +1506,16 @@ class ElectronLoader {
         });
 
         return filePath;
+    }
+
+    /** @returns {string} */
+    #asFileName(/** @type {string} */ text) {
+        return text.replace(/[*?"<>|:./\\]/g, "_");
+    }
+
+    /** @returns {string} */
+    #currentDateTimeAsFileName() {
+        return this.#asFileName(new Date().toISOString());
     }
 }
 

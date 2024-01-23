@@ -14,13 +14,20 @@
         <th mat-header-cell *matHeaderCellDef>Plugin</th>
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-title">
             <ng-container>
-                <span>{{ pluginEntry.pluginRef.plugin }}</span>
-                        
-                <mat-icon *ngIf="!!pluginEntry.pluginRef.verificationError"
-                            class="plugin-verification-error-icon"
-                            matTooltip="This plugin has a verification error">
-                    error
-                </mat-icon>
+                <span>
+                    <div class="plugin-line-name">
+                        {{ pluginEntry.pluginRef.plugin }}
+
+                        <mat-icon *ngIf="!!pluginEntry.pluginRef.verificationError"
+                                  class="plugin-verification-error-icon"
+                                  matTooltip="This plugin has a verification error"
+                                  color="warn">
+                            error
+                        </mat-icon>
+                    </div>
+                    
+                    <div class="plugin-line-mod-id">{{ pluginEntry.pluginRef.modId }}</div>
+                </span>
             </ng-container>
         </td>
     </ng-container>

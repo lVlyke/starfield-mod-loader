@@ -105,7 +105,7 @@ To enable mods in the game you must first activate them. Press the **Activate Mo
 
 Mods will now remain active until you press the **Deactivate Mods** button, even if you close the app or restart your PC.
 
-**IMPORTANT NOTE:** If you update any mod files externally (i.e. in a text editor), make sure to press the **Refresh Files** button, otherwise your changes will not be deployed to the **Mod Base Directory**.
+**IMPORTANT NOTE:** If you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the **Refresh Files** button after, otherwise your changes will not be applied.
 
 **Tip (Linux):** It is recommended to enable the **Normalize path case** option under **File > Preferences** when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
 

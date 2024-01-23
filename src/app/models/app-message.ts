@@ -231,6 +231,43 @@ export namespace AppMessage {
             normalizePaths?: boolean;
         };
     }
+    export interface ImportProfilePluginBackup extends Base {
+        id: `${ProfileMessage.Prefix}:importPluginBackup`;
+        data: {
+            profile: AppProfile;
+            backupPath: string;
+        };
+    }
+
+    export interface CreateProfilePluginBackup extends Base {
+        id: `${ProfileMessage.Prefix}:createPluginBackup`;
+        data: {
+            profile: AppProfile;
+            backupName: string;
+        };
+    }
+
+    export interface DeleteProfilePluginBackup extends Base {
+        id: `${ProfileMessage.Prefix}:deletePluginBackup`;
+        data: {
+            profile: AppProfile;
+            backupFile: string;
+        };
+    }
+
+    export interface ReadProfilePluginBackups extends Base {
+        id: `${ProfileMessage.Prefix}:readPluginBackups`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ExportProfilePluginList extends Base {
+        id: `${ProfileMessage.Prefix}:exportPluginList`;
+        data: {
+            profile: AppProfile;
+        };
+    }
 
     export interface DeployProfile extends Base {
         id: `${ProfileMessage.Prefix}:deploy`;
@@ -291,6 +328,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowProfilePluginBackupsInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfilePluginBackupsInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface LaunchGame extends Base {
         id: `${ProfileMessage.Prefix}:launchGame`;
         data: {
@@ -312,6 +356,11 @@ export namespace AppMessage {
                                | DeleteProfileMod
                                | RenameProfileMod
                                | ReadProfileModFilePaths
+                               | ImportProfilePluginBackup
+                               | CreateProfilePluginBackup
+                               | DeleteProfilePluginBackup
+                               | ReadProfilePluginBackups
+                               | ExportProfilePluginList
                                | DeployProfile
                                | UndeployProfile
                                | FindManualProfileMods
@@ -320,6 +369,7 @@ export namespace AppMessage {
                                | ShowProfileBaseDirInFileExplorer
                                | ShowGameBaseDirInFileExplorer
                                | ShowProfileModsDirInFileExplorer
+                               | ShowProfilePluginBackupsInFileExplorer
                                | LaunchGame
                                | OpenGameConfigFile;
 
@@ -352,6 +402,11 @@ export namespace AppMessage {
         "profile:deleteMod",
         "profile:renameMod",
         "profile:readModFilePaths",
+        "profile:importPluginBackup",
+        "profile:createPluginBackup",
+        "profile:deletePluginBackup",
+        "profile:readPluginBackups",
+        "profile:exportPluginList",
         "profile:deploy",
         "profile:undeploy",
         "profile:findManualMods",
@@ -360,6 +415,7 @@ export namespace AppMessage {
         "profile:showProfileBaseDirInFileExplorer",
         "profile:showProfileModsDirInFileExplorer",
         "profile:showGameBaseDirInFileExplorer",
+        "profile:showProfilePluginBackupsInFileExplorer",
         "profile:launchGame",
         "profile:openGameConfigFile"
     ];

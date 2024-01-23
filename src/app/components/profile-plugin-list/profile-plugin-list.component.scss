@@ -27,8 +27,25 @@
         > .plugin-title {
             font-size: 1rem;
 
+            .plugin-line-name {
+                display: flex;
+                align-items: flex-end;
+                margin-top: 0.5rem;
+            }
+
+            .plugin-line-mod-id {
+                margin-top: 0.25rem;
+                font-size: 0.8em;
+                font-style: italic;
+                max-width: 80%;
+                text-overflow: ellipsis;
+                text-wrap: nowrap;
+                overflow: hidden;
+                opacity: 0.25;
+            }
+
             .plugin-verification-error-icon {
-                margin-left: 1rem;
+                margin-left: 0.25rem;
             }
         }
 
