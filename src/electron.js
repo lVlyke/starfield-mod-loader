@@ -1273,7 +1273,9 @@ class ElectronLoader {
             if (deployPlugins && profile.plugins.length > 0) {
                 const pluginListPath = profile.pluginListPath ? path.resolve(this.#expandPath(profile.pluginListPath)) : "";
 
-                if (pluginListPath && fs.existsSync(path.dirname(pluginListPath))) {
+                if (pluginListPath) {
+                    fs.mkdirpSync(path.dirname(pluginListPath));
+                    
                     // Backup any existing plugins file
                     if (fs.existsSync(pluginListPath)) {
                         const backupFile = `${pluginListPath}.sml_bak`;
@@ -1293,7 +1295,7 @@ class ElectronLoader {
 
                     profileModFiles.push(pluginListPath);
                 } else {
-                    throw new Error(`Unable to write plugins list: path ${pluginListPath} does not exist.`);
+                    throw new Error(`Unable to write plugins list: Plugin list path not defined in profile "${profile.name}"`);
                 }
             }
 

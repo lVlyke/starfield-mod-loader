@@ -280,8 +280,9 @@ export class ProfileManager {
                 if (!!gameDb) {
                     return this.store.dispatch(new AppActions.updateGameDb(gameDb))
                 } else {
-                    // TODO
-                    return throwError(() => "Unable to open game database.");
+                    const errorText = "Unable to open game database file.";
+                    this.dialogManager.createDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
+                    return throwError(() => errorText);
                 }
             })
         ));
@@ -975,9 +976,12 @@ export class ProfileManager {
                                         normalizePathCasing: appState.normalizePathCasing
                                     })),
                                     catchError(() => {
-                                        // TODO - Show error
-                                        return this.store.dispatch(new AppActions.setDeployInProgress(false)).pipe(
-                                            switchMap(() => of(false))
+                                        // TODO - Show error in dialog
+                                        return this.dialogManager.createDefault("Mod deployment failed. Check app.log file for more information.", [
+                                            DialogManager.OK_ACTION_PRIMARY
+                                        ]).pipe(
+                                            switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
+                                            map(() => false)
                                         );
                                     }),
                                     switchMap(() => this.store.dispatch([
@@ -1012,9 +1016,12 @@ export class ProfileManager {
                     return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
                         switchMap(() => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile })),
                         catchError(() => {
-                            // TODO - Show error
-                            return this.store.dispatch(new AppActions.setDeployInProgress(false)).pipe(
-                                switchMap(() => of(false))
+                            // TODO - Show error in dialog
+                            return this.dialogManager.createDefault("Mod undeployment failed. Check app.log file for more information.", [
+                                DialogManager.OK_ACTION_PRIMARY
+                            ]).pipe(
+                                switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
+                                map(() => false)
                             );
                         }),
                         switchMap(() => this.store.dispatch([
