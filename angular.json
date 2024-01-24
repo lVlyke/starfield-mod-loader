@@ -71,10 +71,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "starfield-mod-loader:build:production"
+              "buildTarget": "starfield-mod-loader:build:production"
             },
             "development": {
-              "browserTarget": "starfield-mod-loader:build:development"
+              "buildTarget": "starfield-mod-loader:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -82,7 +82,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "starfield-mod-loader:build"
+            "buildTarget": "starfield-mod-loader:build"
           }
         },
         "test": {

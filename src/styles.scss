@@ -1,8 +1,10 @@
 @use "@angular/material" as mat;
+@use "@lithiumjs/ngx-material-theming" as mat-theming;
 @use "styles/layout";
 
-@include mat.all-component-typographies();
 @include mat.core();
+@include mat-theming.all-static-component-dimensions();
+
 @include layout.declare();
 
 // Use normalize.css

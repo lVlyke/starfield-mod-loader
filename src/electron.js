@@ -2,7 +2,7 @@
 /// <reference path="./app-types.d.ts" />
 
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron");
-const log = require("electron-log");
+const log = require("electron-log/main");
 const url = require("url");
 const path = require("path");
 const os = require("os");
@@ -42,6 +42,8 @@ class ElectronLoader {
     /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
     constructor() {
+        log.initialize();
+        
         if (DEBUG_MODE) {
             log.transports.console.level = "debug";
         }
