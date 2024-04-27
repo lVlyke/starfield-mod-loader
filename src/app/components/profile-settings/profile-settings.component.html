@@ -6,8 +6,11 @@
                         [required]="true"
                         [disabled]="!createMode"
                         [(ngModel)]="formModel.gameId">
+                <mat-select-trigger>
+                    <app-game-badge [gameId]="formModel.gameId" />
+                </mat-select-trigger>
                 <mat-option *ngFor="let gameId of gameIds" [value]="gameId">
-                    {{ gameId | appGameTitle$ | async }}
+                    <app-game-badge [gameId]="gameId" />
                 </mat-option>
             </mat-select>
         </mat-form-field>

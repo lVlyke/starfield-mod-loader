@@ -9,6 +9,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { AppProfileSettingsComponent } from "./profile-settings.component";
 import { MatSelectModule } from "@angular/material/select";
 import { AppPipesModule } from "../../pipes";
+import { AppGameBadgeComponentModule } from "../game-badge/game-badge.module";
 
 @NgModule({
     declarations: [
@@ -26,7 +27,8 @@ import { AppPipesModule } from "../../pipes";
         MatIconModule,
         MatSelectModule,
 
-        AppPipesModule
+        AppPipesModule,
+        AppGameBadgeComponentModule
     ],
     exports: [
         AppProfileSettingsComponent

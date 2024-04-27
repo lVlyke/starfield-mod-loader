@@ -6,14 +6,13 @@ import { MatExpansionPanel } from "@angular/material/expansion";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
-import { filter, map, skip, switchMap, tap } from "rxjs/operators";
+import { filter, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
-import { GameDatabase } from "../../models/game-database";
 import { filterDefined, filterFalse } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
 import { ObservableUtils } from "../../util/observable-utils";
@@ -38,9 +37,6 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.isPluginsEnabled)
     public readonly isPluginsEnabled$!: Observable<boolean>;
 
-    @Select(AppState.getGameDb)
-    public readonly gameDb$!: Observable<GameDatabase>;
-
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
@@ -58,9 +54,6 @@ export class AppModsOverviewPage extends BasePage {
 
     @AsyncState()
     public readonly isPluginsEnabled!: boolean;
-
-    @AsyncState()
-    public readonly gameDb!: GameDatabase;
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;

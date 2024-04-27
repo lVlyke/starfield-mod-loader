@@ -3,12 +3,7 @@
 <div id="profile-controls" *ngIf="!!activeProfile">
     <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
         <div id="profile-mgmt-controls">
-            <span id="profile-game-title"
-                  class="game-title-badge"
-                  [style.background-color]="gameDetails!.bkgColor ?? null"
-                  [style.color]="gameDetails!.fgColor ?? null">
-                {{ activeProfile.gameId | appGameTitle$ | async }}
-            </span>
+            <app-game-badge id="profile-game-title" [gameId]="activeProfile.gameId" />
 
             <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
                 <mat-label>Active Profile</mat-label>
@@ -21,11 +16,8 @@
 
                     <ng-container *ngFor="let profileDesc of profiles">
                         <mat-option [value]="profileDesc">
-                            <span class="game-title"
-                                [style.background-color]="gameDb[profileDesc.gameId].bkgColor ?? null"
-                                [style.color]="gameDb[profileDesc.gameId].fgColor ?? null">
-                                {{ profileDesc.gameId | appGameTitle$ | async }}
-                            </span>
+                            <app-game-badge class="game-title" [gameId]="profileDesc.gameId" />
+
                             <span class="profile-name">
                                 {{ profileDesc.name }}
                             </span>

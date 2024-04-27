@@ -14,6 +14,7 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
 import { AppProfilePluginListComponentModule } from "../../components/profile-plugin-list";
+import { AppGameBadgeComponentModule } from "../../components/game-badge/game-badge.module";
 import { AppPipesModule } from "../../pipes";
 
 const routes: Routes = [
@@ -49,7 +50,8 @@ const routes: Routes = [
         AppPipesModule,
 
         AppProfileModListComponentModule,
-        AppProfilePluginListComponentModule
+        AppProfilePluginListComponentModule,
+        AppGameBadgeComponentModule
     ],
     providers: []
 })

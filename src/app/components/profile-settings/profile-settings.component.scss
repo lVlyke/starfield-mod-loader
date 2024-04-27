@@ -7,4 +7,10 @@
             display: block;
         }
     }
+
+    @at-root app-game-badge {
+        border-radius: 0.75rem;
+        padding: 0.25rem;
+        margin: 0.25rem;
+    }
 }
