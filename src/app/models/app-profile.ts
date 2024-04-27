@@ -19,8 +19,11 @@ export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfileModVerificationResult = AppProfile.ModVerificationResult;
 export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
+export type AppProfileDescription = AppProfile.Description;
 
 export namespace AppProfile {
+
+    export type Description = Pick<AppProfile, "name" | "gameId">;
 
     export interface VerificationResult {
         error: boolean;

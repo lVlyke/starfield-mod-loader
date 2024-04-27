@@ -232,7 +232,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
             }
         });
 
-        // Warn user if a mod uses a script extender they don't appear to be using
+        // Warn user if a mod uses plugins and plugins aren't enabled
         stateRef.get("importRequest").pipe(
             filterDefined(),
             take(1),

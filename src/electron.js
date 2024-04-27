@@ -147,6 +147,15 @@ class ElectronLoader {
             };
         });
 
+        ipcMain.handle("app:loadProfileList", async (_event, /** @type {AppMessageData<"app:loadProfileList">} */ _data) => {
+            try {
+                return this.loadProfileList();
+            } catch (e) {
+                log.error(e);
+                return null;
+            }
+        });
+
         ipcMain.handle("app:loadSettings", async (_event, /** @type {AppMessageData<"app:loadSettings">} */ _data) => {
             try {
                 return this.loadSettings();
@@ -169,7 +178,7 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:loadProfile", async (_event, /** @type {AppMessageData<"app:loadProfile">} */ { name }) => {
+        ipcMain.handle("app:loadProfile", async (_event, /** @type {AppMessageData<"app:loadProfile">} */ { name, gameId }) => {
             return this.loadProfile(name);
         });
 
@@ -568,6 +577,17 @@ class ElectronLoader {
     /** @returns {[Record<any, any>] | []} */
     createDebugMenuOption(/** @type {Record<any, any>} */ menuOption) {
         return DEBUG_MODE ? [menuOption] : [];
+    }
+
+    /**
+     * @returns {AppProfileDescription[]}
+     */
+    loadProfileList() {
+        const profileNames = fs.readdirSync(ElectronLoader.APP_PROFILES_DIR);
+        return profileNames.map((profileName) => ({
+            name: profileName,
+            gameId: this.loadProfile(profileName)?.gameId ?? ""
+        }));
     }
 
     /**

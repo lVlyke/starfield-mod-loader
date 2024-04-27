@@ -13,7 +13,7 @@ import { GameDetails } from "../models/game-details";
 @State<AppData>({
     name: "app",
     defaults: {
-        profileNames: [],
+        profiles: [],
         theme: AppTheme.Dark,
         gameDb: {},
         modsActivated: false,
@@ -26,8 +26,8 @@ import { GameDetails } from "../models/game-details";
 export class AppState {
 
     @Selector()
-    public static getProfileNames(state: AppData): string[] {
-        return state.profileNames;
+    public static getProfileDescriptions(state: AppData): AppProfile.Description[] {
+        return state.profiles;
     }
     
     @Selector()
@@ -80,23 +80,23 @@ export class AppState {
     }
 
     @Action(AppActions.SetProfiles)
-    public setProfiles(context: AppState.Context, { profileNames }: AppActions.SetProfiles): void {
+    public setProfiles(context: AppState.Context, { profiles }: AppActions.SetProfiles): void {
         context.setState(patch({
-            profileNames
+            profiles
         }));
     }
 
     @Action(AppActions.AddProfile)
     public addProfile(context: AppState.Context, { profile }: AppActions.AddProfile): void {
         context.setState(patch({
-            profileNames: append([profile.name])
+            profiles: append([profile])
         }));
     }
 
     @Action(AppActions.DeleteProfile)
     public deleteProfile(context: AppState.Context, { profile }: AppActions.DeleteProfile): void {
         context.setState(patch({
-            profileNames: removeItem(name => name === profile.name)
+            profiles: removeItem(curProfile => curProfile.name === profile.name && curProfile.gameId === profile.gameId)
         }));
     }
 

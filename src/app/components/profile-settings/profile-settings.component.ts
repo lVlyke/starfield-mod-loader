@@ -4,7 +4,7 @@ import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { Observable, combineLatest } from "rxjs";
-import { filter, map, switchMap, take, tap } from "rxjs/operators";
+import { distinctUntilChanged, filter, map, switchMap, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ObservableUtils } from "../../util/observable-utils";
@@ -13,6 +13,7 @@ import { filterDefined, filterTrue } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
 import { AppState } from "../../state";
 import { GameDatabase } from "../../models/game-database";
+import { GameId } from "../../models/game-id";
 
 @Component({
     selector: "app-profile-settings",
@@ -54,12 +55,18 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @DeclareState("formModel")
     private _formModel!: AppProfile;
 
+    protected gameIds: GameId[] = [];
+
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
         profileManager: ProfileManager
     ) {
         super({ cdRef });
+
+        this.gameDb$.pipe(
+            this.managedSource()
+        ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
 
         // Clone the input profile so we don't mutate it during editing
         stateRef.get("profile").subscribe((profile) => {
@@ -70,14 +77,19 @@ export class AppProfileSettingsComponent extends BaseComponent {
         combineLatest(stateRef.getAll("createMode", "remedyMode")).pipe(
             map(([createMode, remedyMode]) => !!createMode || !!remedyMode),
             filterTrue(),
-            switchMap(() => stateRef.get("profile")),
-            take(1),
-            map(profile => this.gameDb[profile.gameId]),
+            switchMap(() => this.form.valueChanges!),
+            map(profile => profile.gameId),
+            filter(gameId => !!gameId),
+            distinctUntilChanged(),
+            map(gameId => this.gameDb[gameId]),
             filterDefined(),
             switchMap(gameDetails => ElectronUtils.invoke("app:findBestProfileDefaults", { gameDetails }))
         ).subscribe((profileDefaults: Partial<AppProfile>) => {
             Object.entries(profileDefaults).forEach(([profileProp, profileDefaultVal]) => {
-                if (_.isEmpty(this._formModel[profileProp as keyof AppProfile]) && !_.isNil(profileDefaultVal) && !_.isEmpty(profileDefaultVal)) {
+                if ((this.createMode || _.isEmpty(this._formModel[profileProp as keyof AppProfile]))
+                    && !_.isNil(profileDefaultVal)
+                    && !_.isEmpty(profileDefaultVal)
+                ) {
                     this._formModel = { ...this._formModel, [profileProp]: profileDefaultVal };
                 }
             });

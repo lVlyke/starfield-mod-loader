@@ -65,6 +65,10 @@ export namespace AppMessage {
         }
     }
 
+    export interface LoadProfileList extends Base {
+        id: `${Prefix}:loadProfileList`;
+    }
+
     export interface LoadSettings extends Base {
         id: `${Prefix}:loadSettings`;
     }
@@ -91,6 +95,7 @@ export namespace AppMessage {
         id: `${Prefix}:loadProfile`;
         data: {
             name: string;
+            gameId: string;
         };
     }
 
@@ -153,6 +158,7 @@ export namespace AppMessage {
                            | ChooseFilePath
                            | VerifyPathExists
                            | OpenFile
+                           | LoadProfileList
                            | LoadSettings
                            | SaveSettings
                            | NewProfile
@@ -381,6 +387,7 @@ export namespace AppMessage {
         "app:chooseFilePath",
         "app:verifyPathExists",
         "app:openFile",
+        "app:loadProfileList",
         "app:loadSettings",
         "app:saveSettings",
         "app:newProfile",

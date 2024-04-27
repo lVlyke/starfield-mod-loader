@@ -1,3 +1,14 @@
+%_game-title-badge {
+    width: 6.5rem;
+    font-weight: 500;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(3px 3px 10px #333);
+    z-index: 1;
+}
+
 :host {
     display: flex;
     height: 100vh;
@@ -34,6 +45,10 @@
             }
         }
 
+        .game-title-badge {
+            @extend %_game-title-badge;
+        }
+
         #profile-mod-list {
             flex: 1 1 75%;
 
@@ -46,9 +61,19 @@
                     flex: 1 1 auto;
                 }
 
+                > #profile-game-title {
+                    flex: 0 0 auto;
+                    border-top-left-radius: 0.5rem;
+                }
+
                 > #profile-mgmt-buttons {
                     flex: 0 0 auto;
                     padding: 0 1rem;
+                    border-top-right-radius: 0.5rem;
+                }
+
+                #profile-select-trigger {
+                    font-weight: 500;
                 }
 
                 #profile-mgmt-button > mat-icon:not(.button-menu-icon) {
@@ -240,5 +265,20 @@
                 width: 100%;
             }
         }
+    }
+
+    @at-root mat-option .game-title {
+        @extend %_game-title-badge;
+        font-size: 1rem;
+        height: calc(48px - 16px); // TODO
+        display: inline-flex;
+        margin-right: 2rem;
+        border-radius: 0.25rem;
+    }
+
+    @at-root mat-option .profile-name {
+        display: inline-flex;
+        align-items: center;
+        font-weight: 500;
     }
 }

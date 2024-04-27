@@ -116,6 +116,9 @@ export class ProfileManager {
             // Load app settings from disk on app start
             this.loadSettings();
 
+            // Load profile list
+            this.loadProfileList();
+
             // Save app settings to disk on changes
             this.appState$.pipe(
                 filterDefined(),
@@ -239,7 +242,6 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             switchMap((settings) => {
                 return this.store.dispatch([
-                    new AppActions.SetProfiles(settings?.profiles),
                     new AppActions.updateModListColumns(settings?.modListColumns),
                     new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
                     new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
@@ -247,7 +249,13 @@ export class ProfileManager {
                     switchMap(() => this.updateGameDatabase()),
                     switchMap(() => {
                         if (settings?.activeProfile) {
-                            return this.loadProfile(settings.activeProfile, true);
+                            return this.loadProfile(
+                                // BC:<=0.6.0: Assume gameId is Starfield if not defined
+                                typeof settings.activeProfile === "string"
+                                    ? { name: settings.activeProfile, gameId: GameId.STARFIELD }
+                                    : settings.activeProfile,
+                                true
+                            );
                         } else {
                             this.saveSettings();
                             return this.createProfileFromUser();
@@ -257,6 +265,14 @@ export class ProfileManager {
                 );
             }),
             switchMap(() => this.appState$.pipe(take(1)))
+        ));
+    }
+
+    public loadProfileList(): Observable<unknown> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile.Description[]>("app:loadProfileList").pipe(
+            switchMap((profileList) => {
+                return this.store.dispatch(new AppActions.SetProfiles(profileList));
+            })
         ));
     }
 
@@ -309,8 +325,11 @@ export class ProfileManager {
         ));
     }
 
-    public loadProfile(profileName: string, setActive: boolean = true): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile>("app:loadProfile", { name: profileName }).pipe(
+    public loadProfile(profile: AppProfile.Description, setActive: boolean = true): Observable<AppProfile | undefined> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile>("app:loadProfile", {
+            name: profile.name,
+            gameId: profile.gameId
+        }).pipe(
             switchMap((profile) => {
                 if (!profile) {
                     // TODO - Show error
@@ -486,8 +505,8 @@ export class ProfileManager {
                 if (activeProfile === profile) {
                     return this.appState$.pipe(
                         take(1),
-                        switchMap(({ profileNames }) => profileNames.length > 0
-                            ? this.setActiveProfile(profileNames[0])
+                        switchMap(({ profiles }) => profiles.length > 0
+                            ? this.loadProfile(profiles[0], true)
                             : this.createProfileFromUser()
                         )
                     );
@@ -542,7 +561,7 @@ export class ProfileManager {
         ));
     }
 
-    public setActiveProfile(profile: AppProfile | string): Observable<AppProfile | undefined> {
+    public setActiveProfile(profile: AppProfile): Observable<AppProfile | undefined> {
         return ObservableUtils.hotResult$(this.isModsActivated$.pipe(
             take(1),
             switchMap((modsActivated) => {
@@ -555,13 +574,9 @@ export class ProfileManager {
             }),
             switchMap(() => {
                 // Make the profile active
-                if (typeof profile === "string") {
-                    return this.loadProfile(profile, true);
-                } else {
-                    return this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
-                        map(() => profile)
-                    );
-                }
+                return this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
+                    map(() => profile)
+                );
             })
         ));
     }
@@ -1112,8 +1127,7 @@ export class ProfileManager {
 
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
-            profiles: appData.profileNames,
-            activeProfile: appData.activeProfile?.name,
+            activeProfile: _.pick(appData.activeProfile ?? {}, "name", "gameId") as AppProfile.Description,
             modsActivated: appData.modsActivated,
             pluginsEnabled: appData.pluginsEnabled,
             normalizePathCasing: appData.normalizePathCasing,

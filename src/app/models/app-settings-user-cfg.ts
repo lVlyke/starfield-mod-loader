@@ -1,6 +1,7 @@
+import { AppProfile } from "./app-profile";
+
 export interface AppSettingsUserCfg {
-    profiles: string[];
-    activeProfile?: string;
+    activeProfile?: string | AppProfile.Description;
     modsActivated: boolean;
     pluginsEnabled: boolean;
     normalizePathCasing: boolean;

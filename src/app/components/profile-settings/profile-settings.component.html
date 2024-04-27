@@ -1,6 +1,18 @@
 <form #profileForm="ngForm" id="profile-form" (ngSubmit)="onFormSubmit$.next(profileForm)">
     <ng-container *ngIf="!!formModel">
         <mat-form-field appearance="fill">
+            <mat-label>Game</mat-label>
+            <mat-select name="gameId"
+                        [required]="true"
+                        [disabled]="!createMode"
+                        [(ngModel)]="formModel.gameId">
+                <mat-option *ngFor="let gameId of gameIds" [value]="gameId">
+                    {{ gameId | appGameTitle$ | async }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
             <mat-label>Profile Name</mat-label>
             <input matInput
                    name="name"

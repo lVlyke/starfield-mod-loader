@@ -3,6 +3,8 @@ import type { GamePluginListType } from "./game-plugin-list-type";
 export interface GameDetails {
     title: string;
     pluginFormats: string[];
+    bkgColor?: string;
+    fgColor?: string;
     modBaseDirs?: string[];
     gameBaseDirs?: string[];
     gameBinaryPaths?: string[];

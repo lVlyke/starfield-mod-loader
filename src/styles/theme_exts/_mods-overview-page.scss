@@ -12,6 +12,10 @@
             border-color: var(--mdc-filled-text-field-active-indicator-color);
         }
 
+        #profile-game-title {
+            background: var(--mdc-filled-text-field-container-color);
+        }
+
         #profile-actions {
             mat-panel-title {
                 font-size: 1.25rem;

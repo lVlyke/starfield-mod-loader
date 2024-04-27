@@ -13,6 +13,7 @@ import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
+import { GameDatabase } from "../../models/game-database";
 import { filterDefined, filterFalse } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
 import { ObservableUtils } from "../../util/observable-utils";
@@ -27,8 +28,8 @@ import { DialogAction } from "../../services/dialog-manager.types";
 })
 export class AppModsOverviewPage extends BasePage {
 
-    @Select(AppState.getProfileNames)
-    public readonly profileNames$!: Observable<AppProfile[]>;
+    @Select(AppState.getProfileDescriptions)
+    public readonly profiles$!: Observable<AppProfile.Description[]>;
 
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
@@ -39,11 +40,14 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.isPluginsEnabled)
     public readonly isPluginsEnabled$!: Observable<boolean>;
 
+    @Select(AppState.getGameDb)
+    public readonly gameDb$!: Observable<GameDatabase>;
+
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
     @AsyncState()
-    public readonly profileNames!: AppProfile[];
+    public readonly profiles!: AppProfile.Description[];
 
     @AsyncState()
     public readonly activeProfile?: AppProfile;
@@ -53,6 +57,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @AsyncState()
     public readonly isPluginsEnabled!: boolean;
+
+    @AsyncState()
+    public readonly gameDb!: GameDatabase;
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;
@@ -87,6 +94,10 @@ export class AppModsOverviewPage extends BasePage {
     @AfterViewInit()
     private readonly afterViewInit$!: Observable<void>;
 
+    protected readonly profileDescCompareFn = (a: AppProfile.Description, b: AppProfile.Description): boolean => {
+        return a.name === b.name && a.gameId === b.gameId;
+    };
+
     protected showPluginList = false;
     protected showedModExternalEditWarning = false;
 
@@ -111,6 +122,10 @@ export class AppModsOverviewPage extends BasePage {
             "activeProfile"
         )).subscribe(([isPluginsEnabled, activeProfile]) => {
             this.showPluginList = isPluginsEnabled && !!activeProfile && activeProfile.plugins.length > 0;
+
+            if (!this.showPluginList && this.profileActionsPanel) {
+                this.profileActionsPanel.expanded = true;
+            }
         });
     }
 

@@ -44,7 +44,7 @@ export namespace AppActions {
         public static readonly type = `[app] set profiles`;
 
         constructor(
-            public profileNames?: string[]
+            public profiles?: AppProfile.Description[]
         ) {}
     }
 

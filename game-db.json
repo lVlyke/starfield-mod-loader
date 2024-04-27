@@ -1,6 +1,8 @@
 {
     "starfield": {
         "title": "Starfield",
+        "bkgColor": "#bc2f06",
+        "fgColor": "#ffffff",
         "modBaseDirs": [
             "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
@@ -44,6 +46,54 @@
             "StarfieldPrefs.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldPrefs.ini",
                 "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
+            ]
+        }
+    },
+    "fallout_4": {
+        "title": "Fallout 4",
+        "bkgColor": "#007300",
+        "fgColor": "#ffffff",
+        "modBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Data",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Data",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/Data"
+        ],
+        "gameBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
+            "C:\\XboxGames\\Fallout 4\\Content",
+            "~/.local/share/Steam/steamapps/common/Fallout 4"
+        ],
+        "gameBinaryPaths": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
+            "C:\\XboxGames\\Fallout 4\\Content\\Fallout4.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/f4se_loader.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/Fallout4.exe"
+        ],
+        "pluginListPaths": [
+            "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
+            "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
+        ],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": ["esm", "esl", "esp"],
+        "scriptExtenders": [
+            {
+                "name": "F4SE",
+                "binaries": ["f4se_loader.exe"],
+                "modPaths": ["F4SE"]
+            }
+        ],
+        "gameConfigFiles": {
+            "Fallout4Custom.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
+                "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
+            ],
+            "Fallout4Prefs.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Prefs.ini",
+                "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
             ]
         }
     }

@@ -7,6 +7,8 @@ import { MatInputModule } from "@angular/material/input";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { AppProfileSettingsComponent } from "./profile-settings.component";
+import { MatSelectModule } from "@angular/material/select";
+import { AppPipesModule } from "../../pipes";
 
 @NgModule({
     declarations: [
@@ -21,7 +23,10 @@ import { AppProfileSettingsComponent } from "./profile-settings.component";
         MatFormFieldModule,
         MatInputModule,
         MatButtonModule,
-        MatIconModule
+        MatIconModule,
+        MatSelectModule,
+
+        AppPipesModule
     ],
     exports: [
         AppProfileSettingsComponent
