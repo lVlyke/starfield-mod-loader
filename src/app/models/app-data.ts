@@ -7,7 +7,6 @@ export interface AppData {
     activeProfile?: AppProfile;
     theme: AppTheme;
     gameDb: GameDatabase;
-    modsActivated: boolean;
     pluginsEnabled: boolean;
     normalizePathCasing: boolean;
     modListColumns?: string[];

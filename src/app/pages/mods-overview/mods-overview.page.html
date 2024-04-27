@@ -134,10 +134,10 @@
                         <button id="mod-activate-button-compact"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
-                                [matTooltip]="isModsActivated ? 'Deactivate Mods' : 'Activate Mods'"
-                                (click)="profileManager.activateMods(!isModsActivated); $event.stopPropagation()">
-                            <mat-icon [color]="isModsActivated ? 'warn' : 'primary'">
-                                {{ isModsActivated ? "pause_circle" : "play_circle" }}
+                                [matTooltip]="isProfileDeployed ? 'Deactivate Mods' : 'Activate Mods'"
+                                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
+                            <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
                             </mat-icon>
         
                             ({{ activeProfile | appProfileActiveModCount }})
@@ -146,18 +146,20 @@
                         <button id="mod-refresh-button-compact"
                                 class="mat-elevation-z3 no-label"
                                 mat-stroked-button
-                                [disabled]="!isModsActivated"
+                                [disabled]="!isProfileDeployed"
                                 (click)="profileManager.refreshDeployedMods(); $event.stopPropagation()">
-                            <mat-icon [color]="isModsActivated ? 'accent' : null">refresh</mat-icon>
+                            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
                         </button>
                     </span>
 
                     <span>
+                        <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
+
                         <button id="launch-game-button-compact"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
-                                matTooltip="Mods are {{ isModsActivated ? 'enabled' : 'disabled'}}"
-                                [matTooltipDisabled]="isModsActivated"
+                                matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
+                                [matTooltipDisabled]="isProfileDeployed"
                                 (click)="profileManager.launchGame(); $event.stopPropagation()">
                             <mat-icon color="accent">play_circle</mat-icon>
         
@@ -173,20 +175,20 @@
                         <button id="mod-activate-button"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
-                                (click)="profileManager.activateMods(!isModsActivated)">
-                            <mat-icon [color]="isModsActivated ? 'warn' : 'primary'">
-                                {{ isModsActivated ? "pause_circle" : "play_circle" }}
+                                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed)">
+                            <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
                             </mat-icon>
         
-                            {{ isModsActivated ? "Deactivate Mods" : "Activate Mods" }}&nbsp;({{ activeProfile | appProfileActiveModCount }})
+                            {{ isProfileDeployed ? "Deactivate Mods" : "Activate Mods" }}&nbsp;({{ activeProfile | appProfileActiveModCount }})
                         </button>
         
                         <button id="mod-refresh-button"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
-                                [disabled]="!isModsActivated"
+                                [disabled]="!isProfileDeployed"
                                 (click)="profileManager.refreshDeployedMods()">
-                            <mat-icon [color]="isModsActivated ? 'accent' : null">refresh</mat-icon>
+                            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
                             
                             Refresh Files
                         </button>
@@ -230,8 +232,8 @@
                     <div class="spacer"></div>
         
                     <div id="game-info">
-                        <div id="mod-status" [attr.mods-activated]="isModsActivated">
-                            Mods are {{ isModsActivated ? "enabled" : "disabled"}}
+                        <div id="mod-status" [attr.mods-activated]="isProfileDeployed">
+                            <ng-container *ngTemplateOutlet="profileDeploymentStatusText" />
                         </div>
                     </div>
         
@@ -351,4 +353,25 @@
             </ng-container>
         </mat-card-content>
     </mat-card>
+</ng-template>
+
+<!-- Profile deployment status text -->
+<ng-template #profileDeploymentStatusText let-asTooltip>
+    <ng-container *ngIf="'Mods for another profile are active' as anotherActiveProfileWarnText">
+        <ng-container *ngIf="('profile:findDeployedProfile' | appSendElectronMsg$:{ refProfile: activeProfile } | async) as deployedProfileName; else showDeployStatus">
+            <ng-container *ngIf="deployedProfileName !== activeProfile?.name; else showDeployStatus">
+                <mat-icon class="warning"
+                        [matTooltip]="anotherActiveProfileWarnText"
+                        [matTooltipDisabled]="!asTooltip">
+                        warning
+                </mat-icon>
+                <span *ngIf="!asTooltip" class="warning">{{ anotherActiveProfileWarnText }}</span>
+            </ng-container>
+        </ng-container>
+        <ng-template #showDeployStatus>
+            <ng-container *ngIf="!asTooltip">
+                Mods are {{ isProfileDeployed ? 'enabled' : 'disabled' }}
+            </ng-container>
+        </ng-template>
+    </ng-container>
 </ng-template>

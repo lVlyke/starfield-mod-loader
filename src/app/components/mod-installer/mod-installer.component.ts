@@ -145,7 +145,10 @@ export class AppModInstallerComponent extends BaseComponent {
         stateRef.get("importRequest").pipe(
             distinctUntilChanged(),
             switchMap(importRequest => this.createInstallSteps(importRequest.installer!))
-        ).subscribe(installSteps => this._installSteps = installSteps);
+        ).subscribe((installSteps) => {
+            this._installSteps = installSteps;
+            this.updateFilesAndFlags();
+        });
 
         // Trigger file updates on changes to the plugin group controls
         stateRef.get("pluginGroupNgModels").pipe(
@@ -174,6 +177,7 @@ export class AppModInstallerComponent extends BaseComponent {
             )),
             distinctUntilChanged(),
             map(index => this._installSteps[index]),
+            filterDefined(),
             map(selectedInstallStep => _.first(_.first(selectedInstallStep.pluginGroups)?.plugins ?? [])),
             filterDefined()
         ).subscribe(firstPlugin => this.previewPlugin = firstPlugin);

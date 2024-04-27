@@ -6,7 +6,7 @@ import { MatExpansionPanel } from "@angular/material/expansion";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
-import { filter, skip, switchMap, tap } from "rxjs/operators";
+import { filter, map, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
@@ -18,6 +18,7 @@ import { filterDefined, filterFalse } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
 import { ObservableUtils } from "../../util/observable-utils";
 import { DialogAction } from "../../services/dialog-manager.types";
+import { ActiveProfileState } from "src/app/state/active-profile/active-profile.state";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -34,9 +35,6 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile | undefined>;
 
-    @Select(AppState.isModsActivated)
-    public readonly isModsActivated$!: Observable<boolean>;
-
     @Select(AppState.isPluginsEnabled)
     public readonly isPluginsEnabled$!: Observable<boolean>;
 
@@ -46,6 +44,9 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
+    @Select(ActiveProfileState.isDeployed)
+    public readonly isProfileDeployed$!: Observable<boolean>;
+
     @AsyncState()
     public readonly profiles!: AppProfile.Description[];
 
@@ -53,7 +54,7 @@ export class AppModsOverviewPage extends BasePage {
     public readonly activeProfile?: AppProfile;
 
     @AsyncState()
-    public readonly isModsActivated!: boolean;
+    public readonly isProfileDeployed!: boolean;
 
     @AsyncState()
     public readonly isPluginsEnabled!: boolean;

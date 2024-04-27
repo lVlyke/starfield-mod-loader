@@ -245,6 +245,10 @@ class ElectronLoader {
             return this.findManualMods(profile);
         });
 
+        ipcMain.handle("profile:findDeployedProfile", async (_event, /** @type {AppMessageData<"profile:findDeployedProfile">} */ { refProfile }) => {
+            return this.readProfileDeploymentMetadata(refProfile)?.profile;
+        });
+
         ipcMain.handle("profile:beginModAdd", async (
             _event,
             /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath }
@@ -661,11 +665,13 @@ class ElectronLoader {
 
         const profileSrc = fs.readFileSync(profileSettingsPath);
         const profile = JSON.parse(profileSrc.toString("utf8"));
-
+        profile.name = name;
         // Deserialize `mods` entries to Map
         profile.mods = new Map(profile.mods);
+        // Update deployment status
+        profile.deployed = this.isProfileDeployed(profile);
 
-        return { name, ...profile };
+        return profile;
     }
 
     /** @returns {void} */
@@ -1207,9 +1213,17 @@ class ElectronLoader {
      * @description Determines whether or not **any** profile is deployed in the `modBaseDir` of `profile`.
      * @returns {boolean}
      * */
-    isProfileDeployed(/** @type {AppProfile} */ profile) {
+    isSimilarProfileDeployed(/** @type {AppProfile} */ profile) {
         const metaFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
         return fs.existsSync(metaFilePath);
+    }
+
+    /** 
+     * @description Determines whether or the specific profile is deployed in the `modBaseDir` of `profile`.
+     * @returns {boolean}
+     * */
+    isProfileDeployed(/** @type {AppProfile} */ profile) {
+        return this.isSimilarProfileDeployed(profile) && this.readProfileDeploymentMetadata(profile)?.profile === profile.name;
     }
 
     /** @returns {ModDeploymentMetadata | undefined} */
@@ -1239,7 +1253,7 @@ class ElectronLoader {
 
         let modDirFiles = await fs.readdir(profile.modBaseDir, { encoding: "utf-8", recursive: true });
 
-        if (this.isProfileDeployed(profile)) {
+        if (this.isSimilarProfileDeployed(profile)) {
             const profileModFiles = this.readProfileDeploymentMetadata(profile)?.profileModFiles.map((filePath) => {
                 return filePath.toLowerCase();
             });
@@ -1283,7 +1297,7 @@ class ElectronLoader {
             // Ensure the mod base dir exists
             fs.mkdirpSync(profile.modBaseDir);
 
-            if (this.isProfileDeployed(profile)) {
+            if (this.isSimilarProfileDeployed(profile)) {
                 await this.undeployProfile(profile);
             }
 
@@ -1373,16 +1387,20 @@ class ElectronLoader {
     /** @returns {Promise<void>} */
     async undeployProfile(/** @type {AppProfile} */ profile) {
         try {
-            if (!this.isProfileDeployed(profile)) {
+            if (!this.isSimilarProfileDeployed(profile)) {
                 return;
             }
 
-            log.info("Undeploying profile", profile.name);
+            const deploymentMetadata = this.readProfileDeploymentMetadata(profile);
+            if (!deploymentMetadata) {
+                log.error("Mod undeployment failed unexpectedly.");
+                return;
+            }
 
-            const { profileModFiles } = /** @type {ModDeploymentMetadata} */ (this.readProfileDeploymentMetadata(profile));
+            log.info("Undeploying profile", deploymentMetadata.profile);
 
             // Only remove files managed by this profile
-            const undeployJobs = profileModFiles.map(async (existingFile) => {
+            const undeployJobs = deploymentMetadata.profileModFiles.map(async (existingFile) => {
                 const fullExistingPath = path.isAbsolute(existingFile)
                     ? existingFile
                     : path.join(profile.modBaseDir, existingFile);

@@ -16,8 +16,7 @@ import { GameDetails } from "../models/game-details";
         profiles: [],
         theme: AppTheme.Dark,
         gameDb: {},
-        modsActivated: false,
-        pluginsEnabled: false, // TODO - Enable by default once plugins are officially supported
+        pluginsEnabled: true,
         normalizePathCasing: false
     },
     children: [ActiveProfileState]
@@ -47,11 +46,6 @@ export class AppState {
     @Selector()
     public static getTheme(state: AppData): AppTheme {
         return state.theme;
-    }
-
-    @Selector()
-    public static isModsActivated(state: AppData): boolean {
-        return state.modsActivated;
     }
 
     @Selector()
@@ -102,11 +96,6 @@ export class AppState {
 
     @Action(AppActions.updateActiveProfile)
     public updateActiveProfile(context: AppState.Context, state: AppActions.ActiveProfileAction): void {
-        context.patchState(_.cloneDeep(state));
-    }
-
-    @Action(AppActions.activateMods)
-    public activateMods(context: AppState.Context, state: AppActions.ModsActivatedAction): void {
         context.patchState(_.cloneDeep(state));
     }
 

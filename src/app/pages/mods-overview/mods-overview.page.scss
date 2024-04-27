@@ -5,8 +5,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    filter: drop-shadow(3px 3px 10px #333);
-    z-index: 1;
+    text-shadow: 2px 2px black;
 }
 
 :host {
@@ -14,6 +13,12 @@
     height: 100vh;
     max-height: 100vh;
     align-items: stretch;
+
+    .warning {
+        color: rgb(200, 200, 0);
+        font-weight: 500;
+        font-style: normal;
+    }
 
     #profile-controls {
         display: flex;
@@ -207,6 +212,12 @@
 
             #mod-status {
                 opacity: 0.8;
+                display: flex;
+                align-items: flex-end;
+
+                mat-icon {
+                    margin-right: 0.5rem;
+                }
 
                 &[mods-activated=false] {
                     font-style: italic;
