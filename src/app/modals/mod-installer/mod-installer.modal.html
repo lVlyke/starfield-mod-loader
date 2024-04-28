@@ -2,7 +2,7 @@
     <mat-card-header>
         <mat-card-title>
             <span>
-                Install {{ importRequest.installer!.info?.name ?? importRequest.installer!.config.moduleName._ ?? importRequest.modName }}
+                Install {{ importRequest.installer!.info?.name ?? importRequest.installer!.config?.moduleName?._ ?? importRequest.modName }}
             </span>
             <span *ngIf="importRequest.installer!.info?.version as modVersion">
                 v{{ modVersion }}
@@ -22,7 +22,7 @@
             </a>
         </mat-card-subtitle>
 
-        <ng-container *ngIf="importRequest.installer!.config.moduleImage?.path?.[0] as modHeaderImgPath">
+        <ng-container *ngIf="importRequest.installer!.config?.moduleImage?.path?.[0] as modHeaderImgPath">
             <img *ngIf="modHeaderImgPath | appModImportRequestImage$:importRequest | async as modHeaderImg"
                  mat-card-md-image
                  [src]="modHeaderImg.url">
@@ -69,7 +69,8 @@
                 Cancel
             </button>
 
-            <button [disabled]="(installerComponent.form.statusChanges | async) === 'INVALID'"
+            <button *ngIf="!(installerComponent.isLoading$ | async)"
+                    [disabled]="(installerComponent.form.statusChanges | async) === 'INVALID'"
                     mat-raised-button
                     type="submit"
                     form="mod-installer-form"

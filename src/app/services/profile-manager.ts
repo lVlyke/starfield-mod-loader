@@ -1104,7 +1104,7 @@ export class ProfileManager {
             minWidth: "62rem",
             maxWidth: "75%",
             width: "fit-content",
-            height: "auto",
+            height: importRequest.installer?.zeroConfig ? "auto" : "80%",
             maxHeight: "80%",
             panelClass: "mat-app-background"
         });

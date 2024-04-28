@@ -107,11 +107,11 @@ export namespace Fomod {
 
     export interface DependencyPluginType {
         defaultType: [PluginType];
-        patterns: DependencyPattern[];
+        patterns: [DependencyPattern.List];
     }
 
     export interface PluginTypeDescriptor {
-        type: [PluginType];
+        type?: [PluginType];
         dependencyType?: [DependencyPluginType];
     }
 

@@ -12,6 +12,7 @@ import { MatRadioModule } from "@angular/material/radio";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatCardModule } from "@angular/material/card";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { AppValueCheckboxComponentModule } from "../value-checkbox";
 import { AppModInstallerComponent } from "./mod-installer.component";
 import { AppPluginGroupValidator } from "./plugin-group-validator.directive";
@@ -46,6 +47,7 @@ const PIPES = [
         MatFormFieldModule,
         MatSlideToggleModule,
         MatCardModule,
+        MatProgressSpinnerModule,
 
         AppPipesModule,
 

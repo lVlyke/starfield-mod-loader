@@ -16,10 +16,10 @@ import { MatStep, MatStepper } from "@angular/material/stepper";
 import { Select } from "@ngxs/store";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
-import { concatMap, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, tap, toArray } from "rxjs/operators";
+import { concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
 import { AppModInstaller } from "./mod-installer.types";
 import { BaseComponent } from "../../core/base-component";
-import { filterDefined, filterTrue } from "../../core/operators";
+import { filterDefined, filterFalse, filterTrue } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
 import { ModInstaller } from "../../models/mod-installer";
 import { AppProfile } from "../../models/app-profile";
@@ -45,6 +45,7 @@ export class AppModInstallerComponent extends BaseComponent {
 
     public readonly STEP_DISABLED_COLOR = "warn"; // TODO - Find a better way of doing this
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
+    public readonly isLoading$: Observable<boolean>;
 
     @Select(AppState.getActiveProfile)
     public readonly activeProfile$!: Observable<AppProfile>;
@@ -85,13 +86,15 @@ export class AppModInstallerComponent extends BaseComponent {
     protected previewPlugin: AppModInstaller.Plugin | undefined;
     protected fullscreenPluginPreviewRef: OverlayHelpersRef | undefined;
 
-    private _validateStepsVisited = (_control: AbstractControl): ValidationErrors | null => {
+    private readonly _validateStepsVisited = (_control: AbstractControl): ValidationErrors | null => {
         return (!this.hasNextStep || this.installStepper.steps.toArray()
             .filter(step => this.installStepIsEnabled(step))
             .every(step => step.interacted))
                 ? null
                 : { installSteps: true };
     };
+
+    private readonly _modFilePathCache = new Map<string, string[]>();
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -102,16 +105,20 @@ export class AppModInstallerComponent extends BaseComponent {
     ) {
         super({ cdRef });
 
+        this.isLoading$ = stateRef.get("installSteps").pipe(
+            map(installSteps => !this.importRequest.installer!.zeroConfig && !installSteps?.length)
+        );
+
         // Check if this mod has all required dependencies
         stateRef.get("importRequest").pipe(
             filterDefined(),
-            switchMap(importRequest => this.resolveCompositeDependencies(importRequest.installer!.config.moduleDependencies, {}).pipe(
+            switchMap(importRequest => this.resolveCompositeDependencies(importRequest.installer!.config?.moduleDependencies ?? [], {}).pipe(
                 switchMap(result => result ? EMPTY : of(importRequest))
             )),
             switchMap((importRequest) => {
                 const ignoreAction = { label: "Ignore" };
 
-                console.info("FOMOD installer dependency check failed: ", importRequest.installer!.config.moduleDependencies);
+                console.info("FOMOD installer dependency check failed: ", importRequest.installer!.config?.moduleDependencies);
 
                 // TODO - Show missing deps
                 return dialogManager.createDefault(
@@ -134,7 +141,7 @@ export class AppModInstallerComponent extends BaseComponent {
             filterDefined(),
             distinctUntilChanged()
          ).subscribe((importRequest) => {
-            let bestModName = importRequest.installer!.info?.name ?? importRequest.installer!.config.moduleName._ ?? importRequest.modName;
+            let bestModName = importRequest.installer!.info?.name ?? importRequest.installer!.config?.moduleName._ ?? importRequest.modName;
             if (importRequest.installer!.info?.version) {
                 bestModName += ` - ${importRequest.installer!.info.version}`;
             }
@@ -170,7 +177,9 @@ export class AppModInstallerComponent extends BaseComponent {
         ).subscribe(() => this.form.form.updateValueAndValidity());
 
         // Update the plugin preview to the first plugin in the first plugin group of a newly selected step
-        stateRef.get("installStepper").pipe(
+        this.isLoading$.pipe(
+            filterFalse(),
+            switchMap(() => stateRef.get("installStepper")),
             filterDefined(),
             switchMap(installStepper => installStepper.selectedIndexChange.pipe(
                 startWith(installStepper.selectedIndex)
@@ -325,13 +334,23 @@ export class AppModInstallerComponent extends BaseComponent {
     }
 
     private updateRequiredFiles(): void {
-        this.importRequest.installer!.config.requiredInstallFiles.forEach((files) => {
-            this.updateFilePathMap(files);
-        });
+        const installerConfig = this.importRequest.installer!.config;
+        if (installerConfig) {
+            // If an installer config was provided, include its required files
+            installerConfig.requiredInstallFiles.forEach((files) => {
+                this.updateFilePathMap(files);
+            });
+        } else {
+            // If no installer config was provided, include all files
+            const filePathMap = this.importRequest.modFilePathMapFilter!;
+            this.importRequest.modFilePaths.forEach((modFilePath) => {
+                filePathMap[modFilePath.filePath] = modFilePath.mappedFilePath ?? modFilePath.filePath;
+            });
+        }
     }
 
     private updateConditionalFiles(installerFlags: AppModInstaller.Flags): Observable<unknown> {
-        const patterns = this.importRequest.installer!.config.conditionalFileInstalls?.patterns?.[0]?.pattern ?? [];
+        const patterns = this.importRequest.installer!.config?.conditionalFileInstalls?.patterns?.[0]?.pattern ?? [];
 
         if (patterns.length === 0) {
             return EMPTY;
@@ -415,39 +434,43 @@ export class AppModInstallerComponent extends BaseComponent {
     }
 
     private resolveFileDependency(file: ModInstaller.FileDependency | string): Observable<boolean> {
-        const filePathMap = this.importRequest.modFilePathMapFilter!;
+        const filePathMap = this.importRequest.modFilePathMapFilter ?? {};
         const fileState = typeof file === "string"
             ? ModInstaller.DependencyState.Active
             : (file.state?.[0] ?? ModInstaller.DependencyState.Active);
         const rawFilePath = typeof file === "string"
             ? file
             : file.file[0];
+        const filePath = rawFilePath.replace(/[\\/]/g, this.importRequest.filePathSeparator);
         const localFile = filePathMap[rawFilePath];
         
         if (localFile) {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
-        const profileMods = this.activeProfile.mods;
-        const filePath = rawFilePath.replace(/[\\/]/g, "");
         const manualFiles = this.activeProfile.manualMods;
         const manualMatch = manualFiles?.find((manualFile) => {
-            return manualFile.replace(/[\\/]/g, "").toLowerCase() === filePath.toLowerCase();
+            const curFilePath = manualFile.replace(/[\\/]/g, this.importRequest.filePathSeparator);
+            return curFilePath.toLowerCase() === filePath.toLowerCase();
         });
 
         if (manualMatch) {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
+        const profileMods = this.activeProfile.mods;
         return from(profileMods.entries()).pipe(
-            mergeMap(([modName, modEntry]) => this.profileManager.readModFilePaths(modName, true).pipe(
-                map(modFilePaths => modFilePaths.some((modFilePath) => {
+            mergeMap(([modName, modEntry]) => this.readModFilePaths(modName).pipe(
+                map(modFilePaths => modFilePaths.some((rawModFilePath) => {
+                    const modFilePath = rawModFilePath.replace(/[\\/]/g, this.importRequest.filePathSeparator);
                     if (filePath.toLowerCase() === modFilePath.toLowerCase()) {
                         switch (fileState) {
                             case ModInstaller.DependencyState.Inactive:
                                 return !modEntry.enabled;
                             case ModInstaller.DependencyState.Active:
                                 return modEntry.enabled;
+                            case ModInstaller.DependencyState.Missing:
+                                return true;
                         }
                     }
 
@@ -456,7 +479,10 @@ export class AppModInstallerComponent extends BaseComponent {
             )),
             toArray(),
             map(results => results.filter(Boolean)),
-            map(matches => matches.length > 0 || fileState === ModInstaller.DependencyState.Missing)
+            map(matches => (fileState === ModInstaller.DependencyState.Missing)
+                                ? matches.length === 0
+                                : matches.length > 0
+            )
         );
     }
 
@@ -464,7 +490,7 @@ export class AppModInstallerComponent extends BaseComponent {
         installer: ModInstaller,
         flags?: AppModInstaller.Flags
     ): Observable<AppModInstaller.InstallStep[]> {
-        const installSteps = installer.config.installSteps;
+        const installSteps = installer.config?.installSteps;
 
         if (!installSteps) {
             return of([]);
@@ -472,15 +498,19 @@ export class AppModInstallerComponent extends BaseComponent {
 
         return from(installSteps.installStep).pipe(
             concatMap(installStep => this.resolveCompositeDependencies(
-                !!flags && installStep.visible ? installStep.visible : [],
-                flags ?? {}
-            ).pipe(
-                switchMap(visible => visible ? of({
-                    stepInfo: installStep,
-                    name: installStep.name[0],
-                    pluginGroups: this.createPluginGroups(installStep)
-                }) : EMPTY)
-            )),
+                    !!flags && installStep.visible ? installStep.visible : [],
+                    flags ?? {}
+                ).pipe(
+                    filterTrue(),
+                    concatMap(() => this.createPluginGroups(installStep).pipe(
+                        map((pluginGroups) => ({
+                            pluginGroups,
+                            stepInfo: installStep,
+                            name: installStep.name[0]
+                        }))
+                    ))
+                )
+            ),
             toArray(),
             map((processedInstallSteps) => {
                 const order = installSteps.order?.[0] ?? ModInstaller.Order.Ascending;
@@ -491,37 +521,78 @@ export class AppModInstallerComponent extends BaseComponent {
         );
     }
 
-    private createPluginGroups(installStep: ModInstaller.InstallStep): AppModInstaller.PluginGroup[] {
+    private createPluginGroups(
+        installStep: ModInstaller.InstallStep,
+        flags?: AppModInstaller.Flags
+    ): Observable<AppModInstaller.PluginGroup[]> {
         const pluginGroups = installStep.optionalFileGroups[0];
-        let processedPluginGroups = pluginGroups.group.map((pluginGroup) => ({
-            pluginGroupInfo: pluginGroup,
-            name: pluginGroup.name[0],
-            type: pluginGroup.type[0],
-            plugins: this.createPlugins(pluginGroup)
-        }));
-
-        const order = pluginGroups.order?.[0] ?? ModInstaller.Order.Ascending;
-        processedPluginGroups = this.orderedSort(processedPluginGroups, order);
-
-        return processedPluginGroups;
+        return from(pluginGroups.group).pipe(
+            concatMap((pluginGroup) => this.createPlugins(pluginGroup, flags).pipe(
+                map((plugins) => ({
+                    plugins,
+                    pluginGroupInfo: pluginGroup,
+                    name: pluginGroup.name[0],
+                    type: pluginGroup.type[0]
+                }))
+            )),
+            toArray(),
+            map((processedPluginGroups) => {
+                const order = pluginGroups.order?.[0] ?? ModInstaller.Order.Ascending;
+                return this.orderedSort(processedPluginGroups, order);
+            })
+        );
     }
 
-    private createPlugins(pluginGroup: ModInstaller.PluginGroup): AppModInstaller.Plugin[] {
+    private createPlugins(
+        pluginGroup: ModInstaller.PluginGroup,
+        flags?: AppModInstaller.Flags
+    ): Observable<AppModInstaller.Plugin[]> {
         const plugins = pluginGroup.plugins[0];
-        let processedPlugins = plugins.plugin.map((plugin) => ({
-            pluginGroup,
-            pluginInfo: plugin,
-            name: plugin.name[0],
-            type: plugin.typeDescriptor[0].type[0].name[0],
-            flags: this.createPluginFlags(plugin),
-            description: plugin.description?.[0],
-            image: plugin.image?.[0]
-        }));
+        return from(plugins.plugin).pipe(
+            concatMap((plugin) => {
+                const pluginDefaultType = plugin.typeDescriptor[0].type;
+                const pluginDependencyType = plugin.typeDescriptor[0].dependencyType;
 
-        const order = plugins.order?.[0] ?? ModInstaller.Order.Ascending;
-        processedPlugins = this.orderedSort(processedPlugins, order);
+                if (!pluginDefaultType && !pluginDependencyType) {
+                    throw new Error("Invalid plugin group.");
+                }
 
-        return processedPlugins;
+                let basePluginType = pluginDependencyType
+                    ? pluginDependencyType[0].defaultType[0].name[0]
+                    : pluginDefaultType![0].name[0];
+                let pluginType$ = of(basePluginType);
+
+                // Resolve any dependencies for plugin type
+                if (pluginDependencyType) {
+                    const dependenyPatterns = pluginDependencyType[0].patterns[0];
+                    pluginType$ = from(dependenyPatterns.pattern).pipe(
+                        concatMap((dependencyPattern) => this.resolveCompositeDependencies(dependencyPattern.dependencies, flags ?? {}).pipe(
+                            filterTrue(),
+                            map(() => dependencyPattern.type[0].name[0])
+                        )),
+                        take(1),
+                        defaultIfEmpty(basePluginType)
+                    );
+                }
+
+                return pluginType$.pipe(
+                    map((pluginType) => ({
+                        pluginGroup,
+                        pluginInfo: plugin,
+                        name: plugin.name[0],
+                        type: pluginType,
+                        flags: this.createPluginFlags(plugin),
+                        description: plugin.description?.[0],
+                        image: plugin.image?.[0]
+                    }))
+                );
+            }),
+            toArray(),
+            map((processedPlugins) => {
+                const order = plugins.order?.[0] ?? ModInstaller.Order.Ascending;
+                return this.orderedSort(processedPlugins, order)
+            })
+        )
     }
 
     private createPluginFlags(plugin: ModInstaller.Plugin): AppModInstaller.Flag[] {
@@ -529,6 +600,17 @@ export class AppModInstallerComponent extends BaseComponent {
             name: flag.name[0],
             value: flag._
         })) ?? [];
+    }
+
+    private readModFilePaths(modName: string): Observable<string[]> {
+        if (this._modFilePathCache.has(modName)) {
+            return of(this._modFilePathCache.get(modName)!);
+        } else {
+            return this.profileManager.readModFilePaths(modName, true).pipe(
+                // Cache file path lookups to avoid redundant calls to the filesystem
+                tap(result => this._modFilePathCache.set(modName, result))
+            );
+        }
     }
 
     private installStepIsEnabled(step?: MatStep): boolean {

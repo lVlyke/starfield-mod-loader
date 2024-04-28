@@ -1,8 +1,9 @@
 import { Fomod } from "./fomod";
 
 export interface ModInstaller {
-    config: ModInstaller.ModuleConfig;
+    config?: ModInstaller.ModuleConfig;
     info?: ModInstaller.ModuleInfo;
+    zeroConfig: boolean;
 }
 
 export namespace ModInstaller {

@@ -11,15 +11,25 @@
     </mat-form-field>
 
     <div class="view-controls">
-        <mat-slide-toggle labelPosition="before" [checked]="compactView" (change)="compactView = $event.checked">
+        <mat-slide-toggle *ngIf="!importRequest.installer!.zeroConfig"
+                          labelPosition="before"
+                          [checked]="compactView"
+                          (change)="compactView = $event.checked">
             Compact View
         </mat-slide-toggle>
     </div>
 
+    <!-- Loading indicator if install steps are being processed -->
+    <div *ngIf="isLoading$ | async" class="loading-indicator">
+        <mat-spinner color="accent" />
+    </div>
+
     <div class="install-step-container">
         <!-- Plugin preview panel -->
-        <div *ngIf="!compactView" class="plugin-info-panel plugin-preview">
-            <ng-container *ngTemplateOutlet="pluginPreview; context: { $implicit: previewPlugin, fullscreenToggle: true }" />
+        <div *ngIf="!compactView" class="plugin-info-panel">
+            <div class="plugin-preview">
+                <ng-container *ngTemplateOutlet="pluginPreview; context: { $implicit: previewPlugin, fullscreenToggle: true }" />
+            </div>
         </div>
 
         <!-- Install stepper -->
@@ -105,7 +115,9 @@
                                                             [disabled]="pluginGroup.type === PluginGroupType.SelectAll || [PluginType.Required, PluginType.NotUsable].includes(plugin.type)"
                                                             [required]="pluginGroup.type === PluginGroupType.SelectAll || [PluginType.Required].includes(plugin.type)"
                                                             (change)="pluginCheckbox.checked ? previewPlugin = plugin : null" />
-                                                <mat-label>{{ plugin.name }}</mat-label>
+                                                <mat-label [attr.disabled]="pluginCheckbox.disabled ? 'disabled' : null">
+                                                    {{ plugin.name }}
+                                                </mat-label>
                                                 
                                                 <ng-container *ngTemplateOutlet="pluginControls; context: { $implicit: plugin }" />
                                             </div>

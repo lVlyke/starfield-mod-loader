@@ -989,22 +989,23 @@ class ElectronLoader {
         let installer = undefined;
 
         // Check if this mod is packaged as a FOMOD installer
+        const fomodModuleInfoFile = modPreparedFilePaths.find(({ filePath }) => filePath.toLowerCase().endsWith(`fomod${path.sep}info.xml`));
         const fomodModuleConfigFile = modPreparedFilePaths.find(({ filePath }) => filePath.toLowerCase().endsWith(`fomod${path.sep}moduleconfig.xml`));
-        if (!!fomodModuleConfigFile) {
+        if (!!fomodModuleInfoFile || !!fomodModuleConfigFile) {
             do {
-                const infoFile = modPreparedFilePaths.find(({ filePath }) => filePath.toLowerCase().endsWith(`fomod${path.sep}info.xml`));
+                
                 const xmlParser = new xml2js.Parser({
                     mergeAttrs: true,
                     trim: true,
                     emptyTag: undefined
                 });
                 /** @type {FomodModuleInfo | undefined} */ let fomodModuleInfo;
-                /** @type {FomodModuleConfig} */ let fomodModuleConfig;
+                /** @type {FomodModuleConfig | undefined} */ let fomodModuleConfig;
 
                 // Parse info.xml (optional)
-                if (infoFile) {
+                if (fomodModuleInfoFile) {
                     try {
-                        const fullInfoFilePath =  path.join(modImportPath, infoFile.filePath);
+                        const fullInfoFilePath =  path.join(modImportPath, fomodModuleInfoFile.filePath);
                         const fileInfo = await detectFileEncodingAndLanguage(fullInfoFilePath);
                         const fileEncoding = /** @type {BufferEncoding} */ (fileInfo.encoding?.toLowerCase() ?? "utf-8");
                         const moduleInfoXml = fs.readFileSync(
@@ -1017,24 +1018,26 @@ class ElectronLoader {
                     }
                 }
 
-                // Parse ModuleConfig.xml
-                try {
-                    const fullConfigFilePath =  path.join(modImportPath, fomodModuleConfigFile.filePath);
-                    const fileInfo = await detectFileEncodingAndLanguage(fullConfigFilePath);
-                    const fileEncoding = /** @type {BufferEncoding} */ (fileInfo.encoding?.toLowerCase() ?? "utf-8");
-                    const moduleConfigXml = fs.readFileSync(
-                        fullConfigFilePath,
-                        { encoding: fileEncoding }
-                    );
-                    fomodModuleConfig = await xmlParser.parseStringPromise(moduleConfigXml);
-                } catch (err) {
-                    log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml: `, err);
-                    break;
-                }
+                // Parse ModuleConfig.xml (optional)
+                if (fomodModuleConfigFile) {
+                    try {
+                        const fullConfigFilePath =  path.join(modImportPath, fomodModuleConfigFile.filePath);
+                        const fileInfo = await detectFileEncodingAndLanguage(fullConfigFilePath);
+                        const fileEncoding = /** @type {BufferEncoding} */ (fileInfo.encoding?.toLowerCase() ?? "utf-8");
+                        const moduleConfigXml = fs.readFileSync(
+                            fullConfigFilePath,
+                            { encoding: fileEncoding }
+                        );
+                        fomodModuleConfig = await xmlParser.parseStringPromise(moduleConfigXml);
+                    } catch (err) {
+                        log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml: `, err);
+                        break;
+                    }
 
-                if (!fomodModuleConfig) {
-                    log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml`);
-                    break;
+                    if (!fomodModuleConfig) {
+                        log.error(`${modName} - Failed to read FOMOD ModuleConfig.xml`);
+                        break;
+                    }
                 }
 
                 // Map FOMOD installer to SML format
@@ -1052,16 +1055,22 @@ class ElectronLoader {
                         };
                     }
 
+                    let moduleConfig = undefined;
+                    if (fomodModuleConfig) {
+                        moduleConfig = {
+                            moduleName: fomodModuleConfig.config.moduleName[0],
+                            moduleDependencies: fomodModuleConfig.config.moduleDependencies ?? [],
+                            requiredInstallFiles: fomodModuleConfig.config.requiredInstallFiles ?? [],
+                            installSteps: fomodModuleConfig.config.installSteps?.[0],
+                            conditionalFileInstalls: fomodModuleConfig.config.conditionalFileInstalls?.[0],
+                            moduleImage: fomodModuleConfig.config.moduleImage?.[0]
+                        };
+                    }
+                    
                     installer = {
                         info: moduleInfo,
-                        config: {
-                            moduleName: fomodModuleConfig?.config.moduleName[0],
-                            moduleDependencies: fomodModuleConfig?.config.moduleDependencies ?? [],
-                            requiredInstallFiles: fomodModuleConfig?.config.requiredInstallFiles ?? [],
-                            installSteps: fomodModuleConfig?.config.installSteps?.[0],
-                            conditionalFileInstalls: fomodModuleConfig?.config.conditionalFileInstalls?.[0],
-                            moduleImage: fomodModuleConfig?.config.moduleImage?.[0]
-                        }
+                        config: moduleConfig,
+                        zeroConfig: !moduleConfig?.installSteps
                     };
                 }  catch (err) {
                     log.error(`${modName} - Failed to parse FOMOD data: `, err);
@@ -1071,9 +1080,12 @@ class ElectronLoader {
                 log.info(`${installer.info?.name ?? modName} - Found FOMOD installer`);
 
                 // Update the root subdir to the parent dir of the `fomod` folder
-                modSubdirRoot = path.dirname(path.dirname(fomodModuleConfigFile.filePath));
-                if (modSubdirRoot === ".") {
-                    modSubdirRoot = "";
+                const fomodFilePath = (fomodModuleInfoFile ?? fomodModuleConfigFile)?.filePath;
+                if (fomodFilePath) {
+                    modSubdirRoot = path.dirname(path.dirname(fomodFilePath));
+                    if (modSubdirRoot === ".") {
+                        modSubdirRoot = "";
+                    }
                 }
             } while(false);
         }

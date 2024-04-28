@@ -11,10 +11,10 @@ export class AppResolveDefaultModInstallerPluginPipe implements PipeTransform {
         const plugins = pluginGroup.plugins;
         let plugin: AppModInstaller.Plugin | undefined;
 
-        plugin = plugins.find(plugin => plugin.pluginInfo.typeDescriptor[0].type[0].name[0] === ModInstaller.PluginType.Name.Required);
+        plugin = plugins.find(plugin => plugin.type === ModInstaller.PluginType.Name.Required);
         
         if (!plugin) {
-            plugin = plugins.find(plugin => plugin.pluginInfo.typeDescriptor[0].type[0].name[0] === ModInstaller.PluginType.Name.Recommended);
+            plugin = plugins.find(plugin => plugin.type === ModInstaller.PluginType.Name.Recommended);
         }
 
         if (!plugin) {
