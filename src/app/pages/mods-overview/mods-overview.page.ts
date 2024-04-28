@@ -37,6 +37,9 @@ export class AppModsOverviewPage extends BasePage {
     @Select(AppState.isPluginsEnabled)
     public readonly isPluginsEnabled$!: Observable<boolean>;
 
+    @Select(AppState.isDeployInProgress)
+    public readonly isDeployInProgress$!: Observable<boolean>;
+
     @Select(AppState.getActiveGameDetails)
     public readonly gameDetails$!: Observable<GameDetails | undefined>;
 
@@ -54,6 +57,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @AsyncState()
     public readonly isPluginsEnabled!: boolean;
+
+    @AsyncState()
+    public readonly isDeployInProgress!: boolean;
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;

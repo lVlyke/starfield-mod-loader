@@ -152,9 +152,14 @@
                                 mat-stroked-button
                                 [matTooltip]="isProfileDeployed ? 'Deactivate Mods' : 'Activate Mods'"
                                 (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
-                            <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
-                                {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
-                            </mat-icon>
+                                
+                            @if (isDeployInProgress) {
+                                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+                            } @else {
+                                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                                </mat-icon>
+                            }
         
                             ({{ activeProfile | appProfileActiveModCount }})
                         </button>
@@ -192,9 +197,13 @@
                                 class="mat-elevation-z3"
                                 mat-stroked-button
                                 (click)="profileManager.updateActiveModDeployment(!isProfileDeployed)">
-                            <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
-                                {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
-                            </mat-icon>
+                            @if (isDeployInProgress) {
+                                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+                            } @else {
+                                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                                </mat-icon>
+                            }
         
                             {{ isProfileDeployed ? "Deactivate Mods" : "Activate Mods" }}&nbsp;({{ activeProfile | appProfileActiveModCount }})
                         </button>

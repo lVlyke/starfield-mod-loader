@@ -11,6 +11,7 @@ import { MatListModule } from "@angular/material/list";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatButtonModule } from "@angular/material/button";
 import { MatExpansionModule } from "@angular/material/expansion";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
 import { AppProfilePluginListComponentModule } from "../../components/profile-plugin-list";
@@ -46,6 +47,7 @@ const routes: Routes = [
         MatFormFieldModule,
         MatListModule,
         MatExpansionModule,
+        MatProgressSpinnerModule,
 
         AppPipesModule,
 

@@ -176,7 +176,8 @@ export class ProfileManager {
             // Handle automatic mod redeployment when the active profile is deployed
             this.activeProfile$.pipe(
                 filterDefined(),
-                distinctUntilKeyChanged("name"),
+                map(profile => _.pick(profile, "name", "deployed")),
+                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
                 switchMap(() => combineLatest([this.activeProfile$, this.appState$]).pipe(
                     filter(([profile]) => !!profile?.deployed),
                     map(([profile, appState]) => ([

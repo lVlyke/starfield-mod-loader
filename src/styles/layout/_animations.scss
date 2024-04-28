@@ -1,0 +1,16 @@
+@mixin declare() {
+
+    .slow-rotate {
+        animation: keyframes-rotate 2s linear infinite;
+    }
+
+    @keyframes keyframes-rotate {
+        from {
+            transform: rotateZ(359deg)
+        }
+
+        to {
+            transform: rotateZ(0);
+        }
+    }
+}

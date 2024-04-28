@@ -13,17 +13,6 @@
 
         > .sync-icon {
             margin-right: 0.7rem;
-            animation: sync-rotate 2s linear infinite;
-        }
-
-        @keyframes sync-rotate {
-            from {
-                transform: rotateZ(359deg)
-            }
-
-            to {
-                transform: rotateZ(0);
-            }
         }
     }
 }
