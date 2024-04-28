@@ -60,7 +60,7 @@
             </ng-container>
 
             <ng-template #manualModsTemplate>
-                <div>{{ (profile | appProfileActiveModCount) + 1 }}</div>
+                <div>{{ (profile | appProfileActiveModCount:false) + 1 }}</div>
             </ng-template>
         </td>
     </ng-container>

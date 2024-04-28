@@ -205,12 +205,14 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"app:verifyProfile">} */ { profile }
         ) => {
-            const modVerifyResult = this.verifyProfileModsExist(profile);
+            const modVerifyResult = this.verifyProfileModsExist(false, profile);
+            const rootModVerifyResult = this.verifyProfileModsExist(true, profile);
             const modDirVerifyResult = this.verifyProfileModDirExists(profile);
             const gameDirVerifyResult = this.verifyProfileGameDirExists(profile);
 
             return {
                 mods: modVerifyResult,
+                rootMods: rootModVerifyResult,
                 modBaseDir: modDirVerifyResult,
                 gameBaseDir: gameDirVerifyResult
             };
@@ -251,18 +253,28 @@ class ElectronLoader {
 
         ipcMain.handle("profile:beginModAdd", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath }
+            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath, root }
         ) => {
-            log.info("Adding mod: ", modPath);
-            return this.beginModAdd(profile, modPath);
+            if (modPath) {
+                log.info("Adding mod: ", modPath);
+            } else {
+                log.info("Adding new mod");
+            }
+
+            return this.beginModAdd(profile, root ?? false, modPath);
         });
 
         ipcMain.handle("profile:beginModExternalImport", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath }
+            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath, root }
         ) => {
-            log.info("Importing mod: ", modPath);
-            return this.beginModExternalImport(profile, modPath);
+            if (modPath) {
+                log.info("Importing mod: ", modPath);
+            } else {
+                log.info("Importing new mod");
+            }
+            
+            return this.beginModExternalImport(profile, root ?? false, modPath);
         });
 
         ipcMain.handle("profile:completeModImport", async (
@@ -500,6 +512,14 @@ class ElectronLoader {
                             {
                                 label: "Import Mod",
                                 click: () => this.mainWindow.webContents.send("profile:beginModExternalImport")
+                            },
+                            {
+                                label: "Add Root Mod",
+                                click: () => this.mainWindow.webContents.send("profile:beginModAdd", { root: true })
+                            },
+                            {
+                                label: "Import Root Mod",
+                                click: () => this.mainWindow.webContents.send("profile:beginModExternalImport", { root: true })
                             }
                         ]
                     },
@@ -588,10 +608,14 @@ class ElectronLoader {
      */
     loadProfileList() {
         const profileNames = fs.readdirSync(ElectronLoader.APP_PROFILES_DIR);
-        return profileNames.map((profileName) => ({
-            name: profileName,
-            gameId: this.loadProfile(profileName)?.gameId ?? ""
-        }));
+        return profileNames.map((profileName) => {
+            const profile = this.loadProfile(profileName);
+            return {
+                name: profileName,
+                gameId: profile?.gameId ?? "",
+                deployed: profile?.deployed ?? false
+            };
+        });
     }
 
     /**
@@ -666,8 +690,9 @@ class ElectronLoader {
         const profileSrc = fs.readFileSync(profileSettingsPath);
         const profile = JSON.parse(profileSrc.toString("utf8"));
         profile.name = name;
-        // Deserialize `mods` entries to Map
+        // Deserialize mods entries to Map
         profile.mods = new Map(profile.mods);
+        profile.rootMods = new Map(profile.rootMods ?? []);
         // Update deployment status
         profile.deployed = this.isProfileDeployed(profile);
 
@@ -679,8 +704,11 @@ class ElectronLoader {
         const profileDir = this.getProfileDir(profile.name);
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
 
-        // Serialize `mods` Map as entries
-        const profileToWrite = Object.assign({}, profile, { mods: Array.from(profile.mods.entries()) });
+        // Serialize root mods Map as entries
+        const profileToWrite = Object.assign({}, profile, {
+            mods: Array.from(profile.mods.entries()),
+            rootMods: profile.rootMods ? Array.from(profile.rootMods.entries()) : []
+        });
 
         // Make sure the profile and mods directory exists
         fs.mkdirpSync(this.getProfileModsDir(profile.name));
@@ -785,6 +813,7 @@ class ElectronLoader {
     /** @returns {Promise<ModImportRequest | undefined>} */
     async beginModAdd(
         /** @type {AppProfile} */ profile,
+        /** @type {boolean} */ root,
         /** @type {string | undefined} */ modPath,
     ) {
         if (!modPath) {
@@ -807,7 +836,7 @@ class ElectronLoader {
         const filePath = modPath ?? "";
         if (!!filePath) {
             if (fs.lstatSync(filePath).isDirectory()) {
-                return this.beginModExternalImport(profile, filePath);
+                return this.beginModExternalImport(profile, root, filePath);
             }
 
             const fileType = path.extname(filePath);
@@ -879,7 +908,7 @@ class ElectronLoader {
 
             if (await decompressOperation) {
                 try {
-                    return await this.beginModImport(profile, modName, modDirStagingPath, modFilePaths, false);
+                    return await this.beginModImport(profile, root, modName, modDirStagingPath, modFilePaths, false);
                 } catch (err) {
                     log.error(`Error occurred while adding mod ${modName}: `, err);
 
@@ -897,7 +926,8 @@ class ElectronLoader {
     /** @returns {Promise<ModImportRequest | undefined>} */
     async beginModExternalImport(
         /** @type {AppProfile} */ profile,
-        /** @type {string | undefined} */ modPath,
+        /** @type {boolean} */ root,
+        /** @type {string | undefined} */ modPath
     ) {
         if (!modPath) {
             const pickedModFolder = await dialog.showOpenDialog({
@@ -910,13 +940,13 @@ class ElectronLoader {
         const folderPath = modPath ?? "";
         if (!!folderPath) {
             if (fs.lstatSync(folderPath).isFile()) {
-                return this.beginModAdd(profile, folderPath);
+                return this.beginModAdd(profile, root, folderPath);
             }
 
             const modName = path.basename(folderPath);
             const modFilePaths = await fs.readdir(folderPath, { encoding: "utf-8", recursive: true });
 
-            return this.beginModImport(profile, modName, folderPath, modFilePaths, true);
+            return this.beginModImport(profile, root, modName, folderPath, modFilePaths, true);
         }
 
         return undefined;
@@ -925,6 +955,7 @@ class ElectronLoader {
     /** @returns {Promise<ModImportRequest>} */
     async beginModImport(
         /** @type {AppProfile} */ profile,
+        /** @type {boolean} */ root,
         /** @type {string} */ modName,
         /** @type {string} */ modImportPath,
         /** @type {string[]} */ modFilePaths,
@@ -934,7 +965,13 @@ class ElectronLoader {
         const gameDetails = gameDb[profile.gameId];
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
         const modDataDirs = ["Data", "data"];
-        let modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
+        let modSubdirRoot = "";
+        
+        // Look for nested "data" dir for non-root mods
+        if (!root) {
+            modSubdirRoot = modDataDirs.find(dataDir => fs.existsSync(path.join(modImportPath, dataDir))) ?? "";
+        }
+
         const modPreparedFilePaths = modFilePaths
             .filter(filePath => !fs.lstatSync(path.join(modImportPath, filePath)).isDirectory())
             .map(filePath => ({
@@ -1043,6 +1080,7 @@ class ElectronLoader {
 
         return {
             profile,
+            root,
             modName,
             externalImport,
             importStatus: "PENDING",
@@ -1060,6 +1098,7 @@ class ElectronLoader {
     async completeModImport(
         /** @type {ModImportRequest} */ {
             profile,
+            root,
             modName,
             modPath,
             externalImport,
@@ -1158,6 +1197,7 @@ class ElectronLoader {
             }
 
             return {
+                root,
                 modName,
                 modRef: {
                     enabled: true,
@@ -1174,10 +1214,11 @@ class ElectronLoader {
     }
 
     /** @returns {AppProfileModVerificationResult} */
-    verifyProfileModsExist(/** @type {AppProfile} */ profile) {
+    verifyProfileModsExist(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile.name);
+        const modList = root ? profile.rootMods : profile.mods;
 
-        return /** @type {AppProfileModVerificationResult} */ (Array.from(profile.mods.entries()).reduce((result, [modName, _mod]) => {
+        return /** @type {AppProfileModVerificationResult} */ (Array.from(modList.entries()).reduce((result, [modName, _mod]) => {
             const modExists = fs.existsSync(path.join(modsDir, modName));
 
             result = Object.assign(result, {
@@ -1285,6 +1326,56 @@ class ElectronLoader {
         return files;
     }
 
+    /** @returns {Promise<string[]>} */
+    async deployMods(
+        /** @type {AppProfile} */ profile,
+        /** @type {boolean} */ root,
+        /** @type {boolean} */ normalizePathCasing
+    ) {
+        const profileModFiles = [];
+        const modBaseDir = path.resolve(root ? profile.gameBaseDir : profile.modBaseDir);
+
+        // Copy all mods to the modBaseDir for this profile
+        // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
+        const deployableMods = root ? profile.rootMods : profile.mods;
+        const deployableModFiles = Array.from(deployableMods.entries()).reverse();
+        for (const [modName, mod] of deployableModFiles) {
+            if (mod.enabled) {
+                const copyTasks = [];
+                const modDirPath = this.getProfileModDir(profile.name, modName);
+                const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
+
+                // Copy data files to mod base dir
+                for (let modFile of modFilesToCopy) {
+                    let srcFilePath = path.resolve(path.join(modDirPath, modFile.toString()));
+
+                    // Normalize path case to lower if enabled (helpful for case-sensitive file systems)
+                    if (normalizePathCasing) {
+                        modFile = modFile.toLowerCase();
+                    }
+
+                    const destFilePath = path.join(modBaseDir, modFile);
+                    // Only copy files that don't exist on the dest
+                    const shouldCopy = !fs.existsSync(destFilePath) && !fs.lstatSync(srcFilePath).isDirectory();
+                    
+                    if (shouldCopy && modFile.length > 0) {
+                        // Record mod files written from profile
+                        // Record full path for root mods
+                        profileModFiles.push(root ? destFilePath : modFile);
+                    }
+
+                    if (shouldCopy) {
+                        copyTasks.push(fs.copy(srcFilePath.toString(), destFilePath, { overwrite: false }));
+                    }
+                }
+
+                await Promise.all(copyTasks);
+            }
+        }
+
+        return profileModFiles;
+    }
+
     /** @returns {Promise<void>} */
     async deployProfile(
         /** @type {AppProfile} */ profile,
@@ -1333,43 +1424,8 @@ class ElectronLoader {
                 }
             }
 
-            const modBaseDir = path.resolve(profile.modBaseDir);
-            // Copy all mods to the modBaseDir for this profile
-            // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
-            const deployableModFiles = Array.from(profile.mods.entries()).reverse();
-            for (const [modName, mod] of deployableModFiles) {
-                if (mod.enabled) {
-                    const copyTasks = [];
-                    const modDirPath = this.getProfileModDir(profile.name, modName);
-                    const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
-
-                    // Copy data files to mod base dir
-                    for (let modFile of modFilesToCopy) {
-                        let srcFilePath = path.resolve(path.join(modDirPath, modFile.toString()));
-
-                        // Normalize path case to lower if enabled (helpful for case-sensitive file systems)
-                        if (normalizePathCasing) {
-                            modFile = modFile.toLowerCase();
-                        }
-
-                        const destFilePath = path.join(modBaseDir, modFile);
-                        // Only copy files that don't exist on the dest
-                        const shouldCopy = !fs.existsSync(destFilePath) && !fs.lstatSync(srcFilePath).isDirectory();
-                        
-                        if (shouldCopy && modFile.length > 0) {
-                            // Record mod files written from profile
-                            profileModFiles.push(modFile);
-                        }
-
-                        if (shouldCopy) {
-                            copyTasks.push(fs.copy(srcFilePath.toString(), destFilePath, { overwrite: false }));
-                        }
-                    }
-
-                    await Promise.all(copyTasks);
-                }
-            }
-
+            profileModFiles.push(... await this.deployMods(profile, true, normalizePathCasing));
+            profileModFiles.push(... await this.deployMods(profile, false, normalizePathCasing));
             profileModFiles.push(ElectronLoader.PROFILE_METADATA_FILE);
 
             this.writeProfileDeploymentMetadata(profile, {

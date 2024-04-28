@@ -24,31 +24,42 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.AddMod)
-    public addMod(context: ActiveProfileState.Context, { name, mod }: ActiveProfileActions.AddMod): void {
+    public addMod(context: ActiveProfileState.Context, { root, name, mod }: ActiveProfileActions.AddMod): void {
         const state = _.cloneDeep(context.getState()!);
 
-        state.mods.set(name, mod);
+        if (root) {
+            state.rootMods.set(name, mod);
+        } else{
+            state.mods.set(name, mod);
+        }
+        
         context.setState(state);
     }
 
     @Action(ActiveProfileActions.DeleteMod)
-    public deleteMod(context: ActiveProfileState.Context, { name }: ActiveProfileActions.DeleteMod): void {
+    public deleteMod(context: ActiveProfileState.Context, { root, name }: ActiveProfileActions.DeleteMod): void {
         const state = _.cloneDeep(context.getState()!);
 
-        state.mods.delete(name);
+        if (root) {
+            state.rootMods.delete(name);
+        } else {
+            state.mods.delete(name);
+        }
+
         context.setState(state);
     }
 
     @Action(ActiveProfileActions.RenameMod)
-    public renameMod(context: ActiveProfileState.Context, { curName, newName }: ActiveProfileActions.RenameMod): void {
+    public renameMod(context: ActiveProfileState.Context, { root, curName, newName }: ActiveProfileActions.RenameMod): void {
         const state = _.cloneDeep(context.getState()!);
+        const modList = root ? state.rootMods : state.mods;
 
-        Array.from(state.mods.entries()).forEach(([modName, mod]) => {
-            state.mods.delete(modName);
+        Array.from(modList.entries()).forEach(([modName, mod]) => {
+            modList.delete(modName);
 
             if (mod) {
                 // Rename the selected mod, preserving the prior load order
-                state.mods.set(modName === curName ? newName : modName, mod);
+                modList.set(modName === curName ? newName : modName, mod);
             }
         });
 
@@ -58,17 +69,17 @@ export class ActiveProfileState {
     @Action(ActiveProfileActions.UpdateModVerification)
     public updateModVerification(
         context: ActiveProfileState.Context,
-        { modName, verificationResult }: ActiveProfileActions.UpdateModVerification
+        { root, modName, verificationResult }: ActiveProfileActions.UpdateModVerification
     ): void {
-        this._updateModVerifications(context, { [modName]: verificationResult });
+        this._updateModVerifications(context, root, { [modName]: verificationResult });
     }
 
     @Action(ActiveProfileActions.UpdateModVerifications)
     public updateModVerifications(
         context: ActiveProfileState.Context,
-        { modVerificationResults }: ActiveProfileActions.UpdateModVerifications
+        { root, modVerificationResults }: ActiveProfileActions.UpdateModVerifications
     ): void {
-        this._updateModVerifications(context, modVerificationResults);
+        this._updateModVerifications(context, root, modVerificationResults);
     }
 
     @Action(ActiveProfileActions.UpdateManualMods)
@@ -80,16 +91,17 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.ReorderMods)
-    public reorderMods(context: ActiveProfileState.Context, { modOrder }: ActiveProfileActions.ReorderMods): void {
+    public reorderMods(context: ActiveProfileState.Context, { root, modOrder }: ActiveProfileActions.ReorderMods): void {
         const state = _.cloneDeep(context.getState()!);
+        const modList = root ? state.rootMods : state.mods;
 
         modOrder.forEach((modName) => {
-            const mod = state.mods.get(modName);
+            const mod = modList.get(modName);
 
-            state.mods.delete(modName);
+            modList.delete(modName);
 
             if (mod) {
-                state.mods.set(modName, mod);
+                modList.set(modName, mod);
             }
         });
 
@@ -174,12 +186,14 @@ export class ActiveProfileState {
 
     private _updateModVerifications(
         context: ActiveProfileState.Context,
+        root: boolean,
         modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
     ): void {
         const state = _.cloneDeep(context.getState()!);
+        const modList = root ? state.rootMods : state.mods;
 
         Object.entries(modVerificationResults).forEach(([modName, verificationResult]) => {
-            const mod = state.mods.get(modName);
+            const mod = modList.get(modName);
 
             if (!!mod) {
                 if (verificationResult?.error) {

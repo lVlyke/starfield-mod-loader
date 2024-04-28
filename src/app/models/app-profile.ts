@@ -9,7 +9,8 @@ export interface AppProfile {
     modBaseDir: string;
     gameBinaryPath: string;
     pluginListPath?: string;
-    mods: Map<string, ModProfileRef>;
+    mods: AppProfile.ModList;
+    rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
     manualMods?: string[];
     deployed: boolean;
@@ -23,7 +24,9 @@ export type AppProfileDescription = AppProfile.Description;
 
 export namespace AppProfile {
 
-    export type Description = Pick<AppProfile, "name" | "gameId">;
+    export type ModList = Map<string, ModProfileRef>;
+
+    export type Description = Pick<AppProfile, "name" | "gameId" | "deployed">;
 
     export interface VerificationResult {
         error: boolean;
@@ -50,6 +53,7 @@ export namespace AppProfile {
             modBaseDir: "",
             gameBinaryPath: "",
             mods: new Map(),
+            rootMods: new Map(),
             plugins: [],
             deployed: false
         };

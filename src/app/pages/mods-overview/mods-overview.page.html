@@ -6,7 +6,7 @@
             <app-game-badge id="profile-game-title" [gameId]="activeProfile.gameId" />
 
             <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
-                <mat-label>Active Profile</mat-label>
+                <mat-label>Current Profile</mat-label>
                 <mat-select [ngModel]="activeProfile"
                             [compareWith]="profileDescCompareFn"
                             (ngModelChange)="profileManager.loadProfile($event, true)">
@@ -20,6 +20,12 @@
 
                             <span class="profile-name">
                                 {{ profileDesc.name }}
+                                <mat-icon *ngIf="profileDesc.deployed"
+                                          class="deployed-icon"
+                                          color="primary"
+                                          matTooltip="Profile is active">
+                                    play_circle
+                                </mat-icon>
                             </span>
                         </mat-option>
                         <mat-divider />
@@ -40,7 +46,13 @@
         </div>
         
         <mat-card-header class="tool-header">
-            <mat-card-title>Mod List</mat-card-title>
+            <mat-card-title>
+                @if (activeProfile.rootMods.size > 0) {
+                    Root Mods
+                } @else {
+                    Mods
+                }
+            </mat-card-title>
 
             <span id="mod-list-actions">
                 <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
@@ -63,10 +75,22 @@
         </mat-card-header>
 
         <mat-card-content>
-            <app-profile-mod-list *ngIf="activeProfile.mods.size > 0; else emptyModListHint"
-                                [profile]="activeProfile"
-                                (modChange)="registerModUpdate($event.name, $event.modRef)"
-                                (modOrderChange)="reorderMods($event)" />
+            <ng-container *ngIf="activeProfile.rootMods.size > 0">
+                <app-profile-mod-list [profile]="activeProfile"
+                                    [root]="true"
+                                    [showManualMods]="false"
+                                    (modChange)="registerModUpdate(true, $event.name, $event.modRef)"
+                                    (modOrderChange)="reorderMods(true, $event)" />
+            </ng-container>
+
+            <ng-container *ngIf="activeProfile.mods.size > 0; else emptyModListHint">
+                <mat-card-title *ngIf="activeProfile.rootMods.size > 0">Mods</mat-card-title>
+
+                <app-profile-mod-list [profile]="activeProfile"
+                                    [root]="false"
+                                    (modChange)="registerModUpdate(false, $event.name, $event.modRef)"
+                                    (modOrderChange)="reorderMods(false, $event)" />
+            </ng-container>
             
             <ng-template #emptyModListHint>
                 <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
@@ -258,6 +282,16 @@
                 <button mat-list-item (click)="profileManager.addModFromUser({ externalImport: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="accent">folder</mat-icon>
                     <span matLine>Import Mod</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.addModFromUser({ root: true }); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">archive</mat-icon>
+                    <span matLine>Add Root Mod</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.addModFromUser({ root: true, externalImport: true }); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">folder</mat-icon>
+                    <span matLine>Import Root Mod</span>
                 </button>
             </mat-action-list>
         </mat-card-content>

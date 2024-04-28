@@ -72,6 +72,10 @@
                 }
             }
 
+            app-profile-mod-list {
+                margin-bottom: 1rem;
+            }
+
             .empty-mod-list-hint {
                 display: flex;
                 align-items: center;
@@ -275,5 +279,9 @@
         display: inline-flex;
         align-items: center;
         font-weight: 500;
+
+        .deployed-icon {
+            margin-left: 0.5rem;
+        }
     }
 }

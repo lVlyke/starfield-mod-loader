@@ -7,6 +7,7 @@ export type ModImportMergeStrategy = "REPLACE" | "OVERWRITE" | "ADD";
 
 export interface ModImportRequest {
     profile: AppProfile;
+    root: boolean;
     modName: string;
     importStatus: ModImportStatus;
     mergeStrategy: ModImportMergeStrategy;
@@ -21,6 +22,7 @@ export interface ModImportRequest {
 }
 
 export interface ModImportResult {
+    root: boolean;
     modName: string;
     modRef: ModProfileRef;
 }

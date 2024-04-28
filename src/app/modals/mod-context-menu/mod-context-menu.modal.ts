@@ -24,6 +24,9 @@ import { AppModActionsComponentModule } from "../../components/mod-actions/mod-a
 export class AppModContextMenuModal extends BasePage {
 
     @DeclareState()
+    public root!: boolean;
+
+    @DeclareState()
     public modName!: string;
 
     @DeclareState()

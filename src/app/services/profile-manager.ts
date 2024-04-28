@@ -50,6 +50,7 @@ import { GameDetails } from "../models/game-details";
 import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
 import { ActiveProfileState } from "../state/active-profile/active-profile.state";
+import { AppMessage } from "../models/app-message";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -86,15 +87,15 @@ export class ProfileManager {
         ).subscribe();
 
         messageHandler.messages$.pipe(
-            filter(message => message.id === "profile:beginModAdd"),
-            switchMap(() => this.addModFromUser().pipe(
+            filter((message): message is AppMessage.BeginModAdd => message.id === "profile:beginModAdd"),
+            switchMap(({ data }) => this.addModFromUser({ root: data?.root }).pipe(
                 catchError((err) => (console.error("Failed to add mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
-            filter(message => message.id === "profile:beginModExternalImport"),
-            switchMap(() => this.addModFromUser({ externalImport: true }).pipe(
+            filter((message): message is AppMessage.BeginModExternalImport => message.id === "profile:beginModExternalImport"),
+            switchMap(({ data }) => this.addModFromUser({ root: data?.root, externalImport: true }).pipe(
                 catchError((err) => (console.error("Failed to import mod: ", err), EMPTY))
             ))
         ).subscribe();
@@ -185,6 +186,7 @@ export class ProfileManager {
                             "name",
                             "modBaseDir",
                             "mods",
+                            "rootMods",
                             "plugins"
                         ),
         
@@ -242,7 +244,7 @@ export class ProfileManager {
                             return this.loadProfile(
                                 // BC:<=0.6.0: Assume gameId is Starfield if not defined
                                 typeof settings.activeProfile === "string"
-                                    ? { name: settings.activeProfile, gameId: GameId.STARFIELD }
+                                    ? { name: settings.activeProfile, gameId: GameId.STARFIELD, deployed: false }
                                     : settings.activeProfile,
                                 true
                             );
@@ -398,11 +400,18 @@ export class ProfileManager {
                     return ElectronUtils.invoke<AppProfile.VerificationResults>("app:verifyProfile", { profile }).pipe(
                         switchMap((verificationResults) => {
                             const modVerificationResults: Record<string, AppProfile.ModVerificationResult> = {};
+                            const rootModVerificationResults: Record<string, AppProfile.ModVerificationResult> = {};
                             const result = Object.entries(verificationResults).reduce((lastResult, [profileCategory, verificationResults]) => {
                                 switch (profileCategory) {
                                     // Update the error status of each mod (i.e. mod files not found)
                                     case "mods": return Object.entries(verificationResults).map(([modName, verificationResult]) => {
                                         modVerificationResults[modName] = verificationResult;
+
+                                        return this.verifyProfileVerificationResult(verificationResult);
+                                    }).every(Boolean) && lastResult;
+
+                                    case "rootMods": return Object.entries(verificationResults).map(([modName, verificationResult]) => {
+                                        rootModVerificationResults[modName] = verificationResult;
 
                                         return this.verifyProfileVerificationResult(verificationResult);
                                     }).every(Boolean) && lastResult;
@@ -415,8 +424,11 @@ export class ProfileManager {
 
                             if (options.mutateState) {
                                 // Update profile mod verification state
-                                return this.updateModVerifications(modVerificationResults).pipe(
-                                    map(() => result)
+                                return forkJoin([
+                                    this.updateModVerifications(false, modVerificationResults),
+                                    this.updateModVerifications(true, rootModVerificationResults)
+                                ]).pipe(
+                                    map(results => results.every(Boolean))
                                 );
                             } else {
                                 return of(result);
@@ -464,12 +476,12 @@ export class ProfileManager {
         return !verificationResult.error;
     }
 
-    public updateModVerification(modName: string, verificationResult: AppProfile.ModVerificationResult): Observable<any> {
-        return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(modName, verificationResult));
+    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.ModVerificationResult): Observable<any> {
+        return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(root, modName, verificationResult));
     }
 
-    public updateModVerifications(modVerificationResults: Record<string, AppProfile.ModVerificationResult  | undefined>): Observable<any> {
-        return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(modVerificationResults));
+    public updateModVerifications(root: boolean, modVerificationResults: Record<string, AppProfile.ModVerificationResult  | undefined>): Observable<any> {
+        return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(root, modVerificationResults));
     }
 
     public addProfile(profile: AppProfile): Observable<any> {
@@ -620,6 +632,7 @@ export class ProfileManager {
     public addModFromUser(options?: {
         externalImport?: boolean;
         modPath?: string;
+        root?: boolean;
     }): Observable<ModProfileRef | undefined> {
         let loadingIndicatorRef: OverlayHelpersRef | undefined;
 
@@ -628,7 +641,7 @@ export class ProfileManager {
             tap(() => loadingIndicatorRef = this.appManager.showLoadingIndicator("Reading mod data...")),
             switchMap((activeProfile) => ElectronUtils.invoke<ModImportRequest | undefined>(
                 options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
-                { profile: activeProfile, modPath: options?.modPath }
+                { profile: activeProfile, modPath: options?.modPath, root: options?.root }
             )),
             tap(() => loadingIndicatorRef?.close()),
             switchMap((importRequest) => {
@@ -663,7 +676,8 @@ export class ProfileManager {
             }),
             withLatestFrom(this.activeProfile$),
             switchMap(([importRequest, activeProfile]) => {
-                const modAlreadyExists = Array.from(activeProfile!.mods.keys()).includes(importRequest.modName);
+                const modList = importRequest.root ? activeProfile!.rootMods : activeProfile!.mods;
+                const modAlreadyExists = Array.from(modList.keys()).includes(importRequest.modName);
 
                 // Check if this mod already exists in the active profile
                 if (modAlreadyExists && importRequest.importStatus !== "CANCELED") {
@@ -731,7 +745,7 @@ export class ProfileManager {
                 return ElectronUtils.invoke<ModImportResult | undefined>("profile:completeModImport", { importRequest }).pipe(
                     switchMap((importResult) => {
                         if (!!importResult) {
-                            return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.modName, importResult.modRef)).pipe(
+                            return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.root, importResult.modName, importResult.modRef)).pipe(
                                 map(() => importResult.modRef)
                             );
                         } else {
@@ -744,35 +758,35 @@ export class ProfileManager {
         ));
     }
 
-    public updateMod(name: string, modRef: ModProfileRef): Observable<void> {
-        return this.store.dispatch(new ActiveProfileActions.AddMod(name, modRef));
+    public updateMod(root: boolean, name: string, modRef: ModProfileRef): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.AddMod(root, name, modRef));
     }
 
-    public deleteMod(modName: string): Observable<any> {
+    public deleteMod(root: boolean, modName: string): Observable<any> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => forkJoin([
-                this.store.dispatch(new ActiveProfileActions.DeleteMod(modName)),
+                this.store.dispatch(new ActiveProfileActions.DeleteMod(root, modName)),
                 ElectronUtils.invoke("profile:deleteMod", { profile: activeProfile, modName })
             ]))
         ));
     }
 
-    public renameMod(modCurName: string, modNewName: string): Observable<any> {
+    public renameMod(root: boolean, modCurName: string, modNewName: string): Observable<any> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => concat([
                 ElectronUtils.invoke("profile:renameMod", { profile: activeProfile, modCurName, modNewName }),
-                this.store.dispatch(new ActiveProfileActions.RenameMod(modCurName, modNewName))
+                this.store.dispatch(new ActiveProfileActions.RenameMod(root, modCurName, modNewName))
             ]).pipe(toArray()))
         ));
     }
 
-    public renameModFromUser(modCurName: string): Observable<any> {
+    public renameModFromUser(root: boolean, modCurName: string): Observable<any> {
         return ObservableUtils.hotResult$(this.dialogs.showModRenameDialog(modCurName).pipe(
             switchMap(modNewName => {
                 if (modNewName) {
-                    return this.renameMod(modCurName, modNewName);
+                    return this.renameMod(root, modCurName, modNewName);
                 } else {
                     return of(undefined);
                 }
@@ -780,22 +794,23 @@ export class ProfileManager {
         ));
     }
 
-    public reorderMods(modOrder: string[]): Observable<void> {
-        return this.store.dispatch(new ActiveProfileActions.ReorderMods(modOrder));
+    public reorderMods(root: boolean, modOrder: string[]): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.ReorderMods(root, modOrder));
     }
 
-    public reorderMod(modName: string, newIndex: number): Observable<void> {
+    public reorderMod(root: boolean, modName: string, newIndex: number): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
-                    const modOrder = Array.from(activeProfile.mods.keys());
+                    const modList = root ? activeProfile.rootMods : activeProfile.mods;
+                    const modOrder = Array.from(modList.keys());
                     moveItemInArray(
                         modOrder,
                         modOrder.findIndex(curModName => modName === curModName),
                         newIndex
                     );
-                    return this.reorderMods(modOrder);
+                    return this.reorderMods(root, modOrder);
                 } else {
                     return of(undefined);
                 }
@@ -803,16 +818,17 @@ export class ProfileManager {
         ));
     }
 
-    public moveModToTopOfOrder(modName: string): Observable<void> {
-        return this.reorderMod(modName, 0);
+    public moveModToTopOfOrder(root: boolean, modName: string): Observable<void> {
+        return this.reorderMod(root, modName, 0);
     }
 
-    public moveModToBottomOfOrder(modName: string): Observable<void> {
+    public moveModToBottomOfOrder(root: boolean, modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
-                    return this.reorderMod(modName, activeProfile.mods.size - 1);
+                    const modList = root ? activeProfile.rootMods : activeProfile.mods;
+                    return this.reorderMod(root, modName, modList.size - 1);
                 } else {
                     return of(undefined);
                 }
@@ -987,6 +1003,7 @@ export class ProfileManager {
                                         new AppActions.setDeployInProgress(false),
                                         new ActiveProfileActions.setDeployed(true)
                                     ])),
+                                    switchMap(() => this.loadProfileList()), // Reload profile descriptions
                                     switchMap(() => this.updateActiveProfileManualMods()), // Update the manual mod list
                                     map(() => true) // Success
                                 );
@@ -1027,6 +1044,7 @@ export class ProfileManager {
                             new AppActions.setDeployInProgress(false),
                             new ActiveProfileActions.setDeployed(false)
                         ])),
+                        switchMap(() => this.loadProfileList()), // Reload profile descriptions
                         switchMap(() => this.updateActiveProfileManualMods()),
                         map(() => true) // Success
                     );

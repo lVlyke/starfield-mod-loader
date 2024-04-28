@@ -54,6 +54,9 @@ export class AppProfileModListComponent extends BaseComponent {
     public profile!: AppProfile;
 
     @Input()
+    public root!: boolean;
+
+    @Input()
     public showManualMods: boolean = true;
 
     protected modDataSource: ModDataSourceEntry[] = [];
@@ -70,10 +73,12 @@ export class AppProfileModListComponent extends BaseComponent {
 
         combineLatest(stateRef.getAll(
             "profile",
+            "root",
             "showManualMods"
-        )).subscribe(([profile, showManualMods]) => {
+        )).subscribe(([profile, root, showManualMods]) => {
             let modIndex = 0;
-            const modDataSource = Array.from(profile.mods.entries()).map<ModDataSourceEntry>(([name, modRef]) => {
+            const modsList = root ? profile.rootMods : profile.mods;
+            const modDataSource = Array.from(modsList.entries()).map<ModDataSourceEntry>(([name, modRef]) => {
                 if (modRef.enabled) {
                     modIndex++;
                 }
@@ -110,6 +115,7 @@ export class AppProfileModListComponent extends BaseComponent {
                 managed: false
             });
 
+            modContextMenuRef.component.instance.root = this.root;
             modContextMenuRef.component.instance.modName = modEntry.name;
             modContextMenuRef.component.instance.modRef = modEntry.modRef;
 

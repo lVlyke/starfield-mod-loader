@@ -123,12 +123,12 @@ export class AppModsOverviewPage extends BasePage {
         });
     }
 
-    protected registerModUpdate(name: string, mod: ModProfileRef): Observable<void> {
-        return this.profileManager.updateMod(name, mod);
+    protected registerModUpdate(root: boolean, name: string, mod: ModProfileRef): Observable<void> {
+        return this.profileManager.updateMod(root, name, mod);
     }
 
-    protected reorderMods(modOrder: string[]): Observable<void> {
-        return this.profileManager.reorderMods(modOrder);
+    protected reorderMods(root: boolean, modOrder: string[]): Observable<void> {
+        return this.profileManager.reorderMods(root, modOrder);
     }
 
     protected showProfileModsDirInFileExplorer(): Observable<unknown> {

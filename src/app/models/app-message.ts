@@ -194,6 +194,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             modPath?: string;
+            root?: boolean;
         };
     }
 
@@ -202,6 +203,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             modPath?: string;
+            root?: boolean;
         };
     }
 

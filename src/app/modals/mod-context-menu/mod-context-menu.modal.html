@@ -1,6 +1,7 @@
 <mat-card #menuCard class="mat-elevation-z6">
     <mat-card-content>
         <app-mod-actions *ngIf="!!modRef && !!modName"
+                         [root]="root"
                          [modName]="modName"
                          [modRef]="modRef"
                          (actionSelect)="overlayRef.close()">

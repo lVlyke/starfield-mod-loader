@@ -27,6 +27,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] add mod`;
 
         constructor(
+            public root: boolean,
             public name: string,
             public mod: ModProfileRef
         ) {}
@@ -36,6 +37,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] delete mod`;
 
         constructor(
+            public root: boolean,
             public name: string
         ) {}
     }
@@ -44,6 +46,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] rename mod`;
 
         constructor(
+            public root: boolean,
             public curName: string,
             public newName: string
         ) {}
@@ -53,6 +56,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] update mod verification`;
 
         constructor(
+            public root: boolean,
             public modName: string,
             public verificationResult?: AppProfile.ModVerificationResult
         ) {}
@@ -62,6 +66,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] update mod verifications`;
 
         constructor(
+            public root: boolean,
             public modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
         ) {}
     }
@@ -78,6 +83,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] reorder mods`;
 
         constructor(
+            public root: boolean,
             public modOrder: string[]
         ) {}
     }

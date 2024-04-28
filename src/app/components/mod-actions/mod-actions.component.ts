@@ -21,6 +21,9 @@ export class AppModActionsComponent extends BaseComponent {
     public readonly actionSelect$ = new EventEmitter<void>();
 
     @Input()
+    public root!: boolean;
+
+    @Input()
     public modName!: string;
 
     @Input()
@@ -46,25 +49,25 @@ export class AppModActionsComponent extends BaseComponent {
             DialogManager.NO_ACTION_PRIMARY
         ]).pipe(
             filter(choice => choice === DialogManager.YES_ACTION)
-        ).subscribe(() => this.profileManager.deleteMod(this.modName));
+        ).subscribe(() => this.profileManager.deleteMod(this.root, this.modName));
 
         this.actionSelect$.emit();
     }
 
     protected renameMod(): void {
-        this.profileManager.renameModFromUser(this.modName);
+        this.profileManager.renameModFromUser(this.root, this.modName);
 
         this.actionSelect$.emit();
     }
 
     protected moveModToTop(): void {
-        this.profileManager.moveModToTopOfOrder(this.modName);
+        this.profileManager.moveModToTopOfOrder(this.root, this.modName);
 
         this.actionSelect$.emit();
     }
 
     protected moveModToBottom(): void {
-        this.profileManager.moveModToBottomOfOrder(this.modName);
+        this.profileManager.moveModToBottomOfOrder(this.root, this.modName);
 
         this.actionSelect$.emit();
     }
