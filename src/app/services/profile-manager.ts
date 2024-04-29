@@ -8,7 +8,6 @@ import {
     concatMap,
     delay,
     distinctUntilChanged,
-    distinctUntilKeyChanged,
     filter,
     finalize,
     map,
@@ -51,6 +50,7 @@ import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
 import { ActiveProfileState } from "../state/active-profile/active-profile.state";
 import { AppMessage } from "../models/app-message";
+import { AppProfileVerificationResultsModal } from "../modals/profile-verification-results";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -376,14 +376,14 @@ export class ProfileManager {
         showSuccessMessage?: boolean;
         showErrorMessage?: boolean;
         updateManualMods?: boolean;
-        mutateState?: boolean;
+        updateModErrorState?: boolean;
     } = {}): Observable<boolean> {
         // Provide default options
         options = Object.assign({
             showErrorMessage: true,
             showSuccessMessage: true,
             updateManualMods: true,
-            mutateState: true,
+            updateModErrorState: true,
         }, options);
 
         let result$;
@@ -400,51 +400,29 @@ export class ProfileManager {
                 if (profile) {
                     return ElectronUtils.invoke<AppProfile.VerificationResults>("app:verifyProfile", { profile }).pipe(
                         switchMap((verificationResults) => {
-                            const modVerificationResults: Record<string, AppProfile.ModVerificationResult> = {};
-                            const rootModVerificationResults: Record<string, AppProfile.ModVerificationResult> = {};
-                            const result = Object.entries(verificationResults).reduce((lastResult, [profileCategory, verificationResults]) => {
-                                switch (profileCategory) {
-                                    // Update the error status of each mod (i.e. mod files not found)
-                                    case "mods": return Object.entries(verificationResults).map(([modName, verificationResult]) => {
-                                        modVerificationResults[modName] = verificationResult;
-
-                                        return this.verifyProfileVerificationResult(verificationResult);
-                                    }).every(Boolean) && lastResult;
-
-                                    case "rootMods": return Object.entries(verificationResults).map(([modName, verificationResult]) => {
-                                        rootModVerificationResults[modName] = verificationResult;
-
-                                        return this.verifyProfileVerificationResult(verificationResult);
-                                    }).every(Boolean) && lastResult;
-                
-                                    // TODO - Track error status of other profile state
-                
-                                    default: return lastResult && this.verifyProfileVerificationResult(verificationResults);
-                                }
-                            }, true);
-
-                            if (options.mutateState) {
+                            let result$ = of(!verificationResults.error);
+                            if (options.updateModErrorState) {
                                 // Update profile mod verification state
-                                return forkJoin([
-                                    this.updateModVerifications(false, modVerificationResults),
-                                    this.updateModVerifications(true, rootModVerificationResults)
+                                result$ = forkJoin([
+                                    this.updateModVerifications(false, verificationResults.mods),
+                                    this.updateModVerifications(true, verificationResults.rootMods)
                                 ]).pipe(
-                                    map(results => results.every(Boolean))
+                                    map(() => !verificationResults.error)
                                 );
-                            } else {
-                                return of(result);
                             }
-                        }),
-                        tap((result) => {
-                            if (result && options.showSuccessMessage) {
-                                this.snackbar.open("Mods verified successfully!", undefined, {
-                                    duration: 3000
-                                });
-                            } else if (!result && options.showErrorMessage) {
-                                this.snackbar.open("Mod verification failed with errors", "Close", {
-                                    panelClass: "snackbar-error"
-                                });
-                            }
+
+                            return result$.pipe(
+                                tap((result) => {
+                                    if ((result && options.showSuccessMessage) || (!result && options.showErrorMessage)) {
+                                        this.snackbar.openFromComponent(AppProfileVerificationResultsModal, {
+                                            data: verificationResults,
+                                            duration: result ? 3000 : undefined
+                                        });
+                                    } else if (result) {
+                                        this.snackbar.dismiss();
+                                    }
+                                })
+                            );
                         })
                     );
                 } else {
@@ -473,15 +451,11 @@ export class ProfileManager {
         ));
     }
 
-    private verifyProfileVerificationResult(verificationResult: AppProfile.VerificationResult): boolean {
-        return !verificationResult.error;
-    }
-
-    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.ModVerificationResult): Observable<any> {
+    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.ModVerificationResults): Observable<any> {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(root, modName, verificationResult));
     }
 
-    public updateModVerifications(root: boolean, modVerificationResults: Record<string, AppProfile.ModVerificationResult  | undefined>): Observable<any> {
+    public updateModVerifications(root: boolean, modVerificationResults: AppProfile.ModVerificationResults): Observable<any> {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(root, modVerificationResults));
     }
 
@@ -557,13 +531,14 @@ export class ProfileManager {
     }
 
     public setActiveProfile(profile: AppProfile): Observable<AppProfile> {
-        return this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
+        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
+            switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
             map(() => profile)
-        );
+        ));
     }
 
     public updateActiveProfile(profileChanges: AppProfile): Observable<any> {
-        return this.store.dispatch(new AppActions.updateActiveProfile(profileChanges));
+        return this.setActiveProfile(profileChanges);
     }
 
     public showAppPreferences(): Observable<OverlayHelpersComponentRef<AppPreferencesModal>> {
@@ -960,7 +935,7 @@ export class ProfileManager {
 
     private deployActiveMods(): Observable<boolean> {
         // First make sure the active profile is verified before deployment
-        return ObservableUtils.hotResult$(this.verifyActiveProfile({ showSuccessMessage: false, mutateState: false }).pipe(
+        return ObservableUtils.hotResult$(this.verifyActiveProfile({ showSuccessMessage: false, updateModErrorState: false }).pipe(
             switchMap((verified) => {
                 if (verified) {
                     return this.activeProfile$.pipe(
@@ -1014,8 +989,8 @@ export class ProfileManager {
                         })
                     );
                 } else {
-                    // Profile couldn't be verified, so verify again with `mutateState` to record the failure
-                    return this.verifyActiveProfile({ showSuccessMessage: false, mutateState: true }).pipe(
+                    // Profile couldn't be verified, so verify again with `updateModErrorState` to record the failure
+                    return this.verifyActiveProfile({ showSuccessMessage: false, updateModErrorState: true }).pipe(
                         // If re-verify succeeded deploy mods, otherwise notify failure
                         switchMap((result) => result ? this.deployActiveMods() : of(false))
                     );

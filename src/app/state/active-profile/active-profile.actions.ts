@@ -58,7 +58,7 @@ export namespace ActiveProfileActions {
         constructor(
             public root: boolean,
             public modName: string,
-            public verificationResult?: AppProfile.ModVerificationResult
+            public verificationResult?: AppProfile.VerificationResult
         ) {}
     }
 
@@ -67,7 +67,7 @@ export namespace ActiveProfileActions {
 
         constructor(
             public root: boolean,
-            public modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
+            public modVerificationResults: AppProfile.ModVerificationResults
         ) {}
     }
 

@@ -79,7 +79,7 @@ export class ActiveProfileState {
         context: ActiveProfileState.Context,
         { root, modVerificationResults }: ActiveProfileActions.UpdateModVerifications
     ): void {
-        this._updateModVerifications(context, root, modVerificationResults);
+        this._updateModVerifications(context, root, modVerificationResults.results);
     }
 
     @Action(ActiveProfileActions.UpdateManualMods)
@@ -187,7 +187,7 @@ export class ActiveProfileState {
     private _updateModVerifications(
         context: ActiveProfileState.Context,
         root: boolean,
-        modVerificationResults: Record<string, AppProfile.ModVerificationResult | undefined>
+        modVerificationResults: Record<string, AppProfile.VerificationResult | undefined>
     ): void {
         const state = _.cloneDeep(context.getState()!);
         const modList = root ? state.rootMods : state.mods;

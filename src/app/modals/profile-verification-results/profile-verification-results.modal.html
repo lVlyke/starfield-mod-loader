@@ -1,0 +1,21 @@
+<span matSnackBarLabel>
+    <div>
+        @if (errors.length > 0) {
+            Profile verification failed with errors:
+        } @else {
+            Profile verified successfully!
+        }
+    </div>
+
+    <div *ngFor="let error of errors" matColor="warn" class="verification-error">
+        {{ error }}
+    </div>
+</span>
+
+<span matSnackBarActions>
+    @if (errors.length > 0) {
+        <button mat-button matSnackBarAction (click)="snackBarRef.dismissWithAction()">
+            Close
+        </button>
+    }
+</span>

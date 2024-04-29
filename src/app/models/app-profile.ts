@@ -18,7 +18,7 @@ export interface AppProfile {
 
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
-export type AppProfileModVerificationResult = AppProfile.ModVerificationResult;
+export type AppProfileModVerificationResults = AppProfile.ModVerificationResults;
 export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
 export type AppProfileDescription = AppProfile.Description;
 
@@ -33,12 +33,22 @@ export namespace AppProfile {
         found: boolean;
     }
 
-    export type VerificationResults = {
-        [K in keyof Partial<AppProfile>]: VerificationResult;
+    export interface CollectedVerificationResult<K extends string | number | symbol = string> extends VerificationResult {
+        results: Record<K, VerificationResult>;
+    }
+
+    export type BaseVerificationResults = VerificationResult & {
+        [K in keyof Required<AppProfile>]: VerificationResult;
     };
 
-    export type ModVerificationResult = VerificationResults["mods"];
-    export type PluginVerificationResult = VerificationResults["plugins"];
+    export interface VerificationResults extends BaseVerificationResults {
+        mods: CollectedVerificationResult;
+        rootMods: CollectedVerificationResult;
+        plugins: CollectedVerificationResult;
+    }
+
+    export type ModVerificationResults = VerificationResults["mods"];
+    export type PluginVerificationResults = VerificationResults["plugins"];
 
     export interface PluginBackupEntry {
         filePath: string;

@@ -205,16 +205,38 @@ class ElectronLoader {
             _event,
             /** @type {AppMessageData<"app:verifyProfile">} */ { profile }
         ) => {
+            const VERIFY_SUCCESS = { error: false, found: true };
+
+            const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile.name));
             const modVerifyResult = this.verifyProfileModsExist(false, profile);
             const rootModVerifyResult = this.verifyProfileModsExist(true, profile);
-            const modDirVerifyResult = this.verifyProfileModDirExists(profile);
-            const gameDirVerifyResult = this.verifyProfileGameDirExists(profile);
+            const modDirVerifyResult = this.verifyProfilePathExists(profile.modBaseDir);
+            const gameDirVerifyResult = this.verifyProfilePathExists(profile.gameBaseDir);
+            const gameBinaryPathVerifyResult = this.verifyProfilePathExists(profile.gameBinaryPath);
+            const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
+            
+            if (!profile.deployed || !profile.plugins?.length) {
+                pluginListPathVerifyResult.error = false;
+            }
 
-            return {
+            const preparedResult = {
+                name: VERIFY_SUCCESS,
+                gameId: VERIFY_SUCCESS, // TODO
+                gameBaseDir: gameDirVerifyResult,
+                modBaseDir: modDirVerifyResult,
+                gameBinaryPath: gameBinaryPathVerifyResult,
+                pluginListPath: pluginListPathVerifyResult,
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
-                modBaseDir: modDirVerifyResult,
-                gameBaseDir: gameDirVerifyResult
+                plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
+                manualMods: VERIFY_SUCCESS,
+                deployed: VERIFY_SUCCESS
+            };
+
+            return {
+                ...preparedResult,
+                error: Object.values(preparedResult).some(curResult => curResult.error),
+                found: profileExistsResult.found
             };
         });
 
@@ -1229,36 +1251,37 @@ class ElectronLoader {
     verifyProfileModsExist(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile.name);
         const modList = root ? profile.rootMods : profile.mods;
+        let hasError = false;
 
-        return /** @type {AppProfileModVerificationResult} */ (Array.from(modList.entries()).reduce((result, [modName, _mod]) => {
+        const results = Array.from(modList.entries()).reduce((result, [modName, _mod]) => {
             const modExists = fs.existsSync(path.join(modsDir, modName));
+            const modHasError = !modExists;
+
+            hasError ||= modHasError;
 
             result = Object.assign(result, {
                 [modName]: {
-                    error: !modExists,
+                    error: modHasError,
                     found: modExists
                 }
             });
 
             return result;
-        }, {}));
-    }
+        }, {});
 
-    /** @returns {AppProfileVerificationResult} */
-    verifyProfileModDirExists(/** @type {AppProfile} */ profile) {
-        const modDirExists = fs.existsSync(profile.modBaseDir);
         return {
-            error: false,
-            found: modDirExists
+            error: hasError,
+            found: true,
+            results
         };
     }
 
     /** @returns {AppProfileVerificationResult} */
-    verifyProfileGameDirExists(/** @type {AppProfile} */ profile) {
-        const gameDirExists = fs.existsSync(profile.gameBaseDir);
+    verifyProfilePathExists(/** @type {string} */ pathToVerify) {
+        const pathExists = fs.existsSync(pathToVerify);
         return {
-            error: !gameDirExists,
-            found: gameDirExists
+            error: !pathExists,
+            found: pathExists
         };
     }
 
