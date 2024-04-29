@@ -99,6 +99,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface LoadExternalProfile extends Base {
+        id: `${Prefix}:loadExternalProfile`;
+        data: {
+            profilePath?: string;
+        };
+    }
+
     export interface SaveProfile extends Base {
         id: `${Prefix}:saveProfile`;
         data: {
@@ -164,6 +171,7 @@ export namespace AppMessage {
                            | NewProfile
                            | DeleteProfile
                            | LoadProfile
+                           | LoadExternalProfile
                            | SaveProfile
                            | VerifyProfile
                            | CopyProfileMods
@@ -403,6 +411,7 @@ export namespace AppMessage {
         "app:newProfile",
         "app:deleteProfile",
         "app:loadProfile",
+        "app:loadExternalProfile",
         "app:saveProfile",
         "app:copyProfileMods",
         "app:verifyProfile",

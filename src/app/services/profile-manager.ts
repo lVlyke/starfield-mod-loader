@@ -116,11 +116,50 @@ export class ProfileManager {
         
         // Wait for NGXS to load
         of(true).pipe(delay(0)).subscribe(() => {
-            // Load app settings from disk on app start
-            this.loadSettings();
+            // Load required data at app start
+            forkJoin([
+                this.loadSettings(),
+                this.updateGameDatabase(),
+                this.loadProfileList()
+            ]).pipe(
+                // Set initial active profile state
+                switchMap(([settings, _gameDb, profileList]) => {
+                    return of(settings?.activeProfile).pipe(
+                        // First try loading profile from settings
+                        switchMap((profileDesc) => {
+                            if (profileDesc && _.size(profileDesc) > 0) {
+                                return this.loadProfile(
+                                    // BC:<=0.6.0: Assume gameId is Starfield if not defined
+                                    typeof profileDesc === "string"
+                                        ? { name: profileDesc, gameId: GameId.STARFIELD, deployed: false }
+                                        : profileDesc,
+                                    true
+                                );
+                            }
 
-            // Load profile list
-            this.loadProfileList();
+                            return of(null);
+                        }),
+                        // Fall back to try loading first profile in list
+                        switchMap((profile) => {
+                            if (!profile && profileList?.length > 0) {
+                                return this.loadProfile(profileList[0]);
+                            }
+
+                            return of(profile);
+                        }),
+                        // Fall back to creating a new profile
+                        switchMap((profile) => {
+                            if (!profile) {
+                                this.saveSettings();
+                                return this.createProfileFromUser();
+                            }
+
+                            return of(profile);
+                        })
+                    );
+                })
+            ).subscribe();
+            
 
             // Save app settings to disk on changes
             this.appState$.pipe(
@@ -231,40 +270,23 @@ export class ProfileManager {
         });
     }
 
-    public loadSettings(): Observable<AppData> {
+    public loadSettings(): Observable<AppSettingsUserCfg | null> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             switchMap((settings) => {
                 return this.store.dispatch([
                     new AppActions.updateModListColumns(settings?.modListColumns),
                     new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
                     new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
-                ]).pipe(
-                    switchMap(() => this.updateGameDatabase()),
-                    switchMap(() => {
-                        if (settings?.activeProfile) {
-                            return this.loadProfile(
-                                // BC:<=0.6.0: Assume gameId is Starfield if not defined
-                                typeof settings.activeProfile === "string"
-                                    ? { name: settings.activeProfile, gameId: GameId.STARFIELD, deployed: false }
-                                    : settings.activeProfile,
-                                true
-                            );
-                        } else {
-                            this.saveSettings();
-                            return this.createProfileFromUser();
-                        }
-                    })
-                );
-            }),
-            switchMap(() => this.appState$.pipe(take(1)))
+                ]).pipe(map(() => settings));
+            })
         ));
     }
 
-    public loadProfileList(): Observable<unknown> {
+    public loadProfileList(): Observable<AppProfile.Description[]> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile.Description[]>("app:loadProfileList").pipe(
-            switchMap((profileList) => {
-                return this.store.dispatch(new AppActions.SetProfiles(profileList));
-            })
+            switchMap((profileList) => this.store.dispatch(new AppActions.SetProfiles(profileList)).pipe(
+                map(() => profileList)
+            ))
         ));
     }
 
@@ -316,12 +338,7 @@ export class ProfileManager {
             gameId: profile.gameId
         }).pipe(
             switchMap((profile) => {
-                if (!profile) {
-                    // TODO - Show error
-                    return this.createProfileFromUser();
-                }
-
-                if (setActive) {
+                if (profile && setActive) {
                     this.setActiveProfile(profile);
                 }
 
@@ -464,8 +481,11 @@ export class ProfileManager {
     }
 
     public deleteProfile(profile: AppProfile): Observable<any> {
+        const loadingIndicator = this.appManager.showLoadingIndicator("Deleting Profile...");
+
         return ObservableUtils.hotResult$(ElectronUtils.invoke("app:deleteProfile", { profile }).pipe(
             switchMap(() => this.store.dispatch(new AppActions.DeleteProfile(profile))),
+            tap(() => loadingIndicator.close()),
             switchMap(() => this.activeProfile$),
             take(1),
             switchMap((activeProfile) => {
@@ -506,21 +526,39 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(this.showNewProfileWizard(defaults));
     }
 
-    public copyProfileFromUser(profileToCopy: AppProfile): Observable<AppProfile | undefined> {
+    public importProfileFromUser(): Observable<AppProfile | undefined> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile | undefined>("app:loadExternalProfile", {}).pipe(
+            switchMap((profile) => {
+                if (profile) {
+                    return this.copyProfileFromUser(profile, "Imported Profile");
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public copyProfileFromUser(
+        profileToCopy: AppProfile,
+        profileName: string = `${profileToCopy.name} - Copy`
+    ): Observable<AppProfile | undefined> {
         return ObservableUtils.hotResult$(of(false).pipe(
             switchMap(() => this.showNewProfileWizard({
                 ...profileToCopy,
-                name: `${profileToCopy.name} - Copy`
+                name: profileName,
+                deployed: false
             })),
             switchMap((newProfile) => {
                 if (!!newProfile) {
                     // Copy mods to the newly created profile
-                    return this.store.dispatch(new AppActions.setDeployInProgress(true)).pipe(
-                        switchMap(() => ElectronUtils.invoke("app:copyProfileMods", {
-                            srcProfile: profileToCopy,
-                            destProfile: newProfile
-                        })),
-                        switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
+                    const loadingIndicator = this.appManager.showLoadingIndicator("Copying Profile...");
+
+                    return ElectronUtils.invoke("app:copyProfileMods", {
+                        srcProfile: profileToCopy,
+                        destProfile: newProfile
+                    }).pipe(
+                        switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
+                        tap(() => loadingIndicator.close()),
                         map(() => newProfile)
                     );
                 } else {
@@ -950,7 +988,7 @@ export class ProfileManager {
                                             return this.dialogManager.createDefault(`Mods for profile "${deployedProfileName}" will be deactivated. Continue?`, [
                                                 DialogManager.YES_ACTION_PRIMARY,
                                                 DialogManager.NO_ACTION,
-                                            ], { hasBackdrop: true }).pipe(
+                                            ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
                                                 switchMap(result => result === DialogManager.YES_ACTION_PRIMARY
                                                     ? of(activeProfile)
                                                     : EMPTY

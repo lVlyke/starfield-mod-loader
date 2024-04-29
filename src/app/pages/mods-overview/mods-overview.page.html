@@ -317,6 +317,11 @@
                     <span matLine>Add Profile</span>
                 </button>
 
+                <button mat-list-item (click)="profileManager.importProfileFromUser(); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">group_add</mat-icon>
+                    <span matLine>Import Profile</span>
+                </button>
+
                 <button mat-list-item (click)="profileManager.copyProfileFromUser(activeProfile!); showProfileMgmtMenuRef?.close()">
                     <mat-icon matListIcon color="primary">people_alt</mat-icon>
                     <span matLine>Copy Profile</span>

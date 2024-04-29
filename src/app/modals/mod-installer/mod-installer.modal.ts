@@ -68,7 +68,7 @@ export class AppModInstallerModal extends BaseComponent {
                     return dialogManager.createDefault("No files are active for this mod. Do you want to install it anyway?", [
                         DialogManager.YES_ACTION,
                         DialogManager.NO_ACTION_PRIMARY
-                    ], { hasBackdrop: true }).pipe(
+                    ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
                         switchMap((selectedAction) => {
                             if (selectedAction === DialogManager.YES_ACTION) {
                                 return of(form);

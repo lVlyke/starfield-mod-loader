@@ -213,7 +213,7 @@ export class AppModsOverviewPage extends BasePage {
         this.dialogManager.createDefault("Are you sure you want to delete the current profile?", [
             DialogManager.YES_ACTION,
             DialogManager.NO_ACTION_PRIMARY
-        ]).pipe(
+        ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
             filter(choice => choice === DialogManager.YES_ACTION)
         ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
     }

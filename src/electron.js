@@ -182,6 +182,18 @@ class ElectronLoader {
             return this.loadProfile(name);
         });
 
+        ipcMain.handle("app:loadExternalProfile", async (_event, /** @type {AppMessageData<"app:loadExternalProfile">} */ { profilePath }) => {
+            if (!profilePath) {
+                const pickedFile = (await dialog.showOpenDialog({
+                    properties: ["openDirectory"]
+                }));
+                
+                profilePath = pickedFile?.filePaths[0];
+            }
+
+            return this.loadProfileFromPath(profilePath, profilePath);
+        });
+
         ipcMain.handle("app:saveProfile", async (_event, /** @type {AppMessageData<"app:saveProfile">} */ { profile }) => {
             return this.saveProfile(profile);
         });
@@ -669,41 +681,47 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
-    getProfileDir(/** @type {string} */ profileName) {
-        return path.join(ElectronLoader.APP_PROFILES_DIR, profileName);
+    getProfileDir(/** @type {string} */ profileNameOrPath) {
+        return path.isAbsolute(profileNameOrPath)
+            ? profileNameOrPath
+            : path.join(ElectronLoader.APP_PROFILES_DIR, profileNameOrPath);
     }
 
     /** @returns {string} */
-    getProfileModsDir(/** @type {string} */ profileName) {
-        return path.join(this.getProfileDir(profileName), ElectronLoader.PROFILE_MODS_DIR);
+    getProfileModsDir(/** @type {string} */ profileNameOrPath) {
+        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_DIR);
     }
 
     /** @returns {string} */
-    getProfileModDir(/** @type {string} */ profileName, /** @type {string} */ modName) {
-        return path.join(this.getProfileModsDir(profileName), modName);
+    getProfileModDir(/** @type {string} */ profileNameOrPath, /** @type {string} */ modName) {
+        return path.join(this.getProfileModsDir(profileNameOrPath), modName);
     }
 
     /** @returns {string} */
-    getProfileBackupsDir(/** @type {string} */ profileName) {
+    getProfileBackupsDir(/** @type {string} */ profileNameOrPath) {
         return path.join(
-            this.getProfileDir(profileName), 
+            this.getProfileDir(profileNameOrPath), 
             ElectronLoader.PROFILE_BACKUPS_DIR
         );
     }
 
     /** @returns {string} */
-    getProfilePluginBackupsDir(/** @type {string} */ profileName) {
+    getProfilePluginBackupsDir(/** @type {string} */ profileNameOrPath) {
         return path.join(
-            this.getProfileBackupsDir(profileName),
+            this.getProfileBackupsDir(profileNameOrPath),
             ElectronLoader.PROFILE_BACKUPS_PLUGINS_DIR
         );
     }
 
     /** @returns {AppProfile | null} */
-    loadProfile(/** @type {string} */ name) {
-        const profileDir = this.getProfileDir(name);
+    loadProfile(/** @type {string} */ profileNameOrPath) {
+        return this.loadProfileFromPath(profileNameOrPath, this.getProfileDir(profileNameOrPath));
+    }
+
+    /** @returns {AppProfile | null} */
+    loadProfileFromPath(/** @type {string} */ profileName, /** @type {string} */ profilePath) {
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
-        const profileSettingsPath = path.join(profileDir, profileSettingsName);
+        const profileSettingsPath = path.join(profilePath, profileSettingsName);
 
         if (!fs.existsSync(profileSettingsPath)) {
             return null;
@@ -711,7 +729,7 @@ class ElectronLoader {
 
         const profileSrc = fs.readFileSync(profileSettingsPath);
         const profile = JSON.parse(profileSrc.toString("utf8"));
-        profile.name = name;
+        profile.name = profileName;
         // Deserialize mods entries to Map
         profile.mods = new Map(profile.mods);
         profile.rootMods = new Map(profile.rootMods ?? []);
