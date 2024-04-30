@@ -22,5 +22,9 @@
                 color: mixins.theme-foreground-color(text, $is-dark);
             }
         }
+
+        mat-card-title {
+            background-color: mixins.theme-background-color(card, $is-dark);
+        }
     }
 }

@@ -34,10 +34,6 @@
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
-
-            > button {
-                position: relative;
-            }
         }
 
         #profile-mod-list {
@@ -72,8 +68,29 @@
                 }
             }
 
-            app-profile-mod-list {
-                margin-bottom: 1rem;
+            .mod-list-content {
+
+                .mod-list-actions-bar {
+                    position: sticky;
+                    top: 0;
+                    z-index: 2;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-end;
+                    padding-top: 0.5rem;
+                    margin-bottom: -4rem;
+                }
+
+                mat-card-title {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                    padding: 1rem 0;
+                }
+
+                app-profile-mod-list {
+                    margin-bottom: 0.5rem;
+                }
             }
 
             .empty-mod-list-hint {

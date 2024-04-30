@@ -1,15 +1,15 @@
 # Starfield Mod Loader
 
-A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) versions of the game.
+A simple mod manager for Starfield and Fallout 4 that supports both Steam and UWP (Game Pass) versions of the games.
 
 ![Starfield Mod Loader](/docs/app.png)
 
-## Features
+# Features
 
-* Support for **Steam** and **UWP (Game Pass)** versions of Starfield
-* **Add**, **re-order**, **rename**, **disable** and **remove** your mods
-* **Multiple profiles** enable quick switching between different mod loadouts
-* Support for ESP/ESM plugins __**[*](#espesm-plugins)**__
+* Support for **Steam** and **UWP (Game Pass)** versions of games
+* **Add**, **re-order**, **rename**, **disable** and **remove** your mods and plugins
+* **Multiple profiles** enable quick switching between different games and mod loadouts
+* **Root mod** support enables management of ENBs, script extenders, and other injectors
 * Support for FOMOD installers
 * Native Linux version (including Steam Deck)
 
@@ -18,6 +18,12 @@ A simple mod manager for Starfield that supports both Steam and UWP (Game Pass) 
 Releases can be found here:
 
 &nbsp;&nbsp;&nbsp;&nbsp;[Starfield Mod Loader releases](https://github.com/lVlyke/starfield-mod-loader/releases)
+
+# Supported Games
+Starfield Mod Loader supports the following games:
+
+* **Starfield**
+* **Fallout 4**
 
 # Installation
 
@@ -33,6 +39,8 @@ sResourceDataDirsFinal=
 
 # Using Starfield Mod Loader
 
+**Note:** This guide refers specifically to Starfield, but most of the information also applies to other games.
+
 ## Create a profile
 
 To add and manage mods you must first create a profile. Upon first launching the app you will be shown a form to create a new profile.
@@ -41,7 +49,7 @@ The **Mod Base Directory** path should be set to the `Data` folder in either you
 
 **Note:** If you are using the game's installation `Data` folder, make sure you delete the `Data` folder at `Documents/My Games/Starfield`, otherwise your mods will not be detected by the game.
 
-The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install Starfield.
+The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install the game.
 
 The **Game Executable** path should point to `Starfield.exe` (or `sfse_loader.exe` if using SFSE), which should be in the game base directory from the prior step. **Note:** You may get an error from Windows Explorer when selecting the UWP version of `Starfield.exe` that says "You don't have permission to open this file". If this happens, simply copy the path of the file and manually paste it into the input field without using the file explorer.
 
@@ -49,7 +57,7 @@ You can create additional profiles at any time by pressing the **Create Profile*
 
 ## Add some mods
 
-Once your profile is set up you can begin adding and managing mods. To add a new mod, click the **+** icon in the **Mod List** section and select **Add Mod**, or select **Profile > Mods > Add Mod** from the menu bar. Choose the mod you want to install.
+Once your profile is set up you can begin adding and managing mods. To add a new mod, click the **+** icon in the **Mod List** section and select **Add Mod**, or select **Profile > Mods > Add Mod** from the menu bar and choose the mod that you want to install.
 
 **Note:** You can also import existing mods by clicking the **+** icon in the **Mod List** section and select **Import Mod**, or select **Profile > Mods > Import Mod** from the menu bar. This will allow you to add a mod from a folder, which can be useful for importing mods from other profiles.
 
@@ -81,6 +89,12 @@ The installer will guide you through the installation of the mod. Hovering over 
 
 **Tip**: Click the preview image (or the **?** tooltip in compact view) to show a fullscreen view of the image.
 
+### Root mods
+
+Root mods are mods that are deployed to the **Game Base Directory** instead of the **Mod Base Directory**. This allows for script extenders, DLSS injectors, ENBs, and other types of injectors to be managed as mods in your profile.
+
+To add a root mod, click the **+** icon in the **Mod List** section and select **Add Root Mod**, or select **Profile > Mods > Add Root Mod** from the menu bar and chose the mod that you want to install.
+
 ## Managing your mods
 
 Mods you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. To rename or delete a mod, right click it and select the appropriate option.
@@ -93,11 +107,11 @@ Any mod files that you have manually copied to your **Mod Base Directory** outsi
 
 ### ESP/ESM plugins
 
-**IMPORTANT NOTE:** Starfield Mod Loader supports ESP/ESM plugins, however please note that support is currently still considered **experimental** as the official Starfield Creation Kit modding tools have not yet been released. You will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
+Once at least one mod with a plugin has been installed, you will see your plugins listed along with their load order. Plugins can be individually disabled or re-ordered by dragging and dropping them.
 
-By default, plugin support is disabled. Plugins can be enabled by going to **File > Preferences** and enabling plugins. Alternatively, you will be prompted to enable plugins when adding a mod with a plugin file.
+Plugin support can be enable or disabled by going to **File > Preferences** and toggling the plugin support option. If disabled, you will be prompted to enable plugins when adding mods that include plugins.
 
-Once plugins are enabled and at least one plugin has been installed, you will see your plugins listed along with their load order. Plugins can be disabled or re-ordered by dragging and dropping them.
+**IMPORTANT NOTE FOR STARFIELD:** Starfield does not yet officially support plugins. To use unofficial plugins for Starfield, you will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
 
 ## Activate your mods
 

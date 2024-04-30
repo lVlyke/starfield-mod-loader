@@ -226,6 +226,10 @@ class ElectronLoader {
             const gameDirVerifyResult = this.verifyProfilePathExists(profile.gameBaseDir);
             const gameBinaryPathVerifyResult = this.verifyProfilePathExists(profile.gameBinaryPath);
             const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
+
+            if (!profile.deployed) {
+                gameBinaryPathVerifyResult.error = false;
+            }
             
             if (!profile.deployed || !profile.plugins?.length) {
                 pluginListPathVerifyResult.error = false;
@@ -1341,14 +1345,20 @@ class ElectronLoader {
 
     /** @returns {Promise<Array<string>>} */
     async findManualMods(/** @type {AppProfile} */ profile) {
-        if (!fs.existsSync(profile.modBaseDir)) {
+        const absModDir = path.resolve(profile.modBaseDir);
+        if (!fs.existsSync(absModDir)) {
             return [];
         }
 
-        let modDirFiles = await fs.readdir(profile.modBaseDir, { encoding: "utf-8", recursive: true });
+        let modDirFiles = await fs.readdir(absModDir, { encoding: "utf-8", recursive: true });
 
         if (this.isSimilarProfileDeployed(profile)) {
             const profileModFiles = this.readProfileDeploymentMetadata(profile)?.profileModFiles.map((filePath) => {
+                // Resolve absolute file paths relative to `modBaseDir`
+                if (path.isAbsolute(filePath)) {
+                    filePath = filePath.replace(`${absModDir}${path.sep}`, "");
+                }
+
                 return filePath.toLowerCase();
             });
 
@@ -1436,6 +1446,7 @@ class ElectronLoader {
         /** @type {boolean} */ normalizePathCasing
     ) {
         const profileModFiles = [];
+        let deploymentError = undefined;
 
         try {
             // Ensure the mod base dir exists
@@ -1479,15 +1490,26 @@ class ElectronLoader {
 
             profileModFiles.push(... await this.deployMods(profile, true, normalizePathCasing));
             profileModFiles.push(... await this.deployMods(profile, false, normalizePathCasing));
-            profileModFiles.push(ElectronLoader.PROFILE_METADATA_FILE);
+        } catch (err) {
+            deploymentError = err;
+        }
 
+        // Write the deployment metadata file
+        if (profileModFiles.length > 0) {
             this.writeProfileDeploymentMetadata(profile, {
                 profile: profile.name,
                 profileModFiles
             });
-        } catch (err) {
-            log.error("Mod deployment failed: ", err);
-            throw err;
+        }
+
+        if (deploymentError) {
+            // Remove any partially deployed files if deployment failed
+            try {
+                this.undeployProfile();
+            } catch (_err) {}
+
+            log.error("Mod deployment failed: ", deploymentError);
+            throw deploymentError;
         }
 
         log.info("Mod deployment succeeded");
@@ -1528,6 +1550,9 @@ class ElectronLoader {
 
             // Wait for all files to be removed
             await Promise.all(undeployJobs);
+
+            // If all undeploy operations succeeded, remove deployment metadata file
+            fs.rmSync(path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE));
         } catch (err) {
             log.error("Mod undeployment failed: ", err);
             throw err;

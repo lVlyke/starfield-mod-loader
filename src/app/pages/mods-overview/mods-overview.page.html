@@ -44,38 +44,32 @@
                 </button>
             </span>
         </div>
-        
-        <mat-card-header class="tool-header">
-            <mat-card-title>
-                @if (activeProfile.rootMods.size > 0) {
-                    Root Mods
-                } @else {
-                    Mods
-                }
-            </mat-card-title>
 
-            <span id="mod-list-actions">
-                <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
-                    <mat-icon>add</mat-icon>
-                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                </button>
+        <mat-card-content class="mod-list-content">
+            <div class="mod-list-actions-bar">
+                <span id="mod-list-actions">
+                    <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
+                        <mat-icon>add</mat-icon>
+                        <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                    </button>
 
-                <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="showProfileModsDirInFileExplorer()">
-                    <mat-icon>folder_open</mat-icon>
-                </button>
+                    <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="showProfileModsDirInFileExplorer()">
+                        <mat-icon>folder_open</mat-icon>
+                    </button>
 
-                <button mat-icon-button color="accent" matTooltip="Verify Profile" (click)="profileManager.verifyActiveProfile()">
-                    <mat-icon>error_outline</mat-icon>
-                </button>
+                    <button mat-icon-button color="accent" matTooltip="Verify Profile" (click)="profileManager.verifyActiveProfile()">
+                        <mat-icon>error_outline</mat-icon>
+                    </button>
 
-                <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileSettings()">
-                    <mat-icon>settings</mat-icon>
-                </button>
-            </span>
-        </mat-card-header>
+                    <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileSettings()">
+                        <mat-icon>settings</mat-icon>
+                    </button>
+                </span>
+            </div>
 
-        <mat-card-content>
             <ng-container *ngIf="activeProfile.rootMods.size > 0">
+                <mat-card-title>Root Mods</mat-card-title>
+
                 <app-profile-mod-list [profile]="activeProfile"
                                     [root]="true"
                                     [showManualMods]="false"
@@ -84,7 +78,7 @@
             </ng-container>
 
             <ng-container *ngIf="activeProfile.mods.size > 0; else emptyModListHint">
-                <mat-card-title *ngIf="activeProfile.rootMods.size > 0">Mods</mat-card-title>
+                <mat-card-title>Mods</mat-card-title>
 
                 <app-profile-mod-list [profile]="activeProfile"
                                     [root]="false"
