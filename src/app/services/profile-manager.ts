@@ -23,7 +23,6 @@ import { EMPTY, Observable, asyncScheduler, combineLatest, concat, forkJoin, fro
 import { filterDefined } from "../core/operators/filter-defined";
 import { ElectronUtils } from "../util/electron-utils";
 import { ObservableUtils } from "../util/observable-utils";
-import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { AppProfile } from "../models/app-profile";
 import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
@@ -33,11 +32,9 @@ import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from ".
 import { AppProfileSettingsModal } from "../modals/profile-settings";
 import { AppDialogs } from "../services/app-dialogs";
 import { LangUtils } from "../util/lang-utils";
-import { AppPreferencesModal } from "../modals/app-preferences";
 import { AppModImportOptionsModal } from "../modals/mod-import-options";
 import { AppModInstallerModal } from "../modals/mod-installer";
 import { GameId } from "../models/game-id";
-import { GameDatabase } from "../models/game-database";
 import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
 import { DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
@@ -48,7 +45,6 @@ import { filterTrue } from "../core/operators";
 import { GameDetails } from "../models/game-details";
 import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
-import { ActiveProfileState } from "../state/active-profile/active-profile.state";
 import { AppMessage } from "../models/app-message";
 import { AppProfileVerificationResultsModal } from "../modals/profile-verification-results";
 
@@ -66,9 +62,6 @@ export class ProfileManager {
 
     @Select(AppState.isPluginsEnabled)
     public readonly isPluginsEnabled$!: Observable<boolean>;
-
-    @Select(ActiveProfileState.isDeployed)
-    public readonly isProfileDeployed$!: Observable<boolean>;
 
     constructor(
         messageHandler: AppMessageHandler,
@@ -106,21 +99,14 @@ export class ProfileManager {
                 catchError((err) => (console.error("Failed to show settings menu: ", err), EMPTY))
             ))
         ).subscribe();
-
-        messageHandler.messages$.pipe(
-            filter(message => message.id === "app:showPreferences"),
-            switchMap(() => this.showAppPreferences().pipe(
-                catchError((err) => (console.error("Failed to show app settings menu: ", err), EMPTY))
-            ))
-        ).subscribe();
         
         // Wait for NGXS to load
         of(true).pipe(delay(0)).subscribe(() => {
             // Load required data at app start
             forkJoin([
-                this.loadSettings(),
-                this.updateGameDatabase(),
-                this.loadProfileList()
+                this.appManager.loadSettings(),
+                this.appManager.updateGameDatabase(),
+                this.appManager.loadProfileList()
             ]).pipe(
                 // Set initial active profile state
                 switchMap(([settings, _gameDb, profileList]) => {
@@ -150,7 +136,7 @@ export class ProfileManager {
                         // Fall back to creating a new profile
                         switchMap((profile) => {
                             if (!profile) {
-                                this.saveSettings();
+                                this.appManager.saveSettings();
                                 return this.createProfileFromUser();
                             }
 
@@ -158,19 +144,6 @@ export class ProfileManager {
                         })
                     );
                 })
-            ).subscribe();
-            
-
-            // Save app settings to disk on changes
-            this.appState$.pipe(
-                filterDefined(),
-                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap(() => forkJoin([
-                    this.saveSettings(),
-                    this.syncUiState()
-                ]).pipe(
-                    catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
-                ))
             ).subscribe();
 
             // Save profile settings to disk on changes
@@ -268,54 +241,6 @@ export class ProfileManager {
                 event.stopPropagation();
             });
         });
-    }
-
-    public loadSettings(): Observable<AppSettingsUserCfg | null> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
-            switchMap((settings) => {
-                return this.store.dispatch([
-                    new AppActions.updateModListColumns(settings?.modListColumns),
-                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
-                    new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
-                ]).pipe(map(() => settings));
-            })
-        ));
-    }
-
-    public loadProfileList(): Observable<AppProfile.Description[]> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile.Description[]>("app:loadProfileList").pipe(
-            switchMap((profileList) => this.store.dispatch(new AppActions.SetProfiles(profileList)).pipe(
-                map(() => profileList)
-            ))
-        ));
-    }
-
-    public saveSettings(): Observable<void> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
-            take(1),
-            map(appState => this.appDataToUserCfg(appState)),
-            switchMap(settings => ElectronUtils.invoke("app:saveSettings", { settings }))
-        ));
-    }
-
-    public updateSettings(settings: Partial<AppData>): Observable<void> {
-        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
-            switchMap(() => this.saveSettings())
-        ));
-    }
-
-    public updateGameDatabase(): Observable<GameDatabase> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
-            switchMap((gameDb) => {
-                if (!!gameDb) {
-                    return this.store.dispatch(new AppActions.updateGameDb(gameDb))
-                } else {
-                    const errorText = "Unable to open game database file.";
-                    this.dialogManager.createDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
-                    return throwError(() => errorText);
-                }
-            })
-        ));
     }
 
     public updateActiveModDeployment(deploy: boolean): Observable<any> {
@@ -577,27 +502,6 @@ export class ProfileManager {
 
     public updateActiveProfile(profileChanges: AppProfile): Observable<any> {
         return this.setActiveProfile(profileChanges);
-    }
-
-    public showAppPreferences(): Observable<OverlayHelpersComponentRef<AppPreferencesModal>> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
-            take(1),
-            map((preferences) => {
-                const modContextMenuRef = this.overlayHelpers.createFullScreen(AppPreferencesModal, {
-                    center: true,
-                    hasBackdrop: true,
-                    disposeOnBackdropClick: false,
-                    minWidth: "24rem",
-                    width: "40%",
-                    height: "auto",
-                    maxHeight: "75%",
-                    panelClass: "mat-app-background"
-                });
-
-                modContextMenuRef.component.instance.preferences = preferences;
-                return modContextMenuRef;
-            })
-        ));
     }
 
     public showProfileSettings(
@@ -1017,7 +921,7 @@ export class ProfileManager {
                                         new AppActions.setDeployInProgress(false),
                                         new ActiveProfileActions.setDeployed(true)
                                     ])),
-                                    switchMap(() => this.loadProfileList()), // Reload profile descriptions
+                                    switchMap(() => this.appManager.loadProfileList()), // Reload profile descriptions
                                     switchMap(() => this.updateActiveProfileManualMods()), // Update the manual mod list
                                     map(() => true) // Success
                                 );
@@ -1058,7 +962,7 @@ export class ProfileManager {
                             new AppActions.setDeployInProgress(false),
                             new ActiveProfileActions.setDeployed(false)
                         ])),
-                        switchMap(() => this.loadProfileList()), // Reload profile descriptions
+                        switchMap(() => this.appManager.loadProfileList()), // Reload profile descriptions
                         switchMap(() => this.updateActiveProfileManualMods()),
                         map(() => true) // Success
                     );
@@ -1066,17 +970,6 @@ export class ProfileManager {
                     return of(false); // Failed
                 }
             })
-        ));
-    }
-
-    private syncUiState(): Observable<void> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
-            take(1),
-            switchMap((appState) => ElectronUtils.invoke("app:syncUiState", {
-                appState,
-                modListCols: AppData.DEFAULT_MOD_LIST_COLUMN_ORDER,
-                defaultModListCols: AppData.DEFAULT_MOD_LIST_COLUMNS
-            }))
         ));
     }
 
@@ -1139,14 +1032,5 @@ export class ProfileManager {
                 return of(userResult);
             })
         );
-    }
-
-    private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
-        return {
-            activeProfile: _.pick(appData.activeProfile ?? {}, "name", "gameId") as AppProfile.Description,
-            pluginsEnabled: appData.pluginsEnabled,
-            normalizePathCasing: appData.normalizePathCasing,
-            modListColumns: appData.modListColumns
-        };
     }
 }

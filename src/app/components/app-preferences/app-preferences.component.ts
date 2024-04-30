@@ -4,9 +4,9 @@ import { NgForm } from "@angular/forms";
 import { ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
-import { ProfileManager } from "../../services/profile-manager";
 import { AppData } from "../../models/app-data";
 import { AppTheme } from "../../models/app-theme";
+import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
 
 @Component({
     selector: "app-preferences",
@@ -34,7 +34,7 @@ export class AppPreferencesComponent extends BaseComponent {
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppPreferencesComponent>,
-        profileManager: ProfileManager
+        appManager: AppStateBehaviorManager
     ) {
         super({ cdRef });
 
@@ -44,7 +44,7 @@ export class AppPreferencesComponent extends BaseComponent {
 
         this.onFormSubmit$.pipe(
             filter(form => !!form.valid),
-            switchMap(() => profileManager.updateSettings(this.formModel))
+            switchMap(() => appManager.updateSettings(this.formModel))
         ).subscribe();
     }
 

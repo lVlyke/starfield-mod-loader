@@ -193,7 +193,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
             "gameDetails",
             "importRequest"
         )).pipe(
-            filter(([gameDetails]) => !!gameDetails?.scriptExtenders?.length),
+            filter(([gameDetails, importRequest]) => !importRequest.root && !!gameDetails?.scriptExtenders?.length),
             map(([
                 gameDetails, { 
                 modFilePaths,

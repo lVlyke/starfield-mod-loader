@@ -1,18 +1,31 @@
+import * as _ from "lodash";
 import { Inject, Injectable, forwardRef } from "@angular/core";
 import { Select, Store } from "@ngxs/store";
-import { EMPTY, Observable } from "rxjs";
-import { distinctUntilChanged, filter, map, switchMap } from "rxjs/operators";
-import { AppMessageData } from "../models/app-message";
+import { EMPTY, Observable, of, throwError } from "rxjs";
+import { catchError, delay, distinctUntilChanged, filter, map, skip, switchMap, take } from "rxjs/operators";
+import { AppMessage, AppMessageData } from "../models/app-message";
 import { AppActions, AppState } from "../state";
 import { AppMessageHandler } from "./app-message-handler";
-import { OverlayHelpers, OverlayHelpersRef } from "./overlay-helpers";
+import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from "./overlay-helpers";
+import { AppProfile } from "../models/app-profile";
 import { AppModSyncIndicatorModal, LOADING_MSG_TOKEN } from "../modals/loading-indicator";
 import { AppAboutInfoModal, DEPS_INFO_TOKEN } from "../modals/app-about-info";
 import { ElectronUtils } from "../util/electron-utils";
 import { ExternalFile } from "../models/external-file";
+import { ObservableUtils } from "../util/observable-utils";
+import { AppData } from "../models/app-data";
+import { DialogManager } from "./dialog-manager";
+import { filterDefined } from "../core/operators";
+import { LangUtils } from "../util/lang-utils";
+import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
+import { GameDatabase } from "../models/game-database";
+import { AppPreferencesModal } from "../modals/app-preferences";
 
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
+
+    @Select(AppState)
+    public readonly appState$!: Observable<AppData>;
 
     @Select(AppState.isDeployInProgress)
     public readonly isDeployInProgress$!: Observable<boolean>;
@@ -20,24 +33,41 @@ export class AppStateBehaviorManager {
     constructor(
         messageHandler: AppMessageHandler,
         @Inject(forwardRef(() => Store)) private readonly store: Store,
-        private readonly overlayHelpers: OverlayHelpers
+        private readonly overlayHelpers: OverlayHelpers,
+        private readonly dialogManager: DialogManager,
     ) {
         let deployInProgressOverlayRef: OverlayHelpersRef | undefined;
 
-        messageHandler.messages$.pipe(
-            filter(message => message.id === "app:showAboutInfo")
-        ).subscribe(({ data }) => this.showAppAboutInfo(
-            data as AppMessageData<"app:showAboutInfo"> // TODO
-        ));
+        // Wait for NGXS to load
+        of(true).pipe(delay(0)).subscribe(() => {
+            // Save app settings to disk on changes
+            this.appState$.pipe(
+                filterDefined(),
+                skip(1),
+                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+                switchMap(() => this.saveSettings().pipe(
+                    catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
+                ))
+            ).subscribe();
+        });
 
         messageHandler.messages$.pipe(
-            filter(message => message.id === "app:toggleModListColumn"),
+            filter(message => message.id === "app:showPreferences"),
+            switchMap(() => this.showAppPreferences().pipe(
+                catchError((err) => (console.error("Failed to show app settings menu: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter((message): message is AppMessage.ShowAboutInfo => message.id === "app:showAboutInfo")
+        ).subscribe(({ data }) => this.showAppAboutInfo(data));
+
+        messageHandler.messages$.pipe(
+            filter((message): message is AppMessage.ToggleModListColumn => message.id === "app:toggleModListColumn"),
             switchMap(({ data }) => {
-                const _data = data as AppMessageData<"app:toggleModListColumn">; // TODO
-
-                if (!!_data.column) {
-                    return this.toggleModListColumn(_data.column);
-                } else if (_data.reset) {
+                if (!!data.column) {
+                    return this.toggleModListColumn(data.column);
+                } else if (data.reset) {
                     return this.resetModListColumns();
                 }
 
@@ -96,6 +126,76 @@ export class AppStateBehaviorManager {
         return this.store.dispatch(new AppActions.ResetModListColumns());
     }
 
+    public loadSettings(): Observable<AppSettingsUserCfg | null> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
+            switchMap((settings) => {
+                return this.store.dispatch([
+                    new AppActions.updateModListColumns(settings?.modListColumns),
+                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
+                    new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
+                ]).pipe(map(() => settings));
+            })
+        ));
+    }
+
+    public loadProfileList(): Observable<AppProfile.Description[]> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile.Description[]>("app:loadProfileList").pipe(
+            switchMap((profileList) => this.store.dispatch(new AppActions.SetProfiles(profileList)).pipe(
+                map(() => profileList)
+            ))
+        ));
+    }
+
+    public saveSettings(): Observable<void> {
+        return ObservableUtils.hotResult$(this.appState$.pipe(
+            take(1),
+            map(appState => this.appDataToUserCfg(appState)),
+            switchMap(settings => ElectronUtils.invoke("app:saveSettings", { settings })),
+            switchMap(() => this.syncUiState())
+        ));
+    }
+
+    public updateSettings(settings: Partial<AppData>): Observable<void> {
+        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
+            switchMap(() => this.saveSettings())
+        ));
+    }
+
+    public updateGameDatabase(): Observable<GameDatabase> {
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
+            switchMap((gameDb) => {
+                if (!!gameDb) {
+                    return this.store.dispatch(new AppActions.updateGameDb(gameDb))
+                } else {
+                    const errorText = "Unable to open game database file.";
+                    this.dialogManager.createDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
+                    return throwError(() => errorText);
+                }
+            })
+        ));
+    }
+
+    public showAppPreferences(): Observable<OverlayHelpersComponentRef<AppPreferencesModal>> {
+        return ObservableUtils.hotResult$(this.appState$.pipe(
+            take(1),
+            map((preferences) => {
+                const modContextMenuRef = this.overlayHelpers.createFullScreen(AppPreferencesModal, {
+                    center: true,
+                    hasBackdrop: true,
+                    disposeOnBackdropClick: false,
+                    minWidth: "24rem",
+                    width: "40%",
+                    height: "auto",
+                    maxHeight: "75%",
+                    panelClass: "mat-app-background"
+                });
+
+                modContextMenuRef.component.instance.preferences = preferences;
+                return modContextMenuRef;
+            })
+        ));
+    }
+
     public showAppAboutInfo(aboutData: AppMessageData<"app:showAboutInfo">): void {
         this.overlayHelpers.createFullScreen(AppAboutInfoModal, {
             width: "50vw",
@@ -106,5 +206,25 @@ export class AppStateBehaviorManager {
             disposeOnBackdropClick: true,
             panelClass: "mat-app-background"
         }, [[DEPS_INFO_TOKEN, aboutData]]);
+    }
+
+    private syncUiState(): Observable<void> {
+        return ObservableUtils.hotResult$(this.appState$.pipe(
+            take(1),
+            switchMap((appState) => ElectronUtils.invoke("app:syncUiState", {
+                appState,
+                modListCols: AppData.DEFAULT_MOD_LIST_COLUMN_ORDER,
+                defaultModListCols: AppData.DEFAULT_MOD_LIST_COLUMNS
+            }))
+        ));
+    }
+
+    private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
+        return {
+            activeProfile: _.pick(appData.activeProfile ?? {}, "name", "gameId") as AppProfile.Description,
+            pluginsEnabled: appData.pluginsEnabled,
+            normalizePathCasing: appData.normalizePathCasing,
+            modListColumns: appData.modListColumns
+        };
     }
 }
