@@ -3,6 +3,7 @@ import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentState
 import { Select } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
 import { MatExpansionPanel } from "@angular/material/expansion";
+import { MatSelect } from "@angular/material/select";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
@@ -13,7 +14,7 @@ import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
-import { filterDefined, filterFalse } from "../../core/operators";
+import { filterDefined, filterFalse, filterTrue } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
 import { ObservableUtils } from "../../util/observable-utils";
 import { DialogAction } from "../../services/dialog-manager.types";
@@ -63,6 +64,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;
+
+    @ViewChild("currentProfileSelect")
+    public readonly currentProfileSelect!: MatSelect;
 
     @ViewChild("addModMenu", { read: CdkPortal })
     protected readonly addModMenuPortal!: CdkPortal;
@@ -116,6 +120,15 @@ export class AppModsOverviewPage extends BasePage {
             skip(1),
             filterFalse(),
         ).subscribe(() => this.profileActionsPanel.expanded = true);
+
+        stateRef.get("currentProfileSelect").pipe(
+            filterDefined(),
+            switchMap((currentProfileSelect) => currentProfileSelect.openedChange),
+            filterTrue(),
+        ).subscribe(() => {
+            // TODO - Ugly hack to add a backdrop to `mat-select` overlay; not exposed through public API
+            (this.currentProfileSelect.panel?.nativeElement as HTMLElement)?.parentElement?.parentElement?.classList.add("backdrop-dark");
+        });
 
         combineLatest(stateRef.getAll(
             "isPluginsEnabled",

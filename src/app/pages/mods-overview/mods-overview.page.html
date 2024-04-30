@@ -7,7 +7,8 @@
 
             <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
                 <mat-label>Current Profile</mat-label>
-                <mat-select [ngModel]="activeProfile"
+                <mat-select #currentProfileSelect
+                            [ngModel]="activeProfile"
                             [compareWith]="profileDescCompareFn"
                             (ngModelChange)="profileManager.loadProfile($event, true)">
                     <mat-select-trigger id="profile-select-trigger">
