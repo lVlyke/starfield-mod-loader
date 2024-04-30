@@ -1366,7 +1366,9 @@ class ElectronLoader {
                 throw new Error("Unable to read deployment metadata.");
             }
             
-            modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file.toLowerCase()));
+            modDirFiles = modDirFiles.filter(file => {
+                return !profileModFiles.includes(file.toLowerCase()) && file !== ElectronLoader.PROFILE_METADATA_FILE;
+            });
         }
 
         // Filter out directories
@@ -1552,7 +1554,10 @@ class ElectronLoader {
             await Promise.all(undeployJobs);
 
             // If all undeploy operations succeeded, remove deployment metadata file
-            fs.rmSync(path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE));
+            const metadataFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
+            if (fs.existsSync(metadataFilePath)) {
+                fs.rmSync(path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE));
+            }
         } catch (err) {
             log.error("Mod undeployment failed: ", err);
             throw err;

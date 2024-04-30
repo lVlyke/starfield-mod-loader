@@ -75,7 +75,7 @@
         ],
         "pluginListPaths": [
             "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
+            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
         ],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
@@ -89,11 +89,11 @@
         "gameConfigFiles": {
             "Fallout4Custom.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
-                "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
+                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
             ],
             "Fallout4Prefs.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Prefs.ini",
-                "~/.local/share/Steam/steamapps/compatdata/GAME_ID_TODO/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
+                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
             ]
         }
     }
