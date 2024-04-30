@@ -78,7 +78,6 @@
                     flex-direction: row;
                     justify-content: flex-end;
                     padding-top: 0.5rem;
-                    margin-bottom: -4rem;
                 }
 
                 mat-card-title {
@@ -86,6 +85,10 @@
                     top: 0;
                     z-index: 1;
                     padding: 1rem 0;
+                    
+                    &:first-of-type {
+                        margin-top: -4rem;
+                    }
                 }
 
                 app-profile-mod-list {
