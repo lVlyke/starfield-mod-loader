@@ -1177,8 +1177,14 @@ class ElectronLoader {
                 fileEntry.filePath = this.#expandPath(fileEntry.filePath);
 
                 if (modFilePathMapFilter) {
-                    const mappedEntry = Object.entries(modFilePathMapFilter).find(([src]) => {
-                        return fileEntry.filePath.startsWith(path.join(modSubdirRoot, this.#expandPath(src)));
+                    const mappedEntry = Object.entries(modFilePathMapFilter).find(([pathMapSrc]) => {
+                        pathMapSrc = this.#expandPath(pathMapSrc);
+
+                        if (!pathMapSrc.startsWith(modSubdirRoot)) {
+                            pathMapSrc = path.join(modSubdirRoot, pathMapSrc);
+                        }
+
+                        return fileEntry.filePath.startsWith(pathMapSrc);
                     });
                     fileEntry.enabled = !!mappedEntry;
 
@@ -1507,7 +1513,7 @@ class ElectronLoader {
         if (deploymentError) {
             // Remove any partially deployed files if deployment failed
             try {
-                this.undeployProfile();
+                this.undeployProfile(profile);
             } catch (_err) {}
 
             log.error("Mod deployment failed: ", deploymentError);

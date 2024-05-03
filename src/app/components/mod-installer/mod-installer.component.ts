@@ -325,7 +325,7 @@ export class AppModInstallerComponent extends BaseComponent {
 
             plugins.forEach((plugin) => {
                 if (!!plugin.pluginInfo.conditionFlags?.[0]?.flag) {
-                    plugin.pluginInfo.conditionFlags[0].flag.forEach(flag => installerFlags[flag.name[0]] = flag._ ?? true);
+                    plugin.pluginInfo.conditionFlags[0].flag.forEach(flag => installerFlags[flag.name[0]] = flag._);
                 }
             });
         });
@@ -407,7 +407,13 @@ export class AppModInstallerComponent extends BaseComponent {
     
                 if (flagDependency && flagDependency.length > 0) {
                     conditions.push(...flagDependency.map((flagDependency) => {
-                        return of(installerFlags[flagDependency.flag[0]] === (flagDependency.value[0] ?? true));
+                        const checkVal = flagDependency.value[0];
+                        const curVal = installerFlags[flagDependency.flag[0]];
+                        if (!checkVal?.length) {
+                            return of(!curVal);
+                        } else {
+                            return of(curVal === checkVal);
+                        }
                     }));
                 }
     

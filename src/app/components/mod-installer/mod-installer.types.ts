@@ -2,7 +2,7 @@ import { ModInstaller } from "../../models/mod-installer";
 
 export namespace AppModInstaller {
 
-    export type Flags = Record<string, string | boolean>;
+    export type Flags = Record<string, string | undefined>;
 
     export interface Flag {
         name: string;
