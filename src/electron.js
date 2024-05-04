@@ -886,7 +886,6 @@ class ElectronLoader {
             const fileType = path.extname(filePath);
             const modName = path.basename(filePath, fileType);
             const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
-            const modFilePaths = [];
             /** @type Promise */ let decompressOperation;
 
             // Clear the staging dir
@@ -933,10 +932,6 @@ class ElectronLoader {
                         }
 
                         const decompressStream = Seven.extractFull(filePath, modDirStagingPath, { $bin: _7zBinaryPath });
-
-                        decompressStream.on("data", ({ file }) => {
-                            modFilePaths.push(file);
-                        });
                         decompressStream.on("end", () => resolve(true));
                         decompressStream.on("error", (e) => {
                             log.error(e);
@@ -952,6 +947,7 @@ class ElectronLoader {
 
             if (await decompressOperation) {
                 try {
+                    const modFilePaths = fs.readdirSync(modDirStagingPath, { encoding: "utf-8", recursive: true });
                     return await this.beginModImport(profile, root, modName, modDirStagingPath, modFilePaths, false);
                 } catch (err) {
                     log.error(`Error occurred while adding mod ${modName}: `, err);
@@ -1172,11 +1168,12 @@ class ElectronLoader {
                 return undefined;
             }
 
-            // Collect all enabled mod files
-            const enabledModFiles = modFilePaths.filter((fileEntry) => {
+            // Collect all enabled mod files, K = file dest, V = file src
+            /** @type {Map<string, string>} */ const enabledModFiles = modFilePaths.reduce((enabledModFiles, fileEntry) => {
                 fileEntry.filePath = this.#expandPath(fileEntry.filePath);
 
                 if (modFilePathMapFilter) {
+                    // Check if a mapping entry exists for the current file path
                     const mappedEntry = Object.entries(modFilePathMapFilter).find(([pathMapSrc]) => {
                         pathMapSrc = this.#expandPath(pathMapSrc);
 
@@ -1184,11 +1181,22 @@ class ElectronLoader {
                             pathMapSrc = path.join(modSubdirRoot, pathMapSrc);
                         }
 
+                        // Check if the mapping src is a direct match for the file
+                        if (fileEntry.filePath === pathMapSrc) {
+                            return true;
+                        }
+
+                        if (!pathMapSrc.endsWith(path.sep)) {
+                            pathMapSrc += path.sep;
+                        }
+
+                        // Check if the file is inside the mapping src dir
                         return fileEntry.filePath.startsWith(pathMapSrc);
                     });
                     fileEntry.enabled = !!mappedEntry;
 
                     if (mappedEntry) {
+                        // Map the file path to the destination path, excluding any root data dir
                         fileEntry.mappedFilePath = fileEntry.filePath.replace(
                             this.#expandPath(mappedEntry[0]),
                             this.#expandPath(mappedEntry[1].replace(/^[Dd]ata[\\/]/, ""))
@@ -1198,8 +1206,22 @@ class ElectronLoader {
                     fileEntry.enabled = fileEntry.enabled && fileEntry.filePath.startsWith(modSubdirRoot);
                 }
 
-                return fileEntry.enabled;
-            });
+                if (fileEntry.enabled) {
+                    const destFilePath = fileEntry.mappedFilePath ?? fileEntry.filePath;
+                    const existingEntry = enabledModFiles.get(destFilePath);
+                    if (existingEntry) {
+                        log.warn(
+                            `${modName} - Installer provides multiple files that map to the same path: "${destFilePath}"`,
+                            "\r\n",
+                            `Overwriting "${existingEntry}" with "${fileEntry.filePath}"`
+                        );
+                    }
+
+                    enabledModFiles.set(destFilePath, fileEntry.filePath);
+                }
+
+                return enabledModFiles;
+            }, new Map());
             
             const gameDb = this.loadGameDatabase();
             const gameDetails = gameDb[profile.gameId];
@@ -1207,10 +1229,9 @@ class ElectronLoader {
 
             // Collect all enabled plugins
             modPlugins = [];
-            modPlugins = enabledModFiles.reduce((enabledPlugins, { filePath, mappedFilePath }) => {
-                const resolvedPath = mappedFilePath ?? filePath;
-                const rootFilePath = modSubdirRoot ? resolvedPath.replace(`${modSubdirRoot}${path.sep}`, "") : resolvedPath;
-                if (gamePluginFormats.some(pluginFormat => resolvedPath.toLowerCase().endsWith(pluginFormat))) {
+            modPlugins = Array.from(enabledModFiles.keys()).reduce((enabledPlugins, destFilePath) => {
+                const rootFilePath = modSubdirRoot ? destFilePath.replace(`${modSubdirRoot}${path.sep}`, "") : destFilePath;
+                if (gamePluginFormats.some(pluginFormat => destFilePath.toLowerCase().endsWith(pluginFormat))) {
                     enabledPlugins.push(rootFilePath);
                 }
 
@@ -1224,16 +1245,15 @@ class ElectronLoader {
                 fs.rmSync(modProfilePath, { recursive: true, force: true });
             }
 
-            if (enabledModFiles.length > 0) {
+            if (enabledModFiles.size > 0) {
                 const overwriteExistingFiles = mergeStrategy === "OVERWRITE" || mergeStrategy === "REPLACE";
                 const modFileOperations = [];
 
-                enabledModFiles.map(({ filePath, mappedFilePath }) => {
-                    const srcFilePath = path.join(modPath, filePath);
+                for (let [destBasePath, srcFilePath] of enabledModFiles) {
+                    srcFilePath = path.join(modPath, srcFilePath);
 
                     if (!fs.lstatSync(srcFilePath).isDirectory()) {
                         // Normalize path to the data subdir
-                        const destBasePath = mappedFilePath ?? filePath;
                         const rootFilePath = modSubdirRoot ? destBasePath.replace(`${modSubdirRoot}${path.sep}`, "") : destBasePath;
                         const destFilePath = path.join(modProfilePath, rootFilePath);
                         
@@ -1251,7 +1271,7 @@ class ElectronLoader {
                             }));
                         }
                     }
-                });
+                }
 
                 await Promise.all(modFileOperations);
             } else {
@@ -1267,10 +1287,19 @@ class ElectronLoader {
                     plugins: modPlugins
                 }
             };
+        } catch (err) {
+            log.error("Mod import failed: ", err);
+            throw err;
         } finally {
             if (!externalImport) {
-                // Erase the staging data if this was added via archive
-                await fs.remove(modPath);
+                try {
+                    // Erase the staging data if this was added via archive
+                    await fs.remove(modPath);
+                } catch (err) {
+                    log.error(`${modName} - Failed to clean-up temporary installation files: `, err);
+
+                    // Ignore temp file clean-up errors
+                }
             }
         }
     }

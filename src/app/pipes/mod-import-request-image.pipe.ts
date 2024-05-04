@@ -15,6 +15,14 @@ export class AppModImportRequestImagePipe implements PipeTransform {
         if (!path) {
             return NEVER;
         }
+
+        if (importRequest.modSubdirRoot) {
+            const subdirRoot = importRequest.modSubdirRoot + importRequest.filePathSeparator;
+
+            if (!path.startsWith(subdirRoot)) {
+                path = subdirRoot + path;
+            }
+        }
         
         return this.appManager.openFile(
             importRequest.modPath + importRequest.filePathSeparator + path
