@@ -1,9 +1,9 @@
-import * as _ from "lodash";
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter } from "@angular/core";
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, Injector, ViewChild } from "@angular/core";
 import { CdkDrag, CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
-import { Observable, combineLatest } from "rxjs";
+import { CdkPortal } from "@angular/cdk/portal";
+import { Observable } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
-import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
+import { AsyncState, ComponentState, ComponentStateRef, ManagedSubject } from "@lithiumjs/angular";
 import { ThemeContainer } from "@lithiumjs/ngx-material-theming";
 import { AppProfile } from "../../models/app-profile";
 import { GameDetails } from "../../models/game-details";
@@ -11,11 +11,13 @@ import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { Select } from "@ngxs/store";
 import { AppState } from "../../state";
 import { ProfileUtils } from "../../util/profile-utils";
+import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 
 type PluginListEntry = {
     pluginRef: GamePluginProfileRef;
     order: number | undefined;
     typeIndex: number;
+    required: boolean;
 };
 
 type PluginDataSourceEntry = PluginListEntry;
@@ -32,6 +34,7 @@ type PluginDataSourceEntry = PluginListEntry;
 export class AppProfilePluginListComponent extends BaseComponent {
 
     public readonly assign = Object.assign;
+    public readonly showPluginContextMenu$ = new ManagedSubject<[MouseEvent, PluginListEntry]>(this);
 
     @Select(AppState.getActiveGameDetails)
     public readonly activeGameDetails$!: Observable<GameDetails>;
@@ -42,18 +45,28 @@ export class AppProfilePluginListComponent extends BaseComponent {
     @Output("pluginOrderChange")
     public readonly pluginOrderChange$ = new EventEmitter<GamePluginProfileRef[]>;
 
+    @Output("pluginExternalManagementChange")
+    public readonly pluginExternalManagementChange$ = new EventEmitter<never>();
+
+    @Output("pluginTypeChange")
+    public readonly pluginTypeChange$ = new EventEmitter<[GamePluginProfileRef, string]>();
+
     @AsyncState()
     public readonly activeGameDetails!: GameDetails;
 
     @Input()
     public profile!: AppProfile;
 
+    @ViewChild("pluginContextMenu", { read: CdkPortal })
+    protected readonly pluginContextMenuPortal!: CdkPortal;
+
     protected pluginDataSource: PluginDataSourceEntry[] = [];
     protected displayedColumns: string[] = ["enabled", "name", "order"];
+    protected activeContextEntry?: PluginListEntry;
+    protected pluginContextMenuRef?: OverlayHelpersRef;
 
-    protected dropSortPredicate = (index: number, item: CdkDrag<PluginListEntry>): boolean => {
+    protected dropSortPredicate = (index: number, { data: itemBeingMoved }: Pick<CdkDrag<PluginListEntry>, "data">): boolean => {
         const itemAtNewLocation = this.pluginDataSource[index];
-        const itemBeingMoved = item.data;
 
         // Ensure drag operation respects implicit plugin type order
         if (index < this.pluginDataSource.indexOf(itemBeingMoved)) {
@@ -64,15 +77,15 @@ export class AppProfilePluginListComponent extends BaseComponent {
     };
 
     constructor(
+        injector: Injector,
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfilePluginListComponent>,
+        overlayHelpers: OverlayHelpers,
         protected readonly themeContainer: ThemeContainer
     ) {
         super({ cdRef });
 
-        combineLatest(stateRef.getAll(
-            "profile"
-        )).subscribe(([profile]) => {
+        stateRef.get("profile").subscribe((profile) => {
             let pluginIndex = 0;
             const pluginDataSource = profile.plugins.map<PluginDataSourceEntry>((pluginRef) => {
                 if (pluginRef.enabled) {
@@ -82,18 +95,74 @@ export class AppProfilePluginListComponent extends BaseComponent {
                 return {
                     pluginRef,
                     order: pluginRef.enabled ? pluginIndex : undefined,
-                    typeIndex: ProfileUtils.getPluginTypeIndex(pluginRef, this.activeGameDetails.pluginFormats) ?? 0
+                    typeIndex: ProfileUtils.getPluginTypeIndex(pluginRef, this.activeGameDetails.pluginFormats) ?? 0,
+                    required: !!this.activeGameDetails.pinnedPlugins?.find((pinnedPlugin) => {
+                        return pinnedPlugin.required && pluginRef.plugin === pinnedPlugin.plugin;
+                    })
                 };
             });
 
             this.pluginDataSource = pluginDataSource;
         });
+
+        this.showPluginContextMenu$.subscribe(([event, pluginEntry]) => {
+            this.activeContextEntry = pluginEntry;
+
+            this.pluginContextMenuRef = overlayHelpers.createAttached(this.pluginContextMenuPortal, {
+                x: event.clientX,
+                y: event.clientY
+            }, OverlayHelpers.ConnectionPositions.contextMenu, {
+                injector,
+                managed: false
+            });
+
+            event.stopPropagation();
+            event.preventDefault();
+        });
+    }
+
+    protected getPluginType(pluginEntry: PluginListEntry): string | undefined {
+        return ProfileUtils.getPluginType(pluginEntry.pluginRef);
+    }
+
+    protected getDefaultPluginType(pluginEntry: PluginListEntry): string | undefined {
+        return ProfileUtils.getDefaultPluginType(pluginEntry.pluginRef);
+    }
+
+    protected moveToTop(pluginEntry: PluginListEntry): void {
+        const pluginOrder = this.pluginOrder;
+        let firstIndex = 0;
+        while (firstIndex < pluginOrder.length && !this.dropSortPredicate(firstIndex, { data: pluginEntry })) {
+            ++firstIndex;
+        }
+
+        if (firstIndex < pluginOrder.length) {
+            moveItemInArray(pluginOrder, pluginOrder.indexOf(pluginEntry.pluginRef), firstIndex);
+            this.pluginOrderChange$.emit(pluginOrder);
+        }
+    }
+
+    protected moveToBottom(pluginEntry: PluginListEntry): void {
+        const pluginOrder = this.pluginOrder;
+        let lastIndex = pluginOrder.length - 1;
+        while (lastIndex > 0 && !this.dropSortPredicate(lastIndex, { data: pluginEntry })) {
+            --lastIndex;
+        }
+
+        if (lastIndex > 0) {
+            moveItemInArray(pluginOrder, pluginOrder.indexOf(pluginEntry.pluginRef), lastIndex);
+            this.pluginOrderChange$.emit(pluginOrder);
+        }
     }
 
     protected dropReorder(event: CdkDragDrop<unknown>): void {
-        const pluginOrder = this.pluginDataSource.map(({ pluginRef }) => pluginRef);
+        const pluginOrder = this.pluginOrder;
 
         moveItemInArray(pluginOrder, event.previousIndex, event.currentIndex);
         this.pluginOrderChange$.emit(pluginOrder);
+    }
+
+    private get pluginOrder(): GamePluginProfileRef[] {
+        return this.pluginDataSource.map(({ pluginRef }) => pluginRef);
     }
 }

@@ -1,2 +1,2 @@
-export * from "./profile-mod-list.component";
-export * from "./profile-mod-list.module";
+export * from "./mod-actions.component";
+export * from "./mod-actions.module";

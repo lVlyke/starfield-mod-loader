@@ -49,6 +49,10 @@ buildTask.stdout.on("data", (data) => {
             console.log(data.toString());
         });
 
+        electronProcess.stderr.on("data", (data) => {
+            console.error(data.toString());
+        });
+
         electronProcess.on("close", () => {
             console.log("Finished serving");
 

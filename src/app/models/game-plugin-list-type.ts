@@ -1,4 +1,5 @@
 export enum GamePluginListType {
     Default = "Default",
-    CreationEngine = "CreationEngine"
+    CreationEngine = "CreationEngine",
+    Gamebryo = "Gamebryo"
 }

@@ -8,6 +8,7 @@ declare type AppProfileVerificationResults = import("./app/models/app-profile").
 declare type AppProfileModVerificationResult = import("./app/models/app-profile").AppProfileModVerificationResults;
 declare type AppProfilePluginBackupEntry = import("./app/models/app-profile").AppProfilePluginBackupEntry;
 declare type AppProfileDescription = import("./app/models/app-profile").AppProfileDescription;
+declare type AppProfileExternalFiles = import("./app/models/app-profile").AppProfileExternalFiles;
 declare type ModImportStatus = import("./app/models/mod-import-status").ModImportStatus;
 declare type ModImportRequest = import("./app/models/mod-import-status").ModImportRequest;
 declare type ModImportResult = import("./app/models/mod-import-status").ModImportResult;

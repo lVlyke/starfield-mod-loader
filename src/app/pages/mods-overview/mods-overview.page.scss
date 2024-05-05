@@ -290,9 +290,15 @@
 
     @at-root mat-option .game-title {
         font-size: 1rem;
+        width: 10rem;
         height: calc(48px - 16px); // TODO
         margin-right: 2rem;
         border-radius: 0.25rem;
+        padding: 0;
+        white-space: pre;
+        text-overflow: ellipsis;
+        text-wrap: nowrap;
+        overflow: hidden;
     }
 
     @at-root mat-option .profile-name {

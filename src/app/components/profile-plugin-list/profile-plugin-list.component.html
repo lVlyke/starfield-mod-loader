@@ -4,11 +4,19 @@
        [cdkDropListSortPredicate]="dropSortPredicate"
        (cdkDropListDropped)="dropReorder($event)">
     <ng-container matColumnDef="enabled">
-        <th mat-header-cell *matHeaderCellDef></th>
+        <th mat-header-cell *matHeaderCellDef>
+            <button *ngIf="!activeGameDetails.requireExternalPlugins"
+                    mat-icon-button
+                    matTooltip="Manage External Plugins"
+                    [color]="profile.manageExternalPlugins || activeGameDetails.requireExternalPlugins ? 'accent' : null"
+                    (click)="pluginExternalManagementChange$.emit()">
+                <mat-icon>travel_explore</mat-icon>
+            </button>
+        </th>
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-enabled">
             <ng-container>
                 <mat-checkbox [checked]="pluginEntry.pluginRef.enabled"
-                              [disabled]="!!pluginEntry.pluginRef.verificationError"
+                              [disabled]="pluginEntry.required || !!pluginEntry.pluginRef.verificationError"
                               (change)="pluginChange$.emit(assign({}, pluginEntry, { pluginRef: assign({}, pluginEntry.pluginRef, { enabled: $event.checked }) }))" />
             </ng-container>
         </td>
@@ -20,7 +28,18 @@
             <ng-container>
                 <span>
                     <div class="plugin-line-name">
-                        {{ pluginEntry.pluginRef.plugin }}
+                        @if (!!pluginEntry.pluginRef.modId) {
+                            {{ pluginEntry.pluginRef.plugin }}
+                        } @else {
+                            <i>{{ pluginEntry.pluginRef.plugin }}</i>
+                        }
+
+                        <mat-icon *ngIf="!!pluginEntry.pluginRef.promotedType"
+                                  class="plugin-prommoted-icon"
+                                  matTooltip="Plugin promoted to {{ pluginEntry.pluginRef.promotedType | uppercase }}"
+                                  color="primary">
+                            swap_vertical
+                        </mat-icon>
 
                         <mat-icon *ngIf="!!pluginEntry.pluginRef.verificationError"
                                   class="plugin-verification-error-icon"
@@ -30,7 +49,13 @@
                         </mat-icon>
                     </div>
 
-                    <div class="plugin-line-mod-id">{{ pluginEntry.pluginRef.modId }}</div>
+                    <div class="plugin-line-mod-id">
+                        @if (!!pluginEntry.pluginRef.modId) {
+                            {{ pluginEntry.pluginRef.modId }}
+                        } @else {
+                            [External]
+                        }
+                    </div>
                 </span>
             </ng-container>
         </td>
@@ -52,5 +77,46 @@
         cdkDrag
         [cdkDragData]="pluginEntry"
         [attr.li-theme]="themeContainer.theme"
-        [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"></tr>
+        [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"
+        (contextmenu)="showPluginContextMenu$.next([$event, pluginEntry])"></tr>
 </table>
+
+<!-- Plugin context menu portal -->
+<ng-template #pluginContextMenu cdkPortal>
+    <mat-card class="mat-app-background mat-elevation-z6 plugin-context-menu">
+        <mat-card-content>
+            <mat-action-list>
+                <button mat-list-item (click)="moveToTop(activeContextEntry!); pluginContextMenuRef?.close()">
+                    <mat-icon matListIcon>arrow_upward</mat-icon>
+                    <span matLine>Move to Top</span>
+                </button>
+            
+                <button mat-list-item (click)="moveToBottom(activeContextEntry!); pluginContextMenuRef?.close()">
+                    <mat-icon matListIcon>arrow_downward</mat-icon>
+                    <span matLine>Move to Bottom</span>
+                </button>
+
+                <mat-list-item *ngIf="getDefaultPluginType(activeContextEntry!) as defaultPluginType" (click)="pluginTypeSelect.open()">
+                    <mat-icon matListIcon>swap_vertical</mat-icon>
+                    <mat-select #pluginTypeSelect
+                                matLine
+                                placeholder="Plugin Type: {{ pluginTypeSelect.value | uppercase }}"
+                                [value]="getPluginType(activeContextEntry!)"
+                                (valueChange)="pluginTypeChange$.emit([activeContextEntry!.pluginRef, $event]); pluginContextMenuRef?.close()">
+
+                        <mat-select-trigger>Plugin Type: {{ pluginTypeSelect.value | uppercase }}</mat-select-trigger>
+
+                        @for (pluginType of activeGameDetails.pluginFormats; track $index) {
+                            <mat-option [value]="pluginType">
+                                {{ pluginType | uppercase }}
+                                @if (pluginType === defaultPluginType) {
+                                    *
+                                }
+                            </mat-option>
+                        }
+                    </mat-select>
+                </mat-list-item>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>

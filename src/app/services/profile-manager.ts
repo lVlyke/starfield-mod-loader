@@ -155,10 +155,18 @@ export class ProfileManager {
                 ))
             ).subscribe();
 
+            // Make sure that `manageExternalPlugins` is true if the game requires external plugin management
+            this.activeGameDetails$.pipe(
+                map(gameDetails => !!gameDetails?.requireExternalPlugins),
+                distinctUntilChanged(),
+                filterTrue(),
+                switchMap(() => this.manageExternalPlugins(true))
+            ).subscribe();
+
             // Monitor mod changes for new/removed plugins and update the plugins list
             this.activeProfile$.pipe(
                 filterDefined(),
-                map(profile => _.pick(profile, "mods")),
+            map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFiles")),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
                 switchMap(() => this.reconcileActivePluginList())
             ).subscribe();
@@ -328,9 +336,11 @@ export class ProfileManager {
             updateModErrorState: true,
         }, options);
 
+        const loadingIndicator = this.appManager.showLoadingIndicator("Verifying Profile...");
+
         let result$;
         if (options.updateManualMods) {
-            result$ = this.updateActiveProfileManualMods();
+            result$ = this.updateActiveProfileExternalFiles();
         } else {
             result$ = of(true);
         }
@@ -370,21 +380,22 @@ export class ProfileManager {
                 } else {
                     return of(false);
                 }
-            })
+            }),
+            finalize(() => loadingIndicator.close())
         ));
     }
 
-    public findManualMods(profile: AppProfile): Observable<string[]> {
-        return ElectronUtils.invoke<string[]>("profile:findManualMods", { profile });
+    public findExternalFiles(profile: AppProfile): Observable<AppProfile.ExternalFiles> {
+        return ElectronUtils.invoke<AppProfile.ExternalFiles>("profile:findExternalFiles", { profile });
     }
 
-    public updateActiveProfileManualMods(): Observable<any> {
+    public updateActiveProfileExternalFiles(): Observable<any> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             switchMap((profile) => {
                 if (profile) {
-                    return this.findManualMods(profile).pipe(
-                        switchMap(manualMods => this.store.dispatch(new ActiveProfileActions.UpdateManualMods(manualMods)))
+                    return this.findExternalFiles(profile).pipe(
+                        switchMap(externalFiles => this.store.dispatch(new ActiveProfileActions.UpdateExternalFiles(externalFiles)))
                     );
                 } else {
                     return of(false);
@@ -765,8 +776,26 @@ export class ProfileManager {
         );
     }
 
+    public manageExternalPlugins(manageExternalPlugins: boolean): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.manageExternalPlugins(manageExternalPlugins));
+    }
+
     public updatePlugin(pluginRef: GamePluginProfileRef): Observable<void> {
         return this.store.dispatch(new ActiveProfileActions.UpdatePlugin(pluginRef));
+    }
+
+    public promotePluginType(pluginRef: GamePluginProfileRef, promotedType: string): Observable<void> {
+        if (ProfileUtils.getPluginType(pluginRef) === promotedType) {
+            return EMPTY;
+        }
+
+        const updatedProfile = ProfileUtils.getDefaultPluginType(pluginRef) === promotedType
+            ? { ...pluginRef, promotedType: undefined }
+            : { ...pluginRef, promotedType };
+
+        return ObservableUtils.hotResult$(this.updatePlugin(updatedProfile).pipe(
+            switchMap(() => this.reconcileActivePluginList())
+        ));
     }
 
     public reorderPlugins(pluginOrder: GamePluginProfileRef[]): Observable<void> {
@@ -922,7 +951,7 @@ export class ProfileManager {
                                         new ActiveProfileActions.setDeployed(true)
                                     ])),
                                     switchMap(() => this.appManager.loadProfileList()), // Reload profile descriptions
-                                    switchMap(() => this.updateActiveProfileManualMods()), // Update the manual mod list
+                                    switchMap(() => this.updateActiveProfileExternalFiles()), // Update the manual mod list
                                     map(() => true) // Success
                                 );
                             } else {
@@ -963,7 +992,7 @@ export class ProfileManager {
                             new ActiveProfileActions.setDeployed(false)
                         ])),
                         switchMap(() => this.appManager.loadProfileList()), // Reload profile descriptions
-                        switchMap(() => this.updateActiveProfileManualMods()),
+                        switchMap(() => this.updateActiveProfileExternalFiles()),
                         map(() => true) // Success
                     );
                 } else {
@@ -979,7 +1008,7 @@ export class ProfileManager {
             switchMap((gameDetails) => this.store.dispatch(new ActiveProfileActions.ReconcilePluginList(
                 gameDetails?.pluginFormats
             )))
-        ))
+        ));
     }
 
     private createModImportOptionsModal(importRequest: ModImportRequest): Observable<NgForm | void> {

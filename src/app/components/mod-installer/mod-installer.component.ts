@@ -454,13 +454,17 @@ export class AppModInstallerComponent extends BaseComponent {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
-        const manualFiles = this.activeProfile.manualMods;
-        const manualMatch = manualFiles?.find((manualFile) => {
-            const curFilePath = manualFile.replace(/[\\/]/g, this.importRequest.filePathSeparator);
+        const externalModFiles = this.activeProfile.externalFiles?.modDirFiles ?? [];
+        if (this.importRequest.root) {
+            externalModFiles.push(...this.activeProfile.externalFiles?.gameDirFiles ?? []);
+        }
+
+        const externalMatch = externalModFiles?.find((externalFile) => {
+            const curFilePath = externalFile.replace(/[\\/]/g, this.importRequest.filePathSeparator);
             return curFilePath.toLowerCase() === filePath.toLowerCase();
         });
 
-        if (manualMatch) {
+        if (externalMatch) {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 

@@ -12,7 +12,7 @@ import { OverlayHelpers } from "../../services/overlay-helpers";
 import { AppModContextMenuModal } from "../../modals/mod-context-menu";
 import { AppState } from "../../state";
 import { AppData } from "../../models/app-data";
-import { AppProfileExternalFilesListModal, PROFILE_TOKEN } from "../../modals/profile-external-files-list";
+import { AppProfileExternalFilesListModal, FILE_LIST_TOKEN } from "../../modals/profile-external-files-list";
 
 type ModListEntry = {
     name: string;
@@ -20,7 +20,7 @@ type ModListEntry = {
     order: number | undefined;
 };
 
-type ModDataSourceEntry = ModListEntry | "manual";
+type ModListDataSource = Array<ModListEntry | "manual">;
 
 @Component({
     selector: "app-profile-mod-list",
@@ -59,8 +59,10 @@ export class AppProfileModListComponent extends BaseComponent {
     @Input()
     public showManualMods: boolean = true;
 
-    protected modDataSource: ModDataSourceEntry[] = [];
+    protected modEntries: ModListEntry[] = [];
     protected displayedColumns: string[] = [];
+    protected externalModFiles: string[] = [];
+    protected modListDataSource: ModListDataSource = [];
 
     constructor(
         injector: Injector,
@@ -76,9 +78,14 @@ export class AppProfileModListComponent extends BaseComponent {
             "root",
             "showManualMods"
         )).subscribe(([profile, root, showManualMods]) => {
+            this.externalModFiles = (root
+                ? profile.externalFiles?.gameDirFiles
+                : profile.externalFiles?.modDirFiles) ?? [];
+
+            // Create list entries
             let modIndex = 0;
             const modsList = root ? profile.rootMods : profile.mods;
-            const modDataSource = Array.from(modsList.entries()).map<ModDataSourceEntry>(([name, modRef]) => {
+            this.modEntries = Array.from(modsList.entries()).map<ModListEntry>(([name, modRef]) => {
                 if (modRef.enabled) {
                     modIndex++;
                 }
@@ -89,12 +96,15 @@ export class AppProfileModListComponent extends BaseComponent {
                     order: modRef.enabled ? modIndex : undefined
                 };
             });
-
-            if (showManualMods && !!profile.manualMods?.length) {
-                modDataSource.push("manual");
+            
+            const modListDataSource: ModListDataSource = [];
+            // Show manual mods entry if requested
+            if (showManualMods && !!this.externalModFiles.length) {
+                modListDataSource.push("manual");
             }
 
-            this.modDataSource = modDataSource;
+            modListDataSource.push(...this.modEntries);
+            this.modListDataSource = modListDataSource;
         });
 
         stateRef.get("modListColumns").subscribe((modListColumns) => {
@@ -125,11 +135,10 @@ export class AppProfileModListComponent extends BaseComponent {
     }
 
     protected dropReorder(event: CdkDragDrop<unknown>): void {
-        const modOrder = this.modDataSource
-            .filter((entry): entry is ModListEntry => entry !== "manual")
-            .map(({ name }) => name);
+        const modOrder = this.modEntries.map(({ name }) => name);
+        const firstIndex = this.modListDataSource[0] === "manual" ? 1 : 0;
 
-        moveItemInArray(modOrder, event.previousIndex, event.currentIndex);
+        moveItemInArray(modOrder, event.previousIndex - firstIndex, event.currentIndex - firstIndex);
         this.modOrderChange$.emit(modOrder);
     }
 
@@ -140,6 +149,6 @@ export class AppProfileModListComponent extends BaseComponent {
             height: "auto",
             maxHeight: "80vh",
             panelClass: "mat-app-background"
-        }, [[PROFILE_TOKEN, this.profile]]);
+        }, [[FILE_LIST_TOKEN, this.externalModFiles]]);
     }
 }

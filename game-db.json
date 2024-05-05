@@ -1,4 +1,118 @@
 {
+    "fallout_4": {
+        "title": "Fallout 4",
+        "bkgColor": "#007300",
+        "fgColor": "#ffffff",
+        "modBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Data",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Data",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/Data"
+        ],
+        "gameBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
+            "C:\\XboxGames\\Fallout 4\\Content",
+            "~/.local/share/Steam/steamapps/common/Fallout 4"
+        ],
+        "gameBinaryPaths": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
+            "C:\\XboxGames\\Fallout 4\\Content\\Fallout4.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/f4se_loader.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout 4/Fallout4.exe"
+        ],
+        "pluginListPaths": [
+            "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
+            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
+        ],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": ["esm", "esl", "esp"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Fallout4.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": false,
+        "scriptExtenders": [
+            {
+                "name": "F4SE",
+                "binaries": ["f4se_loader.exe"],
+                "modPaths": ["F4SE"]
+            }
+        ],
+        "gameConfigFiles": {
+            "Fallout4Custom.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
+                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
+            ],
+            "Fallout4Prefs.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Prefs.ini",
+                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
+            ]
+        }
+    },
+    "fallout_new_vegas": {
+        "title": "Fallout: New Vegas",
+        "bkgColor": "#ae260e",
+        "fgColor": "#ffffff",
+        "modBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
+            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/Data"
+        ],
+        "gameBaseDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas",
+            "C:\\XboxGames\\Fallout New Vegas\\Content",
+            "~/.local/share/Steam/steamapps/common/Fallout New Vegas"
+        ],
+        "gameBinaryPaths": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\nvse_loader.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\nvse_loader.exe",
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\FalloutNV.exe",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\FalloutNV.exe",
+            "C:\\XboxGames\\Fallout New Vegas\\Content\\FalloutNV.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/nvse_loader.exe",
+            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/FalloutNV.exe"
+        ],
+        "pluginListPaths": [
+            "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
+            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/AppData/Local/FalloutNV/plugins.txt"
+        ],
+        "pluginListType": "Gamebryo",
+        "pluginFormats": ["esm", "esp"],
+        "pinnedPlugins": [
+            {
+                "plugin": "FalloutNV.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": true,
+        "scriptExtenders": [
+            {
+                "name": "NVSE",
+                "binaries": ["nvse_loader.exe"],
+                "modPaths": ["NVSE"]
+            }
+        ],
+        "gameConfigFiles": {
+            "Fallout.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Fallout.ini",
+                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/Fallout.ini"
+            ],
+            "FalloutCustom.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\FalloutCustom.ini",
+                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/FalloutCustom.ini"
+            ],
+            "FalloutPrefs.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\FalloutPrefs.ini",
+                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/FalloutPrefs.ini"
+            ]
+        }
+    },
     "starfield": {
         "title": "Starfield",
         "bkgColor": "#bc2f06",
@@ -31,6 +145,13 @@
         ],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Starfield.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": false,
         "scriptExtenders": [
             {
                 "name": "SFSE",
@@ -46,54 +167,6 @@
             "StarfieldPrefs.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldPrefs.ini",
                 "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
-            ]
-        }
-    },
-    "fallout_4": {
-        "title": "Fallout 4",
-        "bkgColor": "#007300",
-        "fgColor": "#ffffff",
-        "modBaseDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Data",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Data",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/Data"
-        ],
-        "gameBaseDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
-            "C:\\XboxGames\\Fallout 4\\Content",
-            "~/.local/share/Steam/steamapps/common/Fallout 4"
-        ],
-        "gameBinaryPaths": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
-            "C:\\XboxGames\\Fallout 4\\Content\\Fallout4.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/f4se_loader.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/Fallout4.exe"
-        ],
-        "pluginListPaths": [
-            "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
-        ],
-        "pluginListType": "CreationEngine",
-        "pluginFormats": ["esm", "esl", "esp"],
-        "scriptExtenders": [
-            {
-                "name": "F4SE",
-                "binaries": ["f4se_loader.exe"],
-                "modPaths": ["F4SE"]
-            }
-        ],
-        "gameConfigFiles": {
-            "Fallout4Custom.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
-                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
-            ],
-            "Fallout4Prefs.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Prefs.ini",
-                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
             ]
         }
     }

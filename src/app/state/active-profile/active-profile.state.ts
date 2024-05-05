@@ -4,6 +4,7 @@ import { Action, Selector, State, StateContext } from "@ngxs/store";
 import { AppProfile } from "../../models/app-profile";
 import { ActiveProfileActions } from "./active-profile.actions";
 import { ProfileUtils } from "../../util/profile-utils";
+import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 
 @State<AppProfile | null>({
     name: "activeProfile",
@@ -14,8 +15,8 @@ import { ProfileUtils } from "../../util/profile-utils";
 export class ActiveProfileState {
 
     @Selector()
-    public static getManualMods(state: AppProfile): string[] {
-        return state.manualMods ?? [];
+    public static getExternalFiles(state: AppProfile): AppProfile.ExternalFiles | undefined {
+        return state.externalFiles;
     }
 
     @Selector()
@@ -82,10 +83,10 @@ export class ActiveProfileState {
         this._updateModVerifications(context, root, modVerificationResults.results);
     }
 
-    @Action(ActiveProfileActions.UpdateManualMods)
-    public updateManualMods(
+    @Action(ActiveProfileActions.UpdateExternalFiles)
+    public updateExternalFiles(
         context: ActiveProfileState.Context,
-        state: ActiveProfileActions.UpdateManualMods
+        state: ActiveProfileActions.UpdateExternalFiles
     ): void {
         context.patchState(state);
     }
@@ -118,7 +119,7 @@ export class ActiveProfileState {
             state.plugins = [];
         }
 
-        // Add missing plugins
+        // Add missing mod plugins
         modList.forEach(([modId, { enabled, plugins }]) => plugins?.forEach((plugin) => {
             if (enabled) {
                 const existingPlugin = _.find(state.plugins, { plugin });
@@ -135,12 +136,41 @@ export class ActiveProfileState {
 
         // Remove deleted plugins
         state.plugins = state.plugins.filter((pluginRef) => {
-            return modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin));
+            if (pluginRef.modId) {
+                // Check if plugin's parent mod is enabled and plugin still exists
+                return modList.find(([modId, { enabled, plugins }]) => {
+                    return pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin);
+                });
+            } else {
+                // Only allow external mods if `manageExternalPlugins` is true
+                if (!state.manageExternalPlugins) {
+                    return false;
+                }
+
+                // Check if external plugin file still exists
+                return state.externalFiles?.pluginFiles.includes(pluginRef.plugin);
+            }
         });
+
+        let processedPlugins: GamePluginProfileRef[] = [];
+
+        // Add missing external plugins
+        if (state.manageExternalPlugins) {
+            state.externalFiles?.pluginFiles.forEach((externalPluginFile) => {
+                if (!_.find(state.plugins, plugin => plugin.plugin === externalPluginFile)) {
+                    processedPlugins.push({ modId: undefined, plugin: externalPluginFile, enabled: true });
+                }
+            });
+        }
+
+        processedPlugins = processedPlugins.concat(state.plugins);
+
+        // Remove duplicate plugins
+        processedPlugins = _.uniqBy(processedPlugins, "plugin");
 
         // Sort plugins by type order (if required)
         if (pluginTypeOrder) {
-            state.plugins = state.plugins.sort((aRef, bRef) => {
+            processedPlugins = processedPlugins.sort((aRef, bRef) => {
                 const aIndex = ProfileUtils.getPluginTypeIndex(aRef, pluginTypeOrder!),
                       bIndex = ProfileUtils.getPluginTypeIndex(bRef, pluginTypeOrder!);
 
@@ -152,6 +182,7 @@ export class ActiveProfileState {
             });
         }
 
+        state.plugins = processedPlugins;
         context.setState(state);
     }
 
@@ -181,6 +212,11 @@ export class ActiveProfileState {
 
     @Action(ActiveProfileActions.setPluginListPath)
     public setPluginListPath(context: ActiveProfileState.Context, state: ActiveProfileActions.PluginListPathAction): void {
+        context.patchState(state);
+    }
+
+    @Action(ActiveProfileActions.manageExternalPlugins)
+    public manageExternalPlugins(context: ActiveProfileState.Context, state: ActiveProfileActions.ManageExternalPluginsAction): void {
         context.patchState(state);
     }
 

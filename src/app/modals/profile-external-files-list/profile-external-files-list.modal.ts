@@ -3,11 +3,10 @@ import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { ComponentState } from "@lithiumjs/angular";
-import { AppProfile } from "../../models/app-profile";
 import { BaseComponent } from "../../core/base-component";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
 
-export const PROFILE_TOKEN = new InjectionToken<AppProfile>("PROFILE");
+export const FILE_LIST_TOKEN = new InjectionToken<string[]>("FILE_LIST");
 
 @Component({
     selector: "app-profile-external-files-list-modal",
@@ -26,7 +25,7 @@ export class AppProfileExternalFilesListModal extends BaseComponent {
     
     constructor(
         cdRef: ChangeDetectorRef,
-        @Inject(PROFILE_TOKEN) public readonly profile: AppProfile,
+        @Inject(FILE_LIST_TOKEN) public readonly fileList: string[],
         @Inject(OverlayRefSymbol) public readonly overlayRef: OverlayHelpersRef,
     ) {
         super({ cdRef });

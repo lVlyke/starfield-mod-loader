@@ -12,7 +12,8 @@ export interface AppProfile {
     mods: AppProfile.ModList;
     rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
-    manualMods?: string[];
+    externalFiles?: AppProfile.ExternalFiles;
+    manageExternalPlugins?: boolean;
     deployed: boolean;
 }
 
@@ -21,12 +22,19 @@ export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfileModVerificationResults = AppProfile.ModVerificationResults;
 export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
 export type AppProfileDescription = AppProfile.Description;
+export type AppProfileExternalFiles = AppProfile.ExternalFiles;
 
 export namespace AppProfile {
 
     export type ModList = Map<string, ModProfileRef>;
 
     export type Description = Pick<AppProfile, "name" | "gameId" | "deployed">;
+
+    export interface ExternalFiles {
+        gameDirFiles: string[];
+        modDirFiles: string[];
+        pluginFiles: string[];
+    }
 
     export interface VerificationResult {
         error: boolean;

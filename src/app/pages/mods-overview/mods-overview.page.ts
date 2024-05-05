@@ -150,6 +150,10 @@ export class AppModsOverviewPage extends BasePage {
         return this.profileManager.reorderMods(root, modOrder);
     }
 
+    protected toggleExternalPluginManagement(): Observable<void> {
+        return this.profileManager.manageExternalPlugins(!this.activeProfile!.manageExternalPlugins);
+    }
+
     protected showProfileModsDirInFileExplorer(): Observable<unknown> {
         let check$: Observable<DialogAction>;
         if (this.showedModExternalEditWarning) {

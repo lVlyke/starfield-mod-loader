@@ -18,10 +18,12 @@ export namespace ActiveProfileActions {
     }
 
     export type DeployedAction = BasicAction<AppProfile, "deployed">;
+    export type ManageExternalPluginsAction = BasicAction<AppProfile, "manageExternalPlugins">;
     export type PluginListPathAction = BasicAction<AppProfile, "pluginListPath">;
 
     export const setDeployed = createUpdateAction("deployed");
     export const setPluginListPath = createUpdateAction("pluginListPath");
+    export const manageExternalPlugins = createUpdateAction("manageExternalPlugins");
 
     export class AddMod {
         public static readonly type = `[activeProfile] add mod`;
@@ -71,11 +73,11 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
-    export class UpdateManualMods {
-        public static readonly type = `[activeProfile] update manual mods`;
+    export class UpdateExternalFiles {
+        public static readonly type = `[activeProfile] update external files`;
 
         constructor(
-            public manualMods: string[]
+            public externalFiles: AppProfile.ExternalFiles
         ) {}
     }
 

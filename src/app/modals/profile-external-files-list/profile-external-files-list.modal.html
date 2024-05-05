@@ -4,8 +4,8 @@
     </mat-card-header>
 
     <mat-card-content>
-        <div *ngIf="profile.manualMods" class="external-files">
-            <div *ngFor="let file of profile.manualMods">
+        <div class="external-files">
+            <div *ngFor="let file of fileList">
                 {{ file }}
             </div>
         </div>

@@ -308,8 +308,8 @@ export namespace AppMessage {
         };
     }
 
-    export interface FindManualProfileMods extends Base {
-        id: `${ProfileMessage.Prefix}:findManualMods`;
+    export interface FindProfileExternalFiles extends Base {
+        id: `${ProfileMessage.Prefix}:findExternalFiles`;
         data: {
             profile: AppProfile;
         };
@@ -387,7 +387,7 @@ export namespace AppMessage {
                                | DeployProfile
                                | UndeployProfile
                                | FindDeployedProfile
-                               | FindManualProfileMods
+                               | FindProfileExternalFiles
                                | ShowModInFileExplorer
                                | ShowModBaseDirInFileExplorer
                                | ShowProfileBaseDirInFileExplorer
@@ -436,7 +436,7 @@ export namespace AppMessage {
         "profile:deploy",
         "profile:undeploy",
         "profile:findDeployedProfile",
-        "profile:findManualMods",
+        "profile:findExternalFiles",
         "profile:showModInFileExplorer",
         "profile:showModBaseDirInFileExplorer",
         "profile:showProfileBaseDirInFileExplorer",

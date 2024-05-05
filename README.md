@@ -1,6 +1,6 @@
 # Starfield Mod Loader
 
-A simple mod manager for Starfield and Fallout 4 that supports both Steam and UWP (Game Pass) versions of the games.
+A simple mod manager for Starfield and other games that supports both Steam and UWP (Game Pass) versions of games.
 
 ![Starfield Mod Loader](/docs/app.png)
 
@@ -24,6 +24,7 @@ Starfield Mod Loader supports the following games:
 
 * **Starfield**
 * **Fallout 4**
+* **Fallout: New Vegas**
 
 # Installation
 

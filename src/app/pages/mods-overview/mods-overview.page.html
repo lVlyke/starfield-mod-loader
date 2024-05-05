@@ -73,7 +73,6 @@
 
                 <app-profile-mod-list [profile]="activeProfile"
                                     [root]="true"
-                                    [showManualMods]="false"
                                     (modChange)="registerModUpdate(true, $event.name, $event.modRef)"
                                     (modOrderChange)="reorderMods(true, $event)" />
             </ng-container>
@@ -126,7 +125,9 @@
                 <app-profile-plugin-list
                     [profile]="activeProfile"
                     (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
-                    (pluginOrderChange)="profileManager.reorderPlugins($event)" />
+                    (pluginOrderChange)="profileManager.reorderPlugins($event)"
+                    (pluginExternalManagementChange)="toggleExternalPluginManagement()"
+                    (pluginTypeChange)="profileManager.promotePluginType($event[0], $event[1])" />
             </mat-card-content>
         </mat-card>
     

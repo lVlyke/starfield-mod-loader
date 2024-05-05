@@ -1,4 +1,4 @@
-<table mat-table [dataSource]="modDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
+<table mat-table [dataSource]="modListDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
     <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let modEntry" class="mod-enabled">
@@ -31,11 +31,11 @@
                 <span class="manual-mod-text">
                     <span>[External files]</span>
                     <span class="manual-files-count">
-                        &nbsp;(<a matColor="accent" (click)="showExternalFileList()">{{ profile.manualMods!.length }}</a>)
+                        &nbsp;(<a matColor="accent" (click)="showExternalFileList()">{{ externalModFiles.length }}</a>)
                     </span>
 
                     <mat-icon class="manual-mods-tooltip"
-                        matTooltip="These are external game/mod files found in the mod base directory that are not being managed by this profile">
+                        matTooltip="These are external game/mod files found in the mod directory that are not being managed by this profile">
                         help
                     </mat-icon>
                 </span>
@@ -55,13 +55,9 @@
     <ng-container matColumnDef="order">
         <th mat-header-cell *matHeaderCellDef>Load Order</th>
         <td mat-cell *matCellDef="let modEntry" class="mod-load-order">
-            <ng-container *ngIf="modEntry !== 'manual'; else manualModsTemplate">
+            <ng-container *ngIf="modEntry !== 'manual'">
                 <div>{{ modEntry.order ?? "--" }}</div>
             </ng-container>
-
-            <ng-template #manualModsTemplate>
-                <div>{{ (profile | appProfileActiveModCount:false) + 1 }}</div>
-            </ng-template>
         </td>
     </ng-container>
 

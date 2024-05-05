@@ -35,6 +35,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
     static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
+    static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
     
     /** @type {BrowserWindow} */ mainWindow;
     /** @type {Menu} */ menu;
@@ -49,7 +50,7 @@ class ElectronLoader {
         }
 
         log.transports.file.level = DEBUG_MODE ? "info" : "debug";
-        log.transports.file.resolvePath = () => "app.log";
+        log.transports.file.resolvePathFn = () => "app.log";
 
         this.menu = this.createMenu();
         Menu.setApplicationMenu(this.menu);
@@ -245,7 +246,8 @@ class ElectronLoader {
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
-                manualMods: VERIFY_SUCCESS,
+                externalFiles: VERIFY_SUCCESS,
+                manageExternalPlugins: VERIFY_SUCCESS,
                 deployed: VERIFY_SUCCESS
             };
 
@@ -281,8 +283,8 @@ class ElectronLoader {
             return result;
         });
 
-        ipcMain.handle("profile:findManualMods", async (_event, /** @type {AppMessageData<"profile:findManualMods">} */ { profile }) => {
-            return this.findManualMods(profile);
+        ipcMain.handle("profile:findExternalFiles", async (_event, /** @type {AppMessageData<"profile:findExternalFiles">} */ { profile }) => {
+            return this.findProfileExternalFiles(profile);
         });
 
         ipcMain.handle("profile:findDeployedProfile", async (_event, /** @type {AppMessageData<"profile:findDeployedProfile">} */ { refProfile }) => {
@@ -614,9 +616,9 @@ class ElectronLoader {
                     ...this.createDebugMenuOption({
                         type: "separator"
                      }),
-                    ...this.createDebugMenuOption({
-                       role: "toggleDevTools"
-                    })
+                     ...this.createDebugMenuOption({
+                        role: "toggleDevTools"
+                     })
                 ]
             },
 
@@ -1378,20 +1380,40 @@ class ElectronLoader {
         return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
     }
 
+    /** @returns {Promise<AppProfileExternalFiles>} */
+    async findProfileExternalFiles(/** @type {AppProfile} */ profile) {
+        return {
+            modDirFiles: await this.findProfileExternalFilesInDir(profile, profile.modBaseDir, true),
+            gameDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameBaseDir, false),
+            pluginFiles: await this.findProfileExternalPluginFiles(profile)
+        };
+    }
+
     /** @returns {Promise<Array<string>>} */
-    async findManualMods(/** @type {AppProfile} */ profile) {
-        const absModDir = path.resolve(profile.modBaseDir);
-        if (!fs.existsSync(absModDir)) {
+    async findProfileExternalFilesInDir(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ dirPath,
+        /** @type {boolean} */ recursiveSearch
+    ) {
+        dirPath = path.resolve(dirPath);
+        if (!fs.existsSync(dirPath)) {
             return [];
         }
 
-        let modDirFiles = await fs.readdir(absModDir, { encoding: "utf-8", recursive: true });
+        let modDirFiles = await fs.readdir(dirPath, { encoding: "utf-8", recursive: recursiveSearch });
+
+        // Filter out directories and deployment metadata
+        modDirFiles = modDirFiles.filter((file) => {
+            return !fs.lstatSync(path.join(dirPath, file)).isDirectory()
+                && !file.startsWith(ElectronLoader.DEPLOY_EXT_BACKUP_DIR)
+                && file !== ElectronLoader.PROFILE_METADATA_FILE;
+        });
 
         if (this.isSimilarProfileDeployed(profile)) {
             const profileModFiles = this.readProfileDeploymentMetadata(profile)?.profileModFiles.map((filePath) => {
-                // Resolve absolute file paths relative to `modBaseDir`
+                // Resolve absolute file paths relative to `dirPath`
                 if (path.isAbsolute(filePath)) {
-                    filePath = filePath.replace(`${absModDir}${path.sep}`, "");
+                    filePath = filePath.replace(`${dirPath}${path.sep}`, "");
                 }
 
                 return filePath.toLowerCase();
@@ -1401,13 +1423,29 @@ class ElectronLoader {
                 throw new Error("Unable to read deployment metadata.");
             }
             
-            modDirFiles = modDirFiles.filter(file => {
-                return !profileModFiles.includes(file.toLowerCase()) && file !== ElectronLoader.PROFILE_METADATA_FILE;
-            });
+            // Filter deployed files
+            modDirFiles = modDirFiles.filter(file => !profileModFiles.includes(file.toLowerCase()));
         }
 
-        // Filter out directories
-        return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file)).isDirectory());
+        return modDirFiles;
+    }
+
+    /** @returns {Promise<Array<string>>} */
+    async findProfileExternalPluginFiles(/** @type {AppProfile} */ profile) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        let externalFiles = await this.findProfileExternalFilesInDir(profile, profile.modBaseDir, false);
+
+        externalFiles = externalFiles.filter((modFile) => {
+            // Make sure this is a mod file
+            return gameDetails?.pluginFormats.includes(_.last(modFile.split("."))?.toLowerCase() ?? "");
+        });
+
+        externalFiles = _.sortBy(externalFiles, (externalPlugin) => {
+            // Retrieve external plugin order using plugin file's "last modified" timestamp
+            return fs.statSync(path.join(profile.modBaseDir, externalPlugin)).mtime;
+        });
+
+        return externalFiles;
     }
 
     /** @returns {Promise<string[]>} */
@@ -1434,6 +1472,8 @@ class ElectronLoader {
     ) {
         const profileModFiles = [];
         const modBaseDir = path.resolve(root ? profile.gameBaseDir : profile.modBaseDir);
+        const extFilesBackupDir = path.join(root ? profile.gameBaseDir : profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
+        const extFilesList = root ? profile.externalFiles?.gameDirFiles : profile.externalFiles?.modDirFiles;
 
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
@@ -1455,8 +1495,18 @@ class ElectronLoader {
                     }
 
                     const destFilePath = path.join(modBaseDir, modFile);
-                    // Only copy files that don't exist on the dest
-                    const shouldCopy = !fs.existsSync(destFilePath) && !fs.lstatSync(srcFilePath).isDirectory();
+                    // Don't copy directories directly
+                    let shouldCopy = !fs.lstatSync(srcFilePath).isDirectory();
+
+                    if (fs.existsSync(destFilePath)) {
+                        if (extFilesList?.includes(modFile)) {
+                            // Backup original external file to temp directory for deploy and override
+                            fs.moveSync(destFilePath, path.join(extFilesBackupDir, modFile));
+                        } else {
+                            // Don't override deployed files
+                            shouldCopy = false;
+                        }
+                    }
                     
                     if (shouldCopy && modFile.length > 0) {
                         // Record mod files written from profile
@@ -1476,12 +1526,59 @@ class ElectronLoader {
         return profileModFiles;
     }
 
+    /** @returns {Promise<string>} */
+    async writePluginList(/** @type {AppProfile} */ profile) {
+        const pluginListPath = profile.pluginListPath ? path.resolve(this.#expandPath(profile.pluginListPath)) : "";
+
+        if (pluginListPath) {
+            fs.mkdirpSync(path.dirname(pluginListPath));
+            
+            // Backup any existing plugins file
+            if (fs.existsSync(pluginListPath)) {
+                const backupFile = `${pluginListPath}.sml_bak`;
+                if (fs.existsSync(backupFile)) {
+                    fs.moveSync(backupFile, `${backupFile}_${this.#currentDateTimeAsFileName()}`);
+                }
+
+                fs.copyFileSync(pluginListPath, backupFile);
+            }
+
+            // Write the plugin list
+            try {
+                fs.writeFileSync(pluginListPath, this.#createProfilePluginList(profile));
+            } catch (err) {
+                throw new Error(`Unable to write plugins list: ${err.toString()}`);
+            }
+
+            return pluginListPath;
+        } else {
+            throw new Error(`Unable to write plugins list: Plugin list path not defined in profile "${profile.name}"`);
+        }
+    }
+
+    /** @returns {Promise<void>} */
+    async processDeployedFiles(/** @type {AppProfile} */ profile) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+
+        // Gamebryo games require processing of plugin file timestamps to enforce load order
+        if (!!gameDetails && profile.plugins && gameDetails.pluginListType === "Gamebryo") {
+            const modBaseDir = path.resolve(profile.modBaseDir);
+            let pluginTimestamp = Date.now() / 1000 | 0;
+            profile.plugins.forEach((pluginRef) => {
+                // Set plugin order using the plugin file's "last modified" timestamp
+                fs.utimesSync(path.join(modBaseDir, pluginRef.plugin), pluginTimestamp, pluginTimestamp);
+                ++pluginTimestamp;
+            });
+        }
+    }
+
     /** @returns {Promise<void>} */
     async deployProfile(
         /** @type {AppProfile} */ profile,
         /** @type {boolean} */ deployPlugins,
         /** @type {boolean} */ normalizePathCasing
     ) {
+        /** @type {string[]} */
         const profileModFiles = [];
         let deploymentError = undefined;
 
@@ -1495,38 +1592,16 @@ class ElectronLoader {
 
             log.info("Deploying profile", profile.name);
 
-            // Deploy plugin list
-            if (deployPlugins && profile.plugins.length > 0) {
-                const pluginListPath = profile.pluginListPath ? path.resolve(this.#expandPath(profile.pluginListPath)) : "";
-
-                if (pluginListPath) {
-                    fs.mkdirpSync(path.dirname(pluginListPath));
-                    
-                    // Backup any existing plugins file
-                    if (fs.existsSync(pluginListPath)) {
-                        const backupFile = `${pluginListPath}.sml_bak`;
-                        if (fs.existsSync(backupFile)) {
-                            fs.moveSync(backupFile, `${backupFile}_${this.#currentDateTimeAsFileName()}`);
-                        }
-
-                        fs.copyFileSync(pluginListPath, backupFile);
-                    }
-
-                    // Write the plugin list
-                    try {
-                        fs.writeFileSync(pluginListPath, this.#createProfilePluginList(profile));
-                    } catch (err) {
-                        throw new Error(`Unable to write plugins list: ${err.toString()}`);
-                    }
-
-                    profileModFiles.push(pluginListPath);
-                } else {
-                    throw new Error(`Unable to write plugins list: Plugin list path not defined in profile "${profile.name}"`);
-                }
-            }
-
+            // Deploy mods
             profileModFiles.push(... await this.deployMods(profile, true, normalizePathCasing));
             profileModFiles.push(... await this.deployMods(profile, false, normalizePathCasing));
+
+            if (deployPlugins && profile.plugins.length > 0) {
+                // Write plugin list
+                profileModFiles.push(await this.writePluginList(profile));
+            }
+
+            await this.processDeployedFiles(profile);
         } catch (err) {
             deploymentError = err;
         }
@@ -1587,6 +1662,23 @@ class ElectronLoader {
 
             // Wait for all files to be removed
             await Promise.all(undeployJobs);
+
+            const extFilesBackupDirs = [
+                path.join(profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
+                path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)
+            ];
+            // Restore original external files, if any were moved
+            for (const extFilesBackupDir of extFilesBackupDirs) {
+                if (fs.existsSync(extFilesBackupDir)) {
+                    const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => fs.move(
+                        path.join(extFilesBackupDir, backupFile),
+                        path.join(path.dirname(extFilesBackupDir), backupFile)
+                    ));
+
+                    await Promise.all(backupTransfers);
+                    fs.removeSync(extFilesBackupDir);
+                }
+            }
 
             // If all undeploy operations succeeded, remove deployment metadata file
             const metadataFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
@@ -1652,6 +1744,9 @@ class ElectronLoader {
         const gameDetails = this.#getGameDetails(profile.gameId);
 
         switch (listType ?? gameDetails?.pluginListType) {
+            case "Gamebryo": {
+                return this.#createProfilePluginListGamebryo(profile);
+            }
             case "CreationEngine":
             case "Default": {
                 return this.#createProfilePluginListCreationEngine(profile);
@@ -1661,8 +1756,26 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
+    #createProfilePluginListHeader(/** @type {AppProfile} */ profile) {
+        return `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`;
+    }
+
+    /** @returns {string} */
+    #createProfilePluginListGamebryo(/** @type {AppProfile} */ profile) {
+        const header = this.#createProfilePluginListHeader(profile);
+
+        return profile.plugins.reduce((data, pluginRef) => {
+            if (pluginRef.enabled) {
+                data += pluginRef.plugin;
+                data += "\n";
+            }
+            return data;
+        }, header);
+    }
+
+    /** @returns {string} */
     #createProfilePluginListCreationEngine(/** @type {AppProfile} */ profile) {
-        const header = `# This file was generated automatically by Starfield Mod Loader for profile "${profile.name}"\n`;
+        const header = this.#createProfilePluginListHeader(profile);
 
         return profile.plugins.reduce((data, pluginRef) => {
             if (pluginRef.enabled) {
