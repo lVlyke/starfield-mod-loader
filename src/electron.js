@@ -29,6 +29,7 @@ class ElectronLoader {
     static /** @type {string} */ APP_DEPS_LICENSES_FILE = path.join(__dirname, "3rdpartylicenses.txt");
     static /** @type {string} */ APP_DEPS_INFO_FILE = path.join(__dirname, "3rdpartylicenses.json");
     static /** @type {string} */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
+    static /** @type {string} */ GAME_RESOURCES_DIR = path.join(__dirname, "resources");
     static /** @type {string} */ PROFILE_SETTINGS_FILE = "profile.json";
     static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
     static /** @type {string} */ PROFILE_MODS_DIR = "mods";
@@ -248,6 +249,7 @@ class ElectronLoader {
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
                 externalFiles: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
+                linkMode: VERIFY_SUCCESS, // TODO
                 deployed: VERIFY_SUCCESS
             };
 
@@ -392,6 +394,18 @@ class ElectronLoader {
             if (pluginListPath) {
                 return this.exportProfilePluginList(profile, pluginListPath);
             }
+        });
+
+        ipcMain.handle("profile:checkArchiveInvalidationEnabled", async (_event, /** @type {AppMessageData<"profile:checkArchiveInvalidationEnabled">} */ {
+            profile
+        }) => {
+            return this.checkArchiveInvalidationEnabled(profile);
+        });
+
+        ipcMain.handle("profile:setArchiveInvalidationEnabled", async (_event, /** @type {AppMessageData<"profile:setArchiveInvalidationEnabled">} */ {
+            profile, enabled
+        }) => {
+            return this.setArchiveInvalidationEnabled(profile, enabled);
         });
 
         ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ {
@@ -1464,6 +1478,111 @@ class ElectronLoader {
         return files;
     }
 
+    /** @returns {string | undefined} */
+    getGameConfigFilePath(/** @type {GameDetails} */ gameDetails, /** @type {string} */ configFileName) {
+        const configFilePaths = gameDetails.gameConfigFiles?.[configFileName] ?? [];
+        for (let configFilePath of configFilePaths) {
+            configFilePath = this.#expandPath(configFilePath);
+            if (fs.existsSync(configFilePath)) {
+                return configFilePath;
+            }
+        }
+
+        return undefined;
+    }
+
+    /** @returns {Promise<boolean>} */
+    async checkArchiveInvalidationEnabled(/** @type {AppProfile} */ profile) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        if (!gameDetails) {
+            return false;
+        }
+
+        const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
+
+        for (const [configFileName, configData] of archiveInvalidationConfig) {
+            const configFilePath = this.getGameConfigFilePath(gameDetails, configFileName);
+
+            if (!configFilePath || !fs.existsSync(configFilePath)) {
+                continue;
+            }
+
+            const configFileData = fs.readFileSync(configFilePath, { encoding: "utf-8" });
+            if (configFileData.includes(configData)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @returns {Promise<void>} */
+    async setArchiveInvalidationEnabled(/** @type {AppProfile} */ profile, /** @type {boolean} */ enabled) {
+        if (await this.checkArchiveInvalidationEnabled(profile) === enabled) {
+            return;
+        }
+
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        if (!gameDetails) {
+            throw new Error("Game does not support archive invalidation.");
+        }
+
+        const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
+
+        for (const [configFileName, configData] of archiveInvalidationConfig) {
+            const configFilePath = this.getGameConfigFilePath(gameDetails, configFileName);
+
+            if (!configFilePath || !fs.existsSync(configFilePath)) {
+                continue;
+            }
+
+            let configFileData = fs.readFileSync(configFilePath, { encoding: "utf-8" });
+
+            if (!configFileData.includes(configData) && enabled) {
+                configFileData = configData + configFileData;
+            } else if (configFileData.includes(configData) && !enabled) {
+                configFileData = configFileData.replace(configData, "");
+            }
+
+            fs.writeFileSync(configFilePath, configFileData, { encoding: "utf-8" });
+        }
+    }
+
+    /** @returns {Promise<string[]>} */
+    async deployGameResources(
+        /** @type {AppProfile} */ profile,
+        /** @type {boolean} */ normalizePathCasing
+    ) {
+        const profileModFiles = [];
+        const gameDetails = this.#getGameDetails(profile.gameId);
+
+        if (gameDetails?.resources?.mods) {
+            Object.entries(gameDetails.resources.mods).forEach(([resourceSrc, resourceDest]) => {
+                const srcFilePath = path.join(ElectronLoader.GAME_RESOURCES_DIR, resourceSrc);
+                let destFilePath = path.join(profile.modBaseDir, resourceDest);
+
+                if (normalizePathCasing) {
+                    destFilePath = destFilePath.toLowerCase();
+                }
+
+                if (fs.existsSync(destFilePath)) {
+                    return;
+                }
+
+                if (profile.linkMode) {
+                    fs.mkdirpSync(path.dirname(destFilePath));
+                    fs.linkSync(srcFilePath, destFilePath);
+                } else {
+                    fs.copySync(srcFilePath, destFilePath, { overwrite: false });
+                }
+
+                profileModFiles.push(resourceDest);
+            });
+        } 
+
+        return profileModFiles;
+    }
+
     /** @returns {Promise<string[]>} */
     async deployMods(
         /** @type {AppProfile} */ profile,
@@ -1515,7 +1634,12 @@ class ElectronLoader {
                     }
 
                     if (shouldCopy) {
-                        copyTasks.push(fs.copy(srcFilePath.toString(), destFilePath, { overwrite: false }));
+                        if (profile.linkMode) {
+                            copyTasks.push(fs.mkdirp(path.dirname(destFilePath))
+                                .then(() => fs.link(srcFilePath, destFilePath)));
+                        } else {
+                            copyTasks.push(fs.copy(srcFilePath, destFilePath, { overwrite: false }));
+                        }
                     }
                 }
 
@@ -1556,8 +1680,8 @@ class ElectronLoader {
         }
     }
 
-    /** @returns {Promise<void>} */
-    async processDeployedFiles(/** @type {AppProfile} */ profile) {
+    /** @returns {Promise<string[]>} */
+    async processDeployedFiles(/** @type {AppProfile} */ profile, /** @type {string[]} */ profileModFiles) {
         const gameDetails = this.#getGameDetails(profile.gameId);
 
         // Gamebryo games require processing of plugin file timestamps to enforce load order
@@ -1570,6 +1694,8 @@ class ElectronLoader {
                 ++pluginTimestamp;
             });
         }
+
+        return [];
     }
 
     /** @returns {Promise<void>} */
@@ -1601,7 +1727,11 @@ class ElectronLoader {
                 profileModFiles.push(await this.writePluginList(profile));
             }
 
-            await this.processDeployedFiles(profile);
+            // Write game resources
+            profileModFiles.push(... await this.deployGameResources(profile, normalizePathCasing));
+
+            // Process deployed files
+            profileModFiles.push(... await this.processDeployedFiles(profile, profileModFiles));
         } catch (err) {
             deploymentError = err;
         }

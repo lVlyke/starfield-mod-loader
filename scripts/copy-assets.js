@@ -6,6 +6,7 @@ const { execSync } = require("child_process");
 const BUILD_DIR = "./dist";
 
 const ASSETS = {
+    "resources" : "resources",
     "package.json": "package.json",
     "game-db.json": "game-db.json",
     "src/electron.js": "electron.js",

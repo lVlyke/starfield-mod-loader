@@ -111,6 +111,14 @@
                 "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\FalloutPrefs.ini",
                 "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/FalloutPrefs.ini"
             ]
+        },
+        "resources": {
+            "mods": {
+                "fallout_new_vegas/Invalidation.bsa": "Invalidation.bsa"
+            }
+        },
+        "archiveInvalidation": {
+            "FalloutCustom.ini": "; The following section has been added automatically by Starfield Mod Loader. Place any additional changes after this section.\r\n[Archive]\r\nSArchiveList=Invalidation.bsa, Fallout - Textures.bsa, Fallout - Textures2.bsa, Fallout - Meshes.bsa, Fallout - Voices1.bsa, Fallout - Sound.bsa,  Fallout - Misc.bsa\r\n\r\n"
         }
     },
     "starfield": {

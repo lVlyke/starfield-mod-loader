@@ -14,9 +14,13 @@ export interface GameDetails {
     pinnedPlugins?: GameDetails.PinnedPlugin[];
     gameConfigFiles?: Record<string, string[]>;
     scriptExtenders?: GameDetails.ScriptExtender[];
+    resources?: GameDetails.Resources;
+    archiveInvalidation?: GameDetails.ArchiveInvalidationConfig;
 }
 
 export namespace GameDetails {
+
+    export type ArchiveInvalidationConfig = Record<string, string>;
 
     export interface ScriptExtender {
         name: string;
@@ -27,5 +31,8 @@ export namespace GameDetails {
     export interface PinnedPlugin {
         plugin: string;
         required?: boolean;
+    }
+    export interface Resources {
+        mods: Record<string, string>;
     }
 }

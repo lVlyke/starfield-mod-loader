@@ -14,6 +14,7 @@ export interface AppProfile {
     plugins: GamePluginProfileRef[];
     externalFiles?: AppProfile.ExternalFiles;
     manageExternalPlugins?: boolean;
+    linkMode?: boolean;
     deployed: boolean;
 }
 

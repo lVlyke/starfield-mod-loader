@@ -285,6 +285,21 @@ export namespace AppMessage {
         };
     }
 
+    export interface CheckArchiveInvalidationEnabled extends Base {
+        id: `${ProfileMessage.Prefix}:checkArchiveInvalidationEnabled`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface SetArchiveInvalidationEnabled extends Base {
+        id: `${ProfileMessage.Prefix}:setArchiveInvalidationEnabled`;
+        data: {
+            profile: AppProfile;
+            enabled: boolean;
+        };
+    }
+
     export interface DeployProfile extends Base {
         id: `${ProfileMessage.Prefix}:deploy`;
         data: {
@@ -384,6 +399,8 @@ export namespace AppMessage {
                                | DeleteProfilePluginBackup
                                | ReadProfilePluginBackups
                                | ExportProfilePluginList
+                               | CheckArchiveInvalidationEnabled
+                               | SetArchiveInvalidationEnabled
                                | DeployProfile
                                | UndeployProfile
                                | FindDeployedProfile
@@ -433,6 +450,8 @@ export namespace AppMessage {
         "profile:deletePluginBackup",
         "profile:readPluginBackups",
         "profile:exportPluginList",
+        "profile:checkArchiveInvalidationEnabled",
+        "profile:setArchiveInvalidationEnabled",
         "profile:deploy",
         "profile:undeploy",
         "profile:findDeployedProfile",

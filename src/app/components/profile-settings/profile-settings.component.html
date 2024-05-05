@@ -101,5 +101,19 @@
                 <mat-icon>folder</mat-icon>
             </button>
         </mat-form-field>
+
+        <div>
+            <mat-checkbox name="linkMode" [(ngModel)]="formModel.linkMode">
+                Link Mode <mat-icon matTooltip="Deploy links instead of files">help</mat-icon>
+            </mat-checkbox>
+        </div>
+
+        <div>
+            <mat-checkbox *ngIf="archiveInvalidationSupported"
+                        [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
+                        (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
+                Archive Invalidation
+            </mat-checkbox>
+        </div>
     </ng-container>
 </form>

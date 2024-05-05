@@ -56,17 +56,25 @@ export class AppProfileSettingsComponent extends BaseComponent {
     private _formModel!: AppProfile;
 
     protected gameIds: GameId[] = [];
+    protected archiveInvalidationSupported = false;
 
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
-        profileManager: ProfileManager
+        protected readonly profileManager: ProfileManager
     ) {
         super({ cdRef });
 
         this.gameDb$.pipe(
             this.managedSource()
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
+
+        // Check if archive invalidation is supported for the current game
+        stateRef.get("form").pipe(
+            filterDefined(),
+            switchMap(form => form.valueChanges!),
+            map(() => !!this.gameDb[this.formModel.gameId]?.archiveInvalidation)
+        ).subscribe(archiveInvalidationSupported => this.archiveInvalidationSupported = archiveInvalidationSupported);
 
         // Clone the input profile so we don't mutate it during editing
         stateRef.get("profile").subscribe((profile) => {

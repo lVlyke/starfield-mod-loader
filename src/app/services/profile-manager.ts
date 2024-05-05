@@ -851,6 +851,20 @@ export class ProfileManager {
         )
     }
 
+    public isArchiveInvalidationEnabled(): Observable<boolean> {
+        return this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke<boolean>("profile:checkArchiveInvalidationEnabled", { profile }))
+        );
+    }
+
+    public setArchiveInvalidationEnabled(enabled: boolean): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:setArchiveInvalidationEnabled", { profile, enabled }))
+        ));
+    }
+
     public showModInFileExplorer(modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
