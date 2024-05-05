@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Inject, Output } from "@angular/core";
+import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Output } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -8,6 +8,7 @@ import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTI
 @Component({
     templateUrl: "./default-dialog-modal.component.html",
     styleUrls: ["./default-dialog-modal.component.scss"],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
         CommonModule,

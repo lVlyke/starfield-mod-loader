@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject } from "@angular/core";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MAT_SNACK_BAR_DATA, MatSnackBarModule, MatSnackBarRef } from "@angular/material/snack-bar";
 import { CommonModule } from "@angular/common";
@@ -8,6 +8,7 @@ import { AppProfile } from "../../models/app-profile";
 @Component({
     templateUrl: "./profile-verification-results.modal.html",
     styleUrls: ["./profile-verification-results.modal.scss"],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
         CommonModule,

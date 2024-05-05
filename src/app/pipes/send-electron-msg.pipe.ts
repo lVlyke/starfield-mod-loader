@@ -9,6 +9,6 @@ import { ElectronUtils } from "../util/electron-utils";
 export class AppSendElectronMsgPipe implements PipeTransform {
 
     public transform<T = any>(channel: AppMessage["id"], ...args: any[]): Observable<T> {
-        return ElectronUtils.invoke(channel, ...args);
+        return ElectronUtils.invoke<T>(channel, ...args);
     }
 }

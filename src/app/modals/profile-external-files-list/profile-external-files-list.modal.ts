@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -12,6 +12,7 @@ export const FILE_LIST_TOKEN = new InjectionToken<string[]>("FILE_LIST");
     selector: "app-profile-external-files-list-modal",
     templateUrl: "./profile-external-files-list.modal.html",
     styleUrls: ["./profile-external-files-list.modal.scss"],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
         CommonModule,

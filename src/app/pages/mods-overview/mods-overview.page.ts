@@ -7,7 +7,7 @@ import { MatSelect } from "@angular/material/select";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
-import { filter, skip, switchMap, tap } from "rxjs/operators";
+import { delay, filter, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
@@ -116,6 +116,7 @@ export class AppModsOverviewPage extends BasePage {
         super({ cdRef });
 
         this.afterViewInit$.pipe(
+            delay(0),
             switchMap(() => this.isPluginsEnabled$),
             skip(1),
             filterFalse(),

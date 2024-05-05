@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -13,6 +13,7 @@ export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutI
     selector: "app-about-info-modal",
     templateUrl: "./app-about-info.modal.html",
     styleUrls: ["./app-about-info.modal.scss"],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
         CommonModule,
