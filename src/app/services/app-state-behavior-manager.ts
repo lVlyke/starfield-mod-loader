@@ -129,11 +129,25 @@ export class AppStateBehaviorManager {
     public loadSettings(): Observable<AppSettingsUserCfg | null> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
             switchMap((settings) => {
-                return this.store.dispatch([
-                    new AppActions.updateModListColumns(settings?.modListColumns),
-                    new AppActions.setPluginsEnabled(settings?.pluginsEnabled ?? false),
-                    new AppActions.setNormalizePathCasing(settings?.normalizePathCasing ?? false)
-                ]).pipe(map(() => settings));
+                const stateActions = [];
+
+                if (settings?.modListColumns !== undefined) {
+                    stateActions.push(new AppActions.updateModListColumns(settings.modListColumns));
+                }
+
+                if (settings?.pluginsEnabled !== undefined) {
+                    stateActions.push(new AppActions.setPluginsEnabled(settings.pluginsEnabled));
+                }
+
+                if (settings?.normalizePathCasing !== undefined) {
+                    stateActions.push(new AppActions.setNormalizePathCasing(settings.normalizePathCasing));
+                }
+
+                if (stateActions.length > 0) {
+                    return this.store.dispatch(stateActions).pipe(map(() => settings));
+                } else {
+                    return of(settings);
+                }
             })
         ));
     }

@@ -173,9 +173,7 @@
     </div>
 
     <!-- Plugin desc -->
-    <div *ngIf="plugin?.description as pluginPreviewDesc"
-        class="plugin-preview-desc"
-        [innerText]="pluginPreviewDesc">
+    <div class="plugin-preview-desc" [innerText]="plugin?.description ?? ''">
     </div>
 
     <!-- Debug plugin flag viewer -->
