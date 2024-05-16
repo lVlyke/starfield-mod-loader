@@ -157,11 +157,11 @@ export class AppModsOverviewPage extends BasePage {
 
     protected showProfileModsDirInFileExplorer(): Observable<unknown> {
         let check$: Observable<DialogAction>;
-        if (this.showedModExternalEditWarning) {
+        if (this.showedModExternalEditWarning || this.activeProfile?.linkMode) {
             check$ = of(DialogManager.OK_ACTION_PRIMARY);
         } else {
             check$ = this.dialogManager.createDefault(
-                "If you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the Refresh Files button after, otherwise your changes will not be applied.",
+                "If you update any of this profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the Refresh Files button after, otherwise your changes will not be applied.",
                 DialogManager.DEFAULT_ACTIONS,
                 { hasBackdrop: true }
             );
