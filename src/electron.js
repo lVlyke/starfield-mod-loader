@@ -1174,36 +1174,38 @@ class ElectronLoader {
 
                 if (modFilePathMapFilter) {
                     // Check if a mapping entry exists for the current file path
-                    const mappedEntry = Object.entries(modFilePathMapFilter).find(([pathMapSrc]) => {
-                        pathMapSrc = this.#expandPath(pathMapSrc);
+                    const mappedEntry = Object.entries(modFilePathMapFilter).find(([pathMapSrcRaw]) => {
+                        let pathMapSrcNorm = this.#expandPath(pathMapSrcRaw).toLowerCase();
 
-                        if (!pathMapSrc.startsWith(modSubdirRoot)) {
-                            pathMapSrc = path.join(modSubdirRoot, pathMapSrc);
+                        if (!pathMapSrcNorm.startsWith(modSubdirRoot.toLowerCase())) {
+                            pathMapSrcNorm = path.join(modSubdirRoot, pathMapSrcNorm).toLowerCase();
                         }
 
                         // Check if the mapping src is a direct match for the file
-                        if (fileEntry.filePath === pathMapSrc) {
+                        if (fileEntry.filePath.toLowerCase() === pathMapSrcNorm) {
                             return true;
                         }
 
-                        if (!pathMapSrc.endsWith(path.sep)) {
-                            pathMapSrc += path.sep;
+                        if (!pathMapSrcNorm.endsWith(path.sep)) {
+                            pathMapSrcNorm += path.sep;
                         }
 
                         // Check if the file is inside the mapping src dir
-                        return fileEntry.filePath.startsWith(pathMapSrc);
+                        return fileEntry.filePath.toLowerCase().startsWith(pathMapSrcNorm);
                     });
                     fileEntry.enabled = !!mappedEntry;
 
                     if (mappedEntry) {
+                        const mappedSrcPath = this.#expandPath(mappedEntry[0]);
+                        const mappedDestPath = this.#expandPath(mappedEntry[1].replace(/^[Dd]ata[\\/]/, ""));
                         // Map the file path to the destination path, excluding any root data dir
-                        fileEntry.mappedFilePath = fileEntry.filePath.replace(
-                            this.#expandPath(mappedEntry[0]),
-                            this.#expandPath(mappedEntry[1].replace(/^[Dd]ata[\\/]/, ""))
-                        );
+                        if (fileEntry.filePath.toLowerCase().startsWith(mappedSrcPath.toLowerCase())) {
+                            fileEntry.mappedFilePath = `${mappedDestPath}${fileEntry.filePath.substring(mappedSrcPath.length)}`;
+                            fileEntry.mappedFilePath = fileEntry.mappedFilePath.replace(/^[/\\]+/, "");
+                        }
                     }
                 } else {
-                    fileEntry.enabled = fileEntry.enabled && fileEntry.filePath.startsWith(modSubdirRoot);
+                    fileEntry.enabled = fileEntry.enabled && fileEntry.filePath.toLowerCase().startsWith(modSubdirRoot.toLowerCase());
                 }
 
                 if (fileEntry.enabled) {
