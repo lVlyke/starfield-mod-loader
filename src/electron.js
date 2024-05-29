@@ -202,15 +202,25 @@ class ElectronLoader {
             return this.deleteProfile(profile);
         });
 
-        ipcMain.handle("app:copyProfileMods", async (
+        ipcMain.handle("app:copyProfileData", async (
             _event,
-            /** @type {AppMessageData<"app:copyProfileMods">} */ { srcProfile, destProfile }
+            /** @type {AppMessageData<"app:copyProfileData">} */ { srcProfile, destProfile }
         ) => {
             log.info("Copying profile src: ", srcProfile.name, " dest: ", destProfile.name);
+
             const srcModsDir = this.getProfileModsDir(srcProfile.name);
             const destModsDir = this.getProfileModsDir(destProfile.name);
 
-            return fs.copySync(srcModsDir, destModsDir);
+            fs.mkdirpSync(destModsDir);
+            fs.copySync(srcModsDir, destModsDir);
+
+            const srcBackupsDir = this.getProfileBackupsDir(srcProfile.name);
+            if (fs.existsSync(srcBackupsDir)) {
+                const destBackupsDir = this.getProfileBackupsDir(destProfile.name);
+
+                fs.mkdirpSync(destBackupsDir);
+                fs.copySync(srcBackupsDir, destBackupsDir);
+            }
         });
 
         ipcMain.handle("app:verifyProfile", /** @returns {Promise<AppProfileVerificationResults>} */ async (
@@ -344,6 +354,10 @@ class ElectronLoader {
             /** @type {AppMessageData<"profile:readModFilePaths">} */ { profile, modName, normalizePaths }
         ) => {
             return this.readModFilePaths(profile, modName, normalizePaths);
+        });
+
+        ipcMain.handle("profile:findPluginFiles", async (_event, /** @type {AppMessageData<"profile:findPluginFiles">} */ { profile }) => {
+            return this.findPluginFiles(profile);
         });
 
         ipcMain.handle("profile:importPluginBackup", async (
@@ -788,12 +802,21 @@ class ElectronLoader {
 
         // Only import plugins that already exist in the current plugin list
         let restoredPlugins = pluginsBackup.filter((restoredPlugin) => profile.plugins.some((existingPlugin) => {
-            return existingPlugin.plugin == restoredPlugin.plugin && existingPlugin.modId == restoredPlugin.modId;
+            if (existingPlugin.plugin !== restoredPlugin.plugin) {
+                return false;
+            }
+
+            // If plugin name matches but not mod ID, use the mod ID of the existing profile mod
+            if (existingPlugin.modId !== restoredPlugin.modId) {
+                restoredPlugin.modId = existingPlugin.modId;
+            }
+
+            return true;
         }));
 
         // Move any existing plugins that weren't in the backup to the bottom of the load order
         restoredPlugins.push(...profile.plugins.filter((existingPlugin) => !restoredPlugins.some((restoredPlugin) => {
-            return existingPlugin.plugin == restoredPlugin.plugin && existingPlugin.modId == restoredPlugin.modId;
+            return existingPlugin.plugin === restoredPlugin.plugin && existingPlugin.modId === restoredPlugin.modId;
         })));
         
         // Return the updated profile
@@ -1224,21 +1247,6 @@ class ElectronLoader {
 
                 return enabledModFiles;
             }, new Map());
-            
-            const gameDb = this.loadGameDatabase();
-            const gameDetails = gameDb[profile.gameId];
-            const gamePluginFormats = gameDetails?.pluginFormats ?? [];
-
-            // Collect all enabled plugins
-            modPlugins = [];
-            modPlugins = Array.from(enabledModFiles.keys()).reduce((enabledPlugins, destFilePath) => {
-                const rootFilePath = modSubdirRoot ? destFilePath.replace(`${modSubdirRoot}${path.sep}`, "") : destFilePath;
-                if (gamePluginFormats.some(pluginFormat => destFilePath.toLowerCase().endsWith(pluginFormat))) {
-                    enabledPlugins.push(rootFilePath);
-                }
-
-                return enabledPlugins;
-            }, modPlugins);
 
             const modProfilePath = this.getProfileModDir(profile.name, modName);
 
@@ -1285,8 +1293,7 @@ class ElectronLoader {
                 modName,
                 modRef: {
                     enabled: true,
-                    updatedDate: new Date().toISOString(),
-                    plugins: modPlugins
+                    updatedDate: new Date().toISOString()
                 }
             };
         } catch (err) {
@@ -1412,20 +1419,51 @@ class ElectronLoader {
         return modDirFiles.filter((file) => !fs.lstatSync(path.join(profile.modBaseDir, file)).isDirectory());
     }
 
-    /** @returns {Promise<string[]>} */
-    async readModFilePaths(
+    /** @returns {string[]} */
+    readModFilePaths(
         /** @type {AppProfile} */ profile,
         /** @type {string} */ modName,
         /** @type {boolean | undefined} */ normalizePaths
     ) {
         const modDirPath = this.getProfileModDir(profile.name, modName);
-        let files = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
+        let files = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: true });
 
         if (normalizePaths) {
             files = files.map(file => this.#expandPath(file));
         }
 
         return files;
+    }
+
+    /** @returns {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef[]} */
+    findPluginFiles(
+        /** @type {AppProfile} */ profile
+    ) {
+        const gameDb = this.loadGameDatabase();
+        const gameDetails = gameDb[profile.gameId];
+        const gamePluginFormats = gameDetails?.pluginFormats ?? [];
+
+        return Array.from(profile.mods.entries()).reduce((/** @type {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
+            const modDirPath = this.getProfileModDir(profile.name, modId);
+            
+            if (fs.existsSync(modDirPath)) {
+                const modFiles = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: false });
+                const modPlugins = modFiles
+                    .filter((modFile) => gamePluginFormats.some(gamePluginFormat => {
+                        return modFile.toLowerCase().endsWith(`.${gamePluginFormat}`);
+                    }))
+                    .filter((modFile) => fs.lstatSync(path.join(modDirPath, modFile)).isFile())
+                    .map((modFile) => ({
+                        modId,
+                        plugin: modFile,
+                        enabled: modRef.enabled
+                    }));
+
+                plugins.push(...modPlugins);
+            }
+
+            return plugins;
+        }, []);
     }
 
     /** @returns {Promise<string[]>} */

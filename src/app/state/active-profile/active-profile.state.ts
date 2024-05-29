@@ -109,7 +109,9 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.ReconcilePluginList)
-    public reconcilePluginList(context: ActiveProfileState.Context, { pluginTypeOrder }: ActiveProfileActions.ReconcilePluginList): void {
+    public reconcilePluginList(
+        context: ActiveProfileState.Context,
+        { plugins, pluginTypeOrder }: ActiveProfileActions.ReconcilePluginList): void {
         const state = _.cloneDeep(context.getState()!);
         const modList = Array.from(state.mods.entries());
 
@@ -119,23 +121,28 @@ export class ActiveProfileState {
         }
 
         // Add missing plugins
-        modList.forEach(([modId, { enabled, plugins }]) => plugins?.forEach((plugin) => {
-            if (enabled) {
-                const existingPlugin = _.find(state.plugins, { plugin });
+        plugins.forEach((activePlugin) => {
+            const modEntry = modList.find(([modId]) => activePlugin.modId === modId);
+
+            if (modEntry?.[1].enabled) {
+                const existingPlugin = _.find(state.plugins, { plugin: activePlugin.plugin });
 
                 if (!existingPlugin) {
                     // Add a new plugin entry
-                    state.plugins.push({ modId, plugin, enabled: true });
+                    state.plugins.push(activePlugin);
                 } else {
                     // Update the modId of the plugin to the last mod in the load order
-                    existingPlugin.modId = modId;
+                    existingPlugin.modId = activePlugin.modId;
                 }
             }
-        }));
+        });
 
         // Remove deleted plugins
-        state.plugins = state.plugins.filter((pluginRef) => {
-            return modList.find(([modId, { enabled, plugins }]) => pluginRef.modId === modId && enabled && plugins?.includes(pluginRef.plugin));
+        state.plugins = state.plugins.filter((existingPlugin) => {
+            const modEntry = modList.find(([modId]) => existingPlugin.modId === modId);
+            const activePlugin = _.find(plugins, { plugin: existingPlugin.plugin });
+
+            return modEntry?.[1].enabled && !!activePlugin;
         });
 
         // Sort plugins by type order (if required)

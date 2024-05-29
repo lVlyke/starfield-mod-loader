@@ -92,6 +92,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] reconcile plugin list`;
 
         constructor(
+            public plugins: GamePluginProfileRef[],
             public pluginTypeOrder?: string[]
         ) {}
     }

@@ -121,8 +121,8 @@ export namespace AppMessage {
         };
     }
 
-    export interface CopyProfileMods extends Base {
-        id: `${Prefix}:copyProfileMods`;
+    export interface CopyProfileData extends Base {
+        id: `${Prefix}:copyProfileData`;
         data: {
             srcProfile: AppProfile;
             destProfile: AppProfile;
@@ -174,7 +174,7 @@ export namespace AppMessage {
                            | LoadExternalProfile
                            | SaveProfile
                            | VerifyProfile
-                           | CopyProfileMods
+                           | CopyProfileData
                            | ShowPreferences
                            | LoadGameDatabase
                            | FindBestProfileDefaults
@@ -247,6 +247,14 @@ export namespace AppMessage {
             normalizePaths?: boolean;
         };
     }
+
+    export interface FindPluginFiles extends Base {
+        id: `${ProfileMessage.Prefix}:findPluginFiles`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface ImportProfilePluginBackup extends Base {
         id: `${ProfileMessage.Prefix}:importPluginBackup`;
         data: {
@@ -379,6 +387,7 @@ export namespace AppMessage {
                                | DeleteProfileMod
                                | RenameProfileMod
                                | ReadProfileModFilePaths
+                               | FindPluginFiles
                                | ImportProfilePluginBackup
                                | CreateProfilePluginBackup
                                | DeleteProfilePluginBackup
@@ -413,7 +422,7 @@ export namespace AppMessage {
         "app:loadProfile",
         "app:loadExternalProfile",
         "app:saveProfile",
-        "app:copyProfileMods",
+        "app:copyProfileData",
         "app:verifyProfile",
         "app:showPreferences",
         "app:loadGameDatabase",
@@ -428,6 +437,7 @@ export namespace AppMessage {
         "profile:deleteMod",
         "profile:renameMod",
         "profile:readModFilePaths",
+        "profile:findPluginFiles",
         "profile:importPluginBackup",
         "profile:createPluginBackup",
         "profile:deletePluginBackup",
