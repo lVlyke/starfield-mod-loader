@@ -1,5 +1,27 @@
 // @ts-check
-/// <reference path="./app-types.d.ts" />
+
+/**
+ * @typedef {import("./app/models/app-message").AppMessage} AppMessage;
+ * @typedef {import("./app/models/app-profile").AppProfile} AppProfile;
+ * @typedef {import("./app/models/app-profile").AppProfileVerificationResult} AppProfileVerificationResult;
+ * @typedef {import("./app/models/app-profile").AppProfileVerificationResults} AppProfileVerificationResults;
+ * @typedef {import("./app/models/app-profile").AppProfileModVerificationResults} AppProfileModVerificationResult;
+ * @typedef {import("./app/models/app-profile").AppProfilePluginBackupEntry} AppProfilePluginBackupEntry;
+ * @typedef {import("./app/models/app-profile").AppProfileDescription} AppProfileDescription;
+ * @typedef {import("./app/models/mod-import-status").ModImportStatus} ModImportStatus;
+ * @typedef {import("./app/models/mod-import-status").ModImportRequest} ModImportRequest;
+ * @typedef {import("./app/models/mod-import-status").ModImportResult} ModImportResult;
+ * @typedef {import("./app/models/app-settings-user-cfg").AppSettingsUserCfg} AppSettingsUserCfg;
+ * @typedef {import("./app/models/game-database").GameDatabase} GameDatabase;
+ * @typedef {import("./app/models/game-id").GameId} GameId;
+ * @typedef {import("./app/models/game-details").GameDetails} GameDetails;
+ * @typedef {import("./app/models/game-plugin-list-type").GamePluginListType} GamePluginListType;
+ * @typedef {import("./app/models/mod-profile-ref").ModProfileRef} ModProfileRef;
+ * @typedef {import("./app/models/mod-deployment-metadata").ModDeploymentMetadata} ModDeploymentMetadata;
+ * @typedef {import("./app/models/fomod").Fomod.ModuleInfo} FomodModuleInfo;
+ * @typedef {import("./app/models/fomod").Fomod.ModuleConfig} FomodModuleConfig;
+ * @typedef {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef} GamePluginProfileRef
+ */
 
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron");
 const log = require("electron-log/main");
@@ -82,7 +104,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:syncUiState", (
             _event,
-            /** @type {AppMessageData<"app:syncUiState">} */ { appState, modListCols, defaultModListCols }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:syncUiState">} */ { appState, modListCols, defaultModListCols }
         ) => {
             // Sync mod list column menu checkbox state
             const activeModListCols = appState.modListColumns ?? defaultModListCols;
@@ -96,7 +118,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:chooseDirectory", async (
             _event,
-            /** @type {AppMessageData<"app:chooseDirectory">} */ { baseDir }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:chooseDirectory">} */ { baseDir }
         ) => {
             const result = await dialog.showOpenDialog({
                 properties: ["openDirectory"],
@@ -108,7 +130,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:chooseFilePath", async (
             _event,
-            /** @type {AppMessageData<"app:chooseFilePath">} */ { baseDir, fileTypes }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:chooseFilePath">} */ { baseDir, fileTypes }
         ) => {
             const result = await dialog.showOpenDialog({
                 filters: fileTypes ? [
@@ -125,7 +147,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:verifyPathExists", async (
             _event,
-            /** @type {AppMessageData<"app:verifyPathExists">} */ data
+            /** @type {import("./app/models/app-message").AppMessageData<"app:verifyPathExists">} */ data
         ) => {
             const paths = Array.isArray(data.path) ? data.path : [data.path]
             return this.#firstValidPath(paths, data.dirname ? curPath => path.dirname(curPath) : undefined);
@@ -133,7 +155,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:openFile", async (
             _event,
-            /** @type {AppMessageData<"app:openFile">} */ data
+            /** @type {import("./app/models/app-message").AppMessageData<"app:openFile">} */ data
         ) => {
             data.path = this.#expandPath(path.resolve(data.path));
             const mimeType = mime.contentType(path.extname(data.path));
@@ -147,7 +169,10 @@ class ElectronLoader {
             };
         });
 
-        ipcMain.handle("app:loadProfileList", async (_event, /** @type {AppMessageData<"app:loadProfileList">} */ _data) => {
+        ipcMain.handle("app:loadProfileList", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:loadProfileList">} */ _data
+        ) => {
             try {
                 return this.loadProfileList();
             } catch (e) {
@@ -156,7 +181,10 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:loadSettings", async (_event, /** @type {AppMessageData<"app:loadSettings">} */ _data) => {
+        ipcMain.handle("app:loadSettings", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:loadSettings">} */ _data
+        ) => {
             try {
                 return this.loadSettings();
             } catch (e) {
@@ -165,11 +193,17 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:saveSettings", async (_event, /** @type {AppMessageData<"app:saveSettings">} */ { settings }) => {
+        ipcMain.handle("app:saveSettings", async (
+            _event, 
+            /** @type {import("./app/models/app-message").AppMessageData<"app:saveSettings">} */ { settings }
+        ) => {
            return this.saveSettings(settings);
         });
 
-        ipcMain.handle("app:loadGameDatabase", async (_event, /** @type {AppMessageData<"app:loadGameDatabase">} */ _data) => {
+        ipcMain.handle("app:loadGameDatabase", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:loadGameDatabase">} */ _data
+        ) => {
             try {
                 return this.loadGameDatabase();
             } catch (e) {
@@ -178,11 +212,17 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:loadProfile", async (_event, /** @type {AppMessageData<"app:loadProfile">} */ { name, gameId }) => {
+        ipcMain.handle("app:loadProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:loadProfile">} */ { name, gameId }
+        ) => {
             return this.loadProfile(name);
         });
 
-        ipcMain.handle("app:loadExternalProfile", async (_event, /** @type {AppMessageData<"app:loadExternalProfile">} */ { profilePath }) => {
+        ipcMain.handle("app:loadExternalProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:loadExternalProfile">} */ { profilePath }
+        ) => {
             if (!profilePath) {
                 const pickedFile = (await dialog.showOpenDialog({
                     properties: ["openDirectory"]
@@ -194,17 +234,23 @@ class ElectronLoader {
             return this.loadProfileFromPath(profilePath, profilePath);
         });
 
-        ipcMain.handle("app:saveProfile", async (_event, /** @type {AppMessageData<"app:saveProfile">} */ { profile }) => {
+        ipcMain.handle("app:saveProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:saveProfile">} */ { profile }
+        ) => {
             return this.saveProfile(profile);
         });
 
-        ipcMain.handle("app:deleteProfile", async (_event, /** @type {AppMessageData<"app:deleteProfile">} */ { profile }) => {
+        ipcMain.handle("app:deleteProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:deleteProfile">} */ { profile }
+        ) => {
             return this.deleteProfile(profile);
         });
 
         ipcMain.handle("app:copyProfileData", async (
             _event,
-            /** @type {AppMessageData<"app:copyProfileData">} */ { srcProfile, destProfile }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:copyProfileData">} */ { srcProfile, destProfile }
         ) => {
             log.info("Copying profile src: ", srcProfile.name, " dest: ", destProfile.name);
 
@@ -225,7 +271,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:verifyProfile", /** @returns {Promise<AppProfileVerificationResults>} */ async (
             _event,
-            /** @type {AppMessageData<"app:verifyProfile">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:verifyProfile">} */ { profile }
         ) => {
             const VERIFY_SUCCESS = { error: false, found: true };
 
@@ -268,7 +314,7 @@ class ElectronLoader {
 
         ipcMain.handle("app:findBestProfileDefaults", async (
             _event,
-            /** @type {AppMessageData<"app:findBestProfileDefaults">} */ { gameDetails }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:findBestProfileDefaults">} */ { gameDetails }
         ) => {
             const result = {};
 
@@ -291,17 +337,23 @@ class ElectronLoader {
             return result;
         });
 
-        ipcMain.handle("profile:findManualMods", async (_event, /** @type {AppMessageData<"profile:findManualMods">} */ { profile }) => {
+        ipcMain.handle("profile:findManualMods", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:findManualMods">} */ { profile }
+        ) => {
             return this.findManualMods(profile);
         });
 
-        ipcMain.handle("profile:findDeployedProfile", async (_event, /** @type {AppMessageData<"profile:findDeployedProfile">} */ { refProfile }) => {
+        ipcMain.handle("profile:findDeployedProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:findDeployedProfile">} */ { refProfile }
+        ) => {
             return this.readProfileDeploymentMetadata(refProfile)?.profile;
         });
 
         ipcMain.handle("profile:beginModAdd", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModAdd">} */ { profile, modPath, root }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:beginModAdd">} */ { profile, modPath, root }
         ) => {
             if (modPath) {
                 log.info("Adding mod: ", modPath);
@@ -314,7 +366,7 @@ class ElectronLoader {
 
         ipcMain.handle("profile:beginModExternalImport", async (
             _event,
-            /** @type {AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath, root }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:beginModExternalImport">} */ { profile, modPath, root }
         ) => {
             if (modPath) {
                 log.info("Importing mod: ", modPath);
@@ -327,12 +379,15 @@ class ElectronLoader {
 
         ipcMain.handle("profile:completeModImport", async (
             _event,
-            /** @type {AppMessageData<"profile:completeModImport">} */ { importRequest }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:completeModImport">} */ { importRequest }
         ) => {
             return this.completeModImport(importRequest);
         });
 
-        ipcMain.handle("profile:deleteMod", async (_event, /** @type {AppMessageData<"profile:deleteMod">} */ { profile, modName }) => {
+        ipcMain.handle("profile:deleteMod", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteMod">} */ { profile, modName }
+        ) => {
             const modDirPath = this.getProfileModDir(profile.name, modName);
             log.info("Deleting mod: ", modDirPath);
 
@@ -341,7 +396,7 @@ class ElectronLoader {
 
         ipcMain.handle("profile:renameMod", async (
             _event,
-            /** @type {AppMessageData<"profile:renameMod">} */ { profile, modCurName, modNewName }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:renameMod">} */ { profile, modCurName, modNewName }
         ) => {
             const modCurDir = this.getProfileModDir(profile.name, modCurName);
             const modNewDir = this.getProfileModDir(profile.name, modNewName);
@@ -351,46 +406,49 @@ class ElectronLoader {
 
         ipcMain.handle("profile:readModFilePaths", async (
             _event,
-            /** @type {AppMessageData<"profile:readModFilePaths">} */ { profile, modName, normalizePaths }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readModFilePaths">} */ { profile, modName, normalizePaths }
         ) => {
             return this.readModFilePaths(profile, modName, normalizePaths);
         });
 
-        ipcMain.handle("profile:findPluginFiles", async (_event, /** @type {AppMessageData<"profile:findPluginFiles">} */ { profile }) => {
+        ipcMain.handle("profile:findPluginFiles", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:findPluginFiles">} */ { profile }
+        ) => {
             return this.findPluginFiles(profile);
         });
 
         ipcMain.handle("profile:importPluginBackup", async (
             _event,
-            /** @type {AppMessageData<"profile:importPluginBackup">} */ { profile, backupPath }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:importPluginBackup">} */ { profile, backupPath }
         ) => {
             return this.importProfilePluginBackup(profile, backupPath);
         });
 
         ipcMain.handle("profile:createPluginBackup", async (
             _event,
-            /** @type {AppMessageData<"profile:createPluginBackup">} */ { profile, backupName }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:createPluginBackup">} */ { profile, backupName }
         ) => {
             return this.createProfilePluginBackup(profile, backupName);
         });
 
         ipcMain.handle("profile:deletePluginBackup", async (
             _event,
-            /** @type {AppMessageData<"profile:deletePluginBackup">} */ { profile, backupFile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deletePluginBackup">} */ { profile, backupFile }
         ) => {
             return this.deleteProfilePluginBackup(profile, backupFile);
         });
 
         ipcMain.handle("profile:readPluginBackups", async (
             _event,
-            /** @type {AppMessageData<"profile:readPluginBackups">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readPluginBackups">} */ { profile }
         ) => {
             return this.readProfilePluginBackups(profile);
         });
 
         ipcMain.handle("profile:exportPluginList", async (
             _event,
-            /** @type {AppMessageData<"profile:exportPluginList">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:exportPluginList">} */ { profile }
         ) => {
             const pickedFile = await dialog.showSaveDialog({
                 filters: [
@@ -406,19 +464,22 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("profile:deploy", async (_event, /** @type {AppMessageData<"profile:deploy">} */ {
+        ipcMain.handle("profile:deploy", async (_event, /** @type {import("./app/models/app-message").AppMessageData<"profile:deploy">} */ {
             profile, deployPlugins, normalizePathCasing
         }) => {
             return this.deployProfile(profile, deployPlugins, normalizePathCasing);
         });
 
-        ipcMain.handle("profile:undeploy", async (_event, /** @type {AppMessageData<"profile:undeploy">} */ { profile }) => {
+        ipcMain.handle("profile:undeploy", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:undeploy">} */ { profile }
+        ) => {
             return this.undeployProfile(profile);
         });
 
         ipcMain.handle("profile:showModInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName }
         ) => {
             const modDirPath = this.getProfileModDir(profile.name, modName);
 
@@ -427,21 +488,21 @@ class ElectronLoader {
 
         ipcMain.handle("profile:showModBaseDirInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showModBaseDirInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showModBaseDirInFileExplorer">} */ { profile }
         ) => {
             shell.openPath(path.resolve(profile.modBaseDir));
         });
 
         ipcMain.handle("profile:showGameBaseDirInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showGameBaseDirInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showGameBaseDirInFileExplorer">} */ { profile }
         ) => {
             shell.openPath(path.resolve(profile.gameBaseDir));
         });
 
         ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showProfileBaseDirInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileBaseDirInFileExplorer">} */ { profile }
         ) => {
             const profileDir = this.getProfileDir(profile.name);
 
@@ -450,7 +511,7 @@ class ElectronLoader {
 
         ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
         ) => {
             const profileModsDir = this.getProfileModsDir(profile.name);
 
@@ -459,14 +520,17 @@ class ElectronLoader {
 
         ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
             _event,
-            /** @type {AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
         ) => {
             const profileModsDir = this.getProfilePluginBackupsDir(profile.name);
 
             shell.openPath(path.resolve(profileModsDir));
         });
 
-        ipcMain.handle("profile:launchGame", async (_event, /** @type {AppMessageData<"profile:launchGame">} */ { profile }) => {
+        ipcMain.handle("profile:launchGame", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:launchGame">} */ { profile }
+        ) => {
             let binaryPath = profile.gameBinaryPath;
 
             // If binary path is relative, use the `gameBaseDir` as the binary dir
@@ -480,7 +544,10 @@ class ElectronLoader {
             });
         });
 
-        ipcMain.handle("profile:openGameConfigFile", async (_event, /** @type {AppMessageData<"profile:openGameConfigFile">} */ { configPaths }) => {
+        ipcMain.handle("profile:openGameConfigFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:openGameConfigFile">} */ { configPaths }
+        ) => {
             await this.openGameConfigFile(configPaths);
         });
     }
@@ -1435,7 +1502,7 @@ class ElectronLoader {
         return files;
     }
 
-    /** @returns {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef[]} */
+    /** @returns {GamePluginProfileRef[]} */
     findPluginFiles(
         /** @type {AppProfile} */ profile
     ) {
@@ -1443,13 +1510,13 @@ class ElectronLoader {
         const gameDetails = gameDb[profile.gameId];
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
 
-        return Array.from(profile.mods.entries()).reduce((/** @type {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
+        return Array.from(profile.mods.entries()).reduce((/** @type {GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
             const modDirPath = this.getProfileModDir(profile.name, modId);
             
             if (fs.existsSync(modDirPath)) {
                 const modFiles = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: false });
                 const modPlugins = modFiles
-                    .filter((modFile) => gamePluginFormats.some(gamePluginFormat => {
+                    .filter((modFile) => gamePluginFormats.some((gamePluginFormat) => {
                         return modFile.toLowerCase().endsWith(`.${gamePluginFormat}`);
                     }))
                     .filter((modFile) => fs.lstatSync(path.join(modDirPath, modFile)).isFile())
