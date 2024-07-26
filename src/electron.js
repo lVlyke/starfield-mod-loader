@@ -1010,6 +1010,7 @@ class ElectronLoader {
                         const _7zBinaries = [
                             "7zzs",
                             "7zz",
+                            "7z",
                             "7z.exe"
                         ];
 
@@ -1023,7 +1024,11 @@ class ElectronLoader {
                         if (!_7zBinaryPath) {
                             _7zBinaryPath = _7zBinaries.reduce((_7zBinaryPath, _7zBinaryPathGuess) => {
                                 try {
-                                    _7zBinaryPath = which.sync(_7zBinaryPathGuess);
+                                    const which7zBinaryPath = which.sync(_7zBinaryPathGuess);
+                                    _7zBinaryPath = (Array.isArray(which7zBinaryPath)
+                                        ? which7zBinaryPath[0]
+                                        : which7zBinaryPath
+                                    ) ?? undefined;
                                 } catch (_err) {}
 
                                 return _7zBinaryPath;
@@ -1638,11 +1643,12 @@ class ElectronLoader {
         if (gameDetails?.resources?.mods) {
             Object.entries(gameDetails.resources.mods).forEach(([resourceSrc, resourceDest]) => {
                 const srcFilePath = path.join(ElectronLoader.GAME_RESOURCES_DIR, resourceSrc);
-                let destFilePath = path.join(profile.modBaseDir, resourceDest);
 
                 if (normalizePathCasing) {
-                    destFilePath = destFilePath.toLowerCase();
+                    // TODO - Apply normalization rules to `resourceDest`
                 }
+
+                const destFilePath = path.join(profile.modBaseDir, resourceDest);
 
                 if (fs.existsSync(destFilePath)) {
                     return;
@@ -1703,6 +1709,13 @@ class ElectronLoader {
         const modBaseDir = path.resolve(root ? profile.gameBaseDir : profile.modBaseDir);
         const extFilesBackupDir = path.join(root ? profile.gameBaseDir : profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const extFilesList = root ? profile.externalFiles?.gameDirFiles : profile.externalFiles?.modDirFiles;
+        const gameDb = this.loadGameDatabase();
+        const gameDetails = gameDb[profile.gameId];
+        const gamePluginFormats = gameDetails?.pluginFormats ?? [];
+
+        const existingDataSubdirs = (await fs.readdir(modBaseDir)).filter((existingModFile) => {
+            return fs.lstatSync(path.join(modBaseDir, existingModFile)).isDirectory();
+        });
 
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
@@ -1716,11 +1729,33 @@ class ElectronLoader {
 
                 // Copy data files to mod base dir
                 for (let modFile of modFilesToCopy) {
-                    let srcFilePath = path.resolve(path.join(modDirPath, modFile.toString()));
+                    const srcFilePath = path.resolve(path.join(modDirPath, modFile.toString()));
 
-                    // Normalize path case to lower if enabled (helpful for case-sensitive file systems)
-                    if (normalizePathCasing) {
-                        modFile = modFile.toLowerCase();
+                    // If file path normalization is enabled, apply to all files inside Data subdirectories (i.e. textures/, meshes/)
+                    if (normalizePathCasing && modFile.includes(path.sep)) {
+                        // Convert file paths to lowercase
+                        // If this file is a plugin, preserve the plugin name's casing
+                        if (gamePluginFormats.some(pluginFormat => modFile.endsWith(pluginFormat))) {
+                            modFile = path.join(path.dirname(modFile).toLowerCase(), path.basename(modFile));
+                        } else {
+                            modFile = modFile.toLowerCase();
+                        }
+
+                        if (root) {
+                            // Preserve capitalization of Data directory for root mods
+                            modFile = modFile.replace(/^data[\\/]/, `Data${path.sep}`);
+                        } else {
+                            // Apply capitalization rules of any existing Data subdirectories to ensure only one folder is created
+                            // TODO - Also do this for root mods
+                            // TODO - Do this recursively
+                            existingDataSubdirs.forEach((existingDataSubdir) => {
+                                existingDataSubdir = `${existingDataSubdir}${path.sep}`;
+                                const lowerSubdir = existingDataSubdir.toLowerCase();
+                                if (modFile.startsWith(lowerSubdir)) {
+                                    modFile = modFile.replace(lowerSubdir, existingDataSubdir);
+                                }
+                            });
+                        }
                     }
 
                     const destFilePath = path.join(modBaseDir, modFile);
