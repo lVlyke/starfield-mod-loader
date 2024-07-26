@@ -326,6 +326,7 @@ export class ProfileManager {
         showSuccessMessage?: boolean;
         showErrorMessage?: boolean;
         updateManualMods?: boolean;
+        updateActivePlugins?: boolean;
         updateModErrorState?: boolean;
     } = {}): Observable<boolean> {
         // Provide default options
@@ -333,16 +334,18 @@ export class ProfileManager {
             showErrorMessage: true,
             showSuccessMessage: true,
             updateManualMods: true,
+            updateActivePlugins: true,
             updateModErrorState: true,
         }, options);
 
         const loadingIndicator = this.appManager.showLoadingIndicator("Verifying Profile...");
-
-        let result$;
+        let result$ = of<unknown>(true);
         if (options.updateManualMods) {
-            result$ = this.updateActiveProfileExternalFiles();
-        } else {
-            result$ = of(true);
+            result$ = forkJoin([result$, this.updateActiveProfileExternalFiles()]);
+        }
+
+        if (options.updateActivePlugins) {
+            result$ = forkJoin([result$, this.reconcileActivePluginList()]);
         }
 
         return ObservableUtils.hotResult$(result$.pipe(
@@ -489,7 +492,7 @@ export class ProfileManager {
                     // Copy mods to the newly created profile
                     const loadingIndicator = this.appManager.showLoadingIndicator("Copying Profile...");
 
-                    return ElectronUtils.invoke("app:copyProfileMods", {
+                    return ElectronUtils.invoke("app:copyProfileData", {
                         srcProfile: profileToCopy,
                         destProfile: newProfile
                     }).pipe(
@@ -1017,11 +1020,21 @@ export class ProfileManager {
     }
 
     private reconcileActivePluginList(): Observable<void> {
-        return ObservableUtils.hotResult$(this.activeGameDetails$.pipe(
-            take(1),
-            switchMap((gameDetails) => this.store.dispatch(new ActiveProfileActions.ReconcilePluginList(
+        return ObservableUtils.hotResult$(forkJoin([
+            this.findActivePluginFiles(),
+            this.activeGameDetails$.pipe(take(1))
+        ]).pipe(
+            switchMap(([plugins, gameDetails]) => this.store.dispatch(new ActiveProfileActions.ReconcilePluginList(
+                plugins,
                 gameDetails?.pluginFormats
             )))
+        ));
+    }
+
+    private findActivePluginFiles(): Observable<GamePluginProfileRef[]> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:findPluginFiles", { profile }))
         ));
     }
 

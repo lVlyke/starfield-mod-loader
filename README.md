@@ -30,6 +30,8 @@ Starfield Mod Loader supports the following games:
 
 To install Starfield Mod Loader, simply download the latest release from the [releases page](https://github.com/lVlyke/starfield-mod-loader/releases) and extract the archive to a folder of your choice.
 
+**Note:** [7-Zip](https://www.7-zip.org/) is required to be installed in order to add mods that use RAR archives.
+
 To enable mods in Starfield, add the following lines to the `StarfieldCustom.ini` file in your `Documents/My Games/Starfield` folder if not already present:
 
 ```ini
