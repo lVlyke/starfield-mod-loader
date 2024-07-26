@@ -114,8 +114,6 @@ Once at least one mod with a plugin has been installed, you will see your plugin
 
 Plugin support can be enable or disabled by going to **File > Preferences** and toggling the plugin support option. If disabled, you will be prompted to enable plugins when adding mods that include plugins.
 
-**IMPORTANT NOTE FOR STARFIELD:** Starfield does not yet officially support plugins. To use unofficial plugins for Starfield, you will also need to install the **[Plugins.txt Enabler mod](https://www.nexusmods.com/starfield/mods/4157)** for plugins to load correctly.
-
 ## Activate your mods
 
 To enable mods in the game you must first activate them. Press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
@@ -164,13 +162,13 @@ Some mods may use different casing for their files/folders (i.e. `Interface` vs 
 
 ### **(Linux)** Mods are not loading when using SFSE
 
-When running SFSE via Proton, Steam will create a new virtual C drive for SFSE that's different from the virtual C drive used for Starfield. This means that when running SFSE, your `StarfieldCustom.ini` and `StarfieldPrefs.ini` files will not be loaded, and instead new ones will be created on the new virtual C drive.
+When running SFSE via Steam/Proton, Steam will create a new virtual C drive for SFSE that's different from the virtual C drive used for Starfield. This means that when running SFSE, your `StarfieldCustom.ini` and `StarfieldPrefs.ini` files will not be loaded, and instead new ones will be created on the new virtual C drive.
 
 To avoid having two separate copies of these files, the easiest solution is to create a symlink on the new virtual C drive to the `Documents/My Games/Starfield` directory on the original Starfield virtual C drive. This way, both virtual C drives will point to the same `Documents/My Games/Starfield` directory.
 
 You will first need to figure out the new virtual C drive directory for SFSE, which will be located in `~/.local/share/Steam/steamapps/compatdata`. You will see a number of directories in here with numerical IDs. One of these directories corresponds to the game ID that Steam assigned to SFSE. To determine which game ID is the correct one, you can look at the folder's "Date modified" timestamp to figure out which virtual drive directories were created recently. Assuming you added SFSE recently, it should have a Date modified field that matches when SFSE was added.
 
-Once you have figured out the game ID for SFSE, navigate to `<game_id>/pfx/drive_c/users/steamuser/Documents/My Games`. Delete the existing `Starfield` directory inside of this directory and then open a terminal at this directory and run the following command:
+Once you have figured out the game ID for SFSE, navigate to `<sfse_game_id>/pfx/drive_c/users/steamuser/Documents/My Games`. Delete the existing `Starfield` directory inside of this directory and then open a terminal at this directory and run the following command:
 
 ```sh
 # Starfield's game ID is 1716740
@@ -178,6 +176,13 @@ ln -s "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steam
 ```
 
 This will create a symlink to Starfield's `Documents/My Games/Starfield` directory, ensuring that SFSE is using the same ini files as the base game.
+
+You must also create a symlink in `<sfse_game_id>/pfx/drive_c/users/steamuser/AppData/Local`:
+
+```sh
+# Create a symlink to `/AppData/Local/Starfield`
+ln -s "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield" "./Starfield"
+```
 
 ## Report an issue
 
