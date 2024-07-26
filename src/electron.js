@@ -1951,7 +1951,8 @@ class ElectronLoader {
                         const backupDest = path.join(path.dirname(extFilesBackupDir), backupFile);
 
                         // Use hardlinks for faster file restoration in link mode
-                        if (profile.linkMode) {
+                        if (profile.linkMode && !fs.lstatSync(backupSrc).isDirectory()) {
+                            // TODO - Recursively do this when encountering directories
                             return fs.link(backupSrc, backupDest);
                         } else {
                             return fs.copy(backupSrc, backupDest);
