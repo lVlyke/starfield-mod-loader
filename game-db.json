@@ -123,7 +123,7 @@
     },
     "starfield": {
         "title": "Starfield",
-        "bkgColor": "#bc2f06",
+        "bkgColor": "#be6326",
         "fgColor": "#ffffff",
         "modBaseDirs": [
             "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",

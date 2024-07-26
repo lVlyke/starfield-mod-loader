@@ -1942,16 +1942,16 @@ class ElectronLoader {
                 path.join(profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)
             ];
+            
             // Restore original external files, if any were moved
             for (const extFilesBackupDir of extFilesBackupDirs) {
                 if (fs.existsSync(extFilesBackupDir)) {
-                    const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => fs.move(
+                    const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => fs.copy(
                         path.join(extFilesBackupDir, backupFile),
                         path.join(path.dirname(extFilesBackupDir), backupFile)
                     ));
 
                     await Promise.all(backupTransfers);
-                    fs.removeSync(extFilesBackupDir);
                 }
             }
 
@@ -1959,6 +1959,13 @@ class ElectronLoader {
             const metadataFilePath = path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE);
             if (fs.existsSync(metadataFilePath)) {
                 fs.rmSync(path.join(profile.modBaseDir, ElectronLoader.PROFILE_METADATA_FILE));
+            }
+
+            // Remove file backup directories
+            for (const extFilesBackupDir of extFilesBackupDirs) {
+                if (fs.existsSync(extFilesBackupDir)) {
+                    fs.removeSync(extFilesBackupDir);
+                }
             }
         } catch (err) {
             log.error("Mod undeployment failed: ", err);

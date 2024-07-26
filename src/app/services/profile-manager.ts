@@ -486,7 +486,7 @@ export class ProfileManager {
                 ...profileToCopy,
                 name: profileName,
                 deployed: false
-            })),
+            }, false)),
             switchMap((newProfile) => {
                 if (!!newProfile) {
                     // Copy mods to the newly created profile
@@ -507,9 +507,9 @@ export class ProfileManager {
         ));
     }
 
-    public setActiveProfile(profile: AppProfile): Observable<AppProfile> {
+    public setActiveProfile(profile: AppProfile, verify: boolean = true): Observable<AppProfile> {
         return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
-            switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
+            switchMap(() => verify ? this.verifyActiveProfile({ showSuccessMessage: false }) : of(true)),
             map(() => profile)
         ));
     }
@@ -544,7 +544,7 @@ export class ProfileManager {
         ));
     }
 
-    public showNewProfileWizard(defaults?: Partial<AppProfile>): Observable<AppProfile | undefined> {
+    public showNewProfileWizard(defaults?: Partial<AppProfile>, verify: boolean = true): Observable<AppProfile | undefined> {
         defaults ??= AppProfile.create("New Profile", GameId.STARFIELD); // TODO
         
         return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
@@ -555,7 +555,7 @@ export class ProfileManager {
 
                 return overlayRef.component.instance.onFormSubmit$.pipe(
                     map(() => overlayRef.component.instance.profileSettingsComponent.formModel),
-                    switchMap(() => this.setActiveProfile(overlayRef.component.instance.profileSettingsComponent.formModel)),
+                    switchMap(newProfile => this.setActiveProfile(newProfile, verify)),
                 );
             })
         ));
