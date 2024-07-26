@@ -1946,10 +1946,17 @@ class ElectronLoader {
             // Restore original external files, if any were moved
             for (const extFilesBackupDir of extFilesBackupDirs) {
                 if (fs.existsSync(extFilesBackupDir)) {
-                    const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => fs.copy(
-                        path.join(extFilesBackupDir, backupFile),
-                        path.join(path.dirname(extFilesBackupDir), backupFile)
-                    ));
+                    const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => {
+                        const backupSrc = path.join(extFilesBackupDir, backupFile);
+                        const backupDest = path.join(path.dirname(extFilesBackupDir), backupFile);
+
+                        // Use hardlinks for faster file restoration in link mode
+                        if (profile.linkMode) {
+                            return fs.link(backupSrc, backupDest);
+                        } else {
+                            return fs.copy(backupSrc, backupDest);
+                        }
+                    });
 
                     await Promise.all(backupTransfers);
                 }
