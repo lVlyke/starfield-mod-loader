@@ -20,8 +20,18 @@ export class ActiveProfileState {
     }
 
     @Selector()
+    public static getPlugins(state: AppProfile): GamePluginProfileRef[] | undefined {
+        return state.plugins;
+    }
+
+    @Selector()
     public static isDeployed(state: AppProfile): boolean {
         return !!state.deployed;
+    }
+
+    @Selector()
+    public static isManageConfigFiles(state: AppProfile): boolean {
+        return !!state.manageConfigFiles;
     }
 
     @Action(ActiveProfileActions.AddMod)

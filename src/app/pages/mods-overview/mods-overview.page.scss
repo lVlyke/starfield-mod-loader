@@ -10,6 +10,11 @@
         font-style: normal;
     }
 
+    .select-header-buttons {
+        display: flex;
+        align-items: center;
+    }
+
     #profile-controls {
         display: flex;
         flex-direction: row;
@@ -44,13 +49,17 @@
                 flex-direction: row;
                 align-items: stretch;
 
-                > #active-profile-form-field {
-                    flex: 1 1 auto;
-                }
-
                 > #profile-game-title {
                     flex: 0 0 auto;
                     border-top-left-radius: 0.5rem;
+                }
+
+                > #active-profile-form-field {
+                    flex: 1 1 auto;
+                    
+                    ::ng-deep > :first-child {
+                        border-top-right-radius: 0;
+                    }
                 }
 
                 > #profile-mgmt-buttons {
@@ -116,12 +125,77 @@
                 flex-grow: 1;
                 min-height: 20rem;
 
+                > mat-card-header {
+                    padding: 0;
+                    align-items: stretch;
+
+                    ::ng-deep > :first-child {
+                        flex: 1 1 auto;
+                    }
+
+                    #data-actions-picker {
+                        width: 100%;
+
+                        ::ng-deep > :first-child {
+                            border-top-left-radius: 0.5rem;
+                            border-top-right-radius: 0;
+                        }
+                    }
+
+                    .select-header-buttons {
+                        border-top-right-radius: 0.5rem;
+                    }
+                }
+
                 > mat-card-content {
                     display: flex;
                     flex-direction: column;
                     height: 100%;
-                    overflow-y: auto;
+                    padding: 0;
+
+                    &[action-type="plugins"] {
+                        overflow-y: auto;
+                    }
                 }
+
+                app-profile-plugin-list {
+                    padding: 16px;
+                }
+            }
+
+            #data-actions-type-trigger {
+                font-size: 1.2rem;
+                font-weight: 500;
+            }
+
+            .config-file-editor {
+                font-family: monospace;
+                border-top: none;
+                flex-grow: 1;
+                resize: none;
+                overflow: auto;
+                white-space: pre;
+            }
+
+            .config-file-name[new-file="true"] {
+                font-style: italic;
+            }
+
+            .config-file-actions {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                margin-top: 0.5rem;
+                padding: 0 0.5rem 0.5rem 0.5rem;
+
+                .config-save-button {
+                    width: 50%;
+                    margin-left: 0.5rem;
+                }
+            }
+
+            mat-tab-group {
+                height: 100%;
             }
 
             #profile-actions {

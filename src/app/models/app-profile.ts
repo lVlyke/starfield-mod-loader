@@ -9,11 +9,13 @@ export interface AppProfile {
     modBaseDir: string;
     gameBinaryPath: string;
     pluginListPath?: string;
+    configFilePath?: string;
     mods: AppProfile.ModList;
     rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
     externalFiles?: AppProfile.ExternalFiles;
     manageExternalPlugins?: boolean;
+    manageConfigFiles?: boolean;
     linkMode?: boolean;
     deployed: boolean;
 }

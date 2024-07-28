@@ -5,11 +5,16 @@
 
     #{$selector} {
 
-        #profile-mgmt-buttons {
+        .select-header-buttons {
             background: var(--mdc-filled-text-field-container-color);
             border-bottom-width: 1px;
             border-bottom-style: solid;
             border-color: var(--mdc-filled-text-field-active-indicator-color);
+        }
+
+        .config-file-editor {
+            background-color: mixins.theme-background-color(card, $is-dark);
+            color: mixins.theme-foreground-color(text, $is-dark);
         }
 
         #profile-game-title {
@@ -23,7 +28,7 @@
             }
         }
 
-        mat-card-title {
+        mat-card-title.sticky-title {
             background-color: mixins.theme-background-color(card, $is-dark);
         }
     }

@@ -1,24 +1,27 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
-import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef } from "@lithiumjs/angular";
+import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef, ManagedBehaviorSubject } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { MatSelect } from "@angular/material/select";
+import { AbstractControl } from "@angular/forms";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
-import { delay, filter, skip, switchMap, tap } from "rxjs/operators";
+import { delay, distinctUntilChanged, filter, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
-import { filterDefined, filterFalse, filterTrue } from "../../core/operators";
+import { filterDefined, filterTrue } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
 import { ObservableUtils } from "../../util/observable-utils";
 import { DialogAction } from "../../services/dialog-manager.types";
-import { ActiveProfileState } from "src/app/state/active-profile/active-profile.state";
+import { ActiveProfileState } from "../../state/active-profile/active-profile.state";
+import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
+import { LangUtils } from "../../util/lang-utils";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -47,6 +50,12 @@ export class AppModsOverviewPage extends BasePage {
     @Select(ActiveProfileState.isDeployed)
     public readonly isProfileDeployed$!: Observable<boolean>;
 
+    @Select(ActiveProfileState.isManageConfigFiles)
+    public readonly isManageConfigFiles$!: Observable<boolean>;
+
+    @Select(ActiveProfileState.getPlugins)
+    public readonly activeProfilePlugins$!: Observable<GamePluginProfileRef[] | undefined>;
+
     @AsyncState()
     public readonly profiles!: AppProfile.Description[];
 
@@ -60,10 +69,16 @@ export class AppModsOverviewPage extends BasePage {
     public readonly isPluginsEnabled!: boolean;
 
     @AsyncState()
+    public readonly gameDetails?: GameDetails;
+
+    @AsyncState()
     public readonly isDeployInProgress!: boolean;
 
     @AsyncState()
-    public readonly gameDetails?: GameDetails;
+    public readonly isManageConfigFiles!: boolean;
+
+    @AsyncState()
+    public readonly activeProfilePlugins?: GamePluginProfileRef[];
 
     @ViewChild("currentProfileSelect")
     public readonly currentProfileSelect!: MatSelect;
@@ -83,6 +98,11 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("profileActionsPanel")
     protected readonly profileActionsPanel!: MatExpansionPanel;
 
+    protected readonly configFileUpdate$ = new ManagedBehaviorSubject<Date>(this, new Date());
+    protected readonly profileDescCompareFn = (a: AppProfile.Description, b: AppProfile.Description): boolean => {
+        return a.name === b.name && a.gameId === b.gameId;
+    };
+
     @DeclareState()
     protected addModMenuRef?: OverlayHelpersRef;
 
@@ -95,15 +115,14 @@ export class AppModsOverviewPage extends BasePage {
     @DeclareState()
     protected importPluginBackupMenuRef?: OverlayHelpersRef;
 
+    @DeclareState("activeDataAction")
+    protected _activeDataAction?: AppModsOverviewPage.DataAction;
+
+    protected profileHasPlugins = false;
+    protected showedModExternalEditWarning = false;
+
     @AfterViewInit()
     private readonly afterViewInit$!: Observable<void>;
-
-    protected readonly profileDescCompareFn = (a: AppProfile.Description, b: AppProfile.Description): boolean => {
-        return a.name === b.name && a.gameId === b.gameId;
-    };
-
-    protected showPluginList = false;
-    protected showedModExternalEditWarning = false;
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -115,13 +134,6 @@ export class AppModsOverviewPage extends BasePage {
     ) {
         super({ cdRef });
 
-        this.afterViewInit$.pipe(
-            delay(0),
-            switchMap(() => this.isPluginsEnabled$),
-            skip(1),
-            filterFalse(),
-        ).subscribe(() => this.profileActionsPanel.expanded = true);
-
         stateRef.get("currentProfileSelect").pipe(
             filterDefined(),
             switchMap((currentProfileSelect) => currentProfileSelect.openedChange),
@@ -131,16 +143,47 @@ export class AppModsOverviewPage extends BasePage {
             (this.currentProfileSelect.panel?.nativeElement as HTMLElement)?.parentElement?.parentElement?.classList.add("backdrop-dark");
         });
 
+        // Pick the default data action on relevant profile changes
         combineLatest(stateRef.getAll(
             "isPluginsEnabled",
-            "activeProfile"
-        )).subscribe(([isPluginsEnabled, activeProfile]) => {
-            this.showPluginList = isPluginsEnabled && !!activeProfile && activeProfile.plugins.length > 0;
+            "activeProfilePlugins",
+            "isManageConfigFiles"
+        )).pipe(
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b))
+        ).subscribe(([isPluginsEnabled, activeProfilePlugins, manageConfigFiles]) => {
+            this.profileHasPlugins = isPluginsEnabled && !!activeProfilePlugins && activeProfilePlugins.length > 0;
 
-            if (!this.showPluginList && this.profileActionsPanel) {
-                this.profileActionsPanel.expanded = true;
+            if (this.profileHasPlugins) {
+                this._activeDataAction = "plugins";
+            } else if (manageConfigFiles) {
+                this._activeDataAction = "config";
+            } else {
+                this._activeDataAction = undefined;
             }
         });
+
+        // Expand profile actions card if no active data actions are available
+        this.afterViewInit$.pipe(
+            delay(0),
+            switchMap(() => stateRef.get("activeDataAction")),
+            skip(1),
+            filter(dataAction => !dataAction && !!this.profileActionsPanel),
+        ).subscribe(() => this.profileActionsPanel.expanded = true);
+
+        // Confirm with user to re-deploy profile after config file changes
+        this.configFileUpdate$.pipe(
+            filter(() => this.isProfileDeployed),
+            switchMap(() => dialogManager.createDefault("Config files have been changed or reloaded. Do you want to deploy these changes now?", [
+                DialogManager.YES_ACTION_PRIMARY,
+                DialogManager.NO_ACTION
+            ], { hasBackdrop: true, disposeOnBackdropClick: true })),
+            filter(result => result === DialogManager.YES_ACTION_PRIMARY),
+            switchMap(() => profileManager.refreshDeployedMods())
+        ).subscribe();
+    }
+
+    public get activeDataAction(): AppModsOverviewPage.DataAction | undefined {
+        return this._activeDataAction;
     }
 
     protected registerModUpdate(root: boolean, name: string, mod: ModProfileRef): Observable<void> {
@@ -149,6 +192,23 @@ export class AppModsOverviewPage extends BasePage {
 
     protected reorderMods(root: boolean, modOrder: string[]): Observable<void> {
         return this.profileManager.reorderMods(root, modOrder);
+    }
+
+    protected updateConfigFile(fileName: string, data: string): Observable<void> {
+        return ObservableUtils.hotResult$(this.profileManager.updateConfigFile(fileName, data).pipe(
+            tap(() => this.configFileUpdate$.next(new Date()))
+        ));
+    }
+
+    protected reloadConfigFile(fileName: string, control: AbstractControl): Observable<unknown> {
+        return ObservableUtils.hotResult$(this.profileManager.readConfigFile(fileName, true).pipe(
+            tap(fileData => control.setValue(fileData)),
+            tap(() => this.configFileUpdate$.next(new Date()))
+        ));
+    }
+
+    protected openConfigFile(fileName: string): Observable<unknown> {
+        return this.profileManager.openProfileConfigFile(fileName);
     }
 
     protected toggleExternalPluginManagement(): Observable<void> {
@@ -239,4 +299,8 @@ export class AppModsOverviewPage extends BasePage {
     protected resolveBackupName(backupEntry: AppProfile.PluginBackupEntry): string {
         return backupEntry.filePath.replace(/\.[^.]+$/g, "");
     }
+}
+
+namespace AppModsOverviewPage {
+    export type DataAction = "plugins" | "config";
 }

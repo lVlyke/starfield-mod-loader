@@ -2,7 +2,7 @@ import { AppData } from "./app-data";
 import { AppDependenciesInfo } from "./app-dependency-info";
 import { AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
-import { GameDetails } from "./game-details";
+import { GameId } from "./game-id";
 import { ModImportRequest } from "./mod-import-status";
 
 export type AppMessage
@@ -140,7 +140,7 @@ export namespace AppMessage {
     export interface FindBestProfileDefaults extends Base {
         id: `${Prefix}:findBestProfileDefaults`;
         data: {
-            gameDetails: GameDetails;
+            gameId: GameId;
         };
     }
 
@@ -367,6 +367,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowProfileConfigDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileConfigDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface ShowGameBaseDirInFileExplorer extends Base {
         id: `${ProfileMessage.Prefix}:showGameBaseDirInFileExplorer`;
         data: {
@@ -395,6 +402,32 @@ export namespace AppMessage {
         };
     }
 
+    export interface OpenProfileConfigFile extends Base {
+        id: `${ProfileMessage.Prefix}:openProfileConfigFile`;
+        data: {
+            profile: AppProfile;
+            configFileName: string;
+        };
+    }
+
+    export interface ReadConfigFile extends Base {
+        id: `${ProfileMessage.Prefix}:readConfigFile`;
+        data: {
+            profile: AppProfile;
+            fileName: string;
+            loadDefaults: boolean;
+        };
+    }
+
+    export interface UpdateConfigFile extends Base {
+        id: `${ProfileMessage.Prefix}:updateConfigFile`;
+        data: {
+            profile: AppProfile;
+            fileName: string;
+            data: string;
+        };
+    }
+
     export type ProfileMessage = ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
@@ -419,9 +452,13 @@ export namespace AppMessage {
                                | ShowProfileBaseDirInFileExplorer
                                | ShowGameBaseDirInFileExplorer
                                | ShowProfileModsDirInFileExplorer
+                               | ShowProfileConfigDirInFileExplorer
                                | ShowProfilePluginBackupsInFileExplorer
                                | LaunchGame
-                               | OpenGameConfigFile;
+                               | OpenGameConfigFile
+                               | OpenProfileConfigFile
+                               | ReadConfigFile
+                               | UpdateConfigFile;
 
     // Message record:
 
@@ -470,9 +507,13 @@ export namespace AppMessage {
         "profile:showModBaseDirInFileExplorer",
         "profile:showProfileBaseDirInFileExplorer",
         "profile:showProfileModsDirInFileExplorer",
+        "profile:showProfileConfigDirInFileExplorer",
         "profile:showGameBaseDirInFileExplorer",
         "profile:showProfilePluginBackupsInFileExplorer",
         "profile:launchGame",
-        "profile:openGameConfigFile"
+        "profile:openGameConfigFile",
+        "profile:openProfileConfigFile",
+        "profile:readConfigFile",
+        "profile:updateConfigFile"
     ];
 }

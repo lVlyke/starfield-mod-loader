@@ -206,9 +206,14 @@ export class ProfileManager {
                             "gameId",
                             "name",
                             "modBaseDir",
+                            "pluginListPath",
+                            "configFilePath",
                             "mods",
                             "rootMods",
-                            "plugins"
+                            "plugins",
+                            "manageExternalPlugins",
+                            "manageConfigFiles",
+                            "linkMode"
                         ),
         
                         // Monitor these app settings:
@@ -854,6 +859,20 @@ export class ProfileManager {
         )
     }
 
+    public readConfigFile(fileName: string, loadDefaults: boolean = false): Observable<string> {
+        return this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke<string>("profile:readConfigFile", { profile, fileName, loadDefaults }))
+        );
+    }
+
+    public updateConfigFile(fileName: string, data: string): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:updateConfigFile", { profile, fileName, data }))
+        ));
+    }
+
     public isArchiveInvalidationEnabled(): Observable<boolean> {
         return this.activeProfile$.pipe(
             take(1),
@@ -889,6 +908,13 @@ export class ProfileManager {
         )));
     }
 
+    public showProfileConfigDirInFileExplorer(): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigDirInFileExplorer", { profile })
+        )));
+    }
+
     public showModBaseDirInFileExplorer(): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
@@ -919,6 +945,13 @@ export class ProfileManager {
 
     public openGameConfigFile(configPaths: string[]): Observable<void> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke("profile:openGameConfigFile", { configPaths }));
+    }
+    
+    public openProfileConfigFile(configFileName: string): Observable<void> {
+        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:openProfileConfigFile", { profile, configFileName })
+        )));
     }
 
     private deployActiveMods(): Observable<boolean> {

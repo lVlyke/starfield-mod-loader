@@ -12,6 +12,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatButtonModule } from "@angular/material/button";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatTabsModule } from "@angular/material/tabs";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
 import { AppProfilePluginListComponentModule } from "../../components/profile-plugin-list";
@@ -48,6 +49,7 @@ const routes: Routes = [
         MatListModule,
         MatExpansionModule,
         MatProgressSpinnerModule,
+        MatTabsModule,
 
         AppPipesModule,
 

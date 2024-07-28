@@ -1,5 +1,5 @@
 
-
+<!-- Profile Controls-->
 <div id="profile-controls" *ngIf="!!activeProfile">
     <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
         <div id="profile-mgmt-controls">
@@ -34,7 +34,7 @@
                 </mat-select>
             </mat-form-field>
 
-            <span id="profile-mgmt-buttons">
+            <span id="profile-mgmt-buttons" class="select-header-buttons">
                 <button mat-icon-button
                         id="profile-mgmt-button"
                         color="primary"
@@ -46,6 +46,7 @@
             </span>
         </div>
 
+        <!-- Mod Lists -->
         <mat-card-content class="mod-list-content">
             <div class="mod-list-actions-bar">
                 <span id="mod-list-actions">
@@ -54,7 +55,7 @@
                         <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                     </button>
 
-                    <button mat-icon-button color="accent" matTooltip="Show Mods" (click)="showProfileModsDirInFileExplorer()">
+                    <button mat-icon-button color="accent" matTooltip="Open Profile Mods Folder" (click)="showProfileModsDirInFileExplorer()">
                         <mat-icon>folder_open</mat-icon>
                     </button>
 
@@ -69,7 +70,7 @@
             </div>
 
             <ng-container *ngIf="activeProfile.rootMods.size > 0">
-                <mat-card-title>Root Mods</mat-card-title>
+                <mat-card-title class="sticky-title">Root Mods</mat-card-title>
 
                 <app-profile-mod-list [profile]="activeProfile"
                                     [root]="true"
@@ -78,7 +79,7 @@
             </ng-container>
 
             <ng-container *ngIf="activeProfile.mods.size > 0; else emptyModListHint">
-                <mat-card-title>Mods</mat-card-title>
+                <mat-card-title class="sticky-title">Mods</mat-card-title>
 
                 <app-profile-mod-list [profile]="activeProfile"
                                     [root]="false"
@@ -92,52 +93,145 @@
         </mat-card-content>
     </mat-card>
 
+    <!-- Data actions -->
     <div id="right-pane-actions">
-        <mat-card *ngIf="showPluginList" id="plugin-actions">
+        <mat-card *ngIf="activeDataAction" id="plugin-actions">
             <mat-card-header class="tool-header">
-                <mat-card-title>Plugins</mat-card-title>
+                <mat-card-title>
+                    <!-- Action selector -->
+                    <mat-form-field id="data-actions-picker" [attr.subscript]="false">
+                        <mat-select id="data-actions-type" [(ngModel)]="_activeDataAction">
+                            <mat-select-trigger>
+                                <span id="data-actions-type-trigger">{{ activeDataAction | titlecase }}</span>
+                            </mat-select-trigger>
+                            <mat-option [disabled]="!profileHasPlugins" value="plugins">
+                                Plugins
+                            </mat-option>
+                            <mat-option [disabled]="!activeProfile.manageConfigFiles" value="config">
+                                Config
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </mat-card-title>
 
-                <span id="plugin-list-actions">
-                    <button mat-icon-button
-                            color="accent"
-                            matTooltip="Restore Plugin Backup"
-                            (click)="showImportPluginBackupMenu($event)">
-                        <mat-icon>history</mat-icon>
-                        <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                    </button>
-
-                    <button mat-icon-button
-                            color="accent"
-                            matTooltip="Create Plugin Backup" 
-                            (click)="showExportPluginBackupMenu()">
-                        <mat-icon>file_copy</mat-icon>
-                    </button>
-
-                    <button mat-icon-button
-                            color="accent"
-                            matTooltip="Export Plugin List"
-                            (click)="profileManager.exportPluginList(activeProfile)">
-                        <mat-icon>ios_share</mat-icon>
-                    </button>
-                </span>
+                @switch (activeDataAction) {
+                    @case ("plugins") {
+                        <!-- Plugin List Controls -->
+                        <span id="plugin-list-actions" class="select-header-buttons">
+                            <button mat-icon-button
+                                    color="accent"
+                                    matTooltip="Restore Plugin Backup"
+                                    (click)="showImportPluginBackupMenu($event)">
+                                <mat-icon>history</mat-icon>
+                                <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                            </button>
+        
+                            <button mat-icon-button
+                                    color="accent"
+                                    matTooltip="Create Plugin Backup" 
+                                    (click)="showExportPluginBackupMenu()">
+                                <mat-icon>file_copy</mat-icon>
+                            </button>
+        
+                            <button mat-icon-button
+                                    color="accent"
+                                    matTooltip="Export Plugin List"
+                                    (click)="profileManager.exportPluginList(activeProfile)">
+                                <mat-icon>ios_share</mat-icon>
+                            </button>
+                        </span>
+                    }
+                    @case ("config") {
+                        <!-- Config Editor Controls -->
+                        <span class="select-header-buttons">
+                            <button mat-icon-button
+                                    color="accent"
+                                    matTooltip="Open Profile Config Folder"
+                                    (click)="profileManager.showProfileConfigDirInFileExplorer()">
+                                <mat-icon>folder_open</mat-icon>
+                            </button>
+                        </span>
+                    }
+                }
             </mat-card-header>
-            <mat-card-content>
-                <app-profile-plugin-list
-                    [profile]="activeProfile"
-                    (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
-                    (pluginOrderChange)="profileManager.reorderPlugins($event)"
-                    (pluginExternalManagementChange)="toggleExternalPluginManagement()"
-                    (pluginTypeChange)="profileManager.promotePluginType($event[0], $event[1])" />
+            <mat-card-content [attr.action-type]="activeDataAction">
+                @switch (activeDataAction) {
+                    @case ("plugins") {
+                        <!-- Plugin List -->
+                        <app-profile-plugin-list
+                            [profile]="activeProfile"
+                            (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
+                            (pluginOrderChange)="profileManager.reorderPlugins($event)"
+                            (pluginExternalManagementChange)="toggleExternalPluginManagement()"
+                            (pluginTypeChange)="profileManager.promotePluginType($event[0], $event[1])" />
+                    }
+                    @case ("config") {
+                        <!-- Config File Editor -->
+                        <ng-container *ngIf="gameDetails?.gameConfigFiles as configFiles">
+                            <!-- File selector -->
+                            <mat-form-field [attr.subscript]="false">
+                                <mat-select #activeConfigFileModel="ngModel"
+                                            [ngModel]="(configFiles | keyvalue)[0].key"
+                                            (ngModelChange)="configFileDataModel.reset()">
+                                    <mat-select-trigger>
+                                        <span class="config-file-name"
+                                              [attr.new-file]="!(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async)">
+                                            {{ activeConfigFileModel.value }}
+                                        </span>
+                                        <span *ngIf="configFileDataModel.dirty" matColor="accent">*</span>
+                                    </mat-select-trigger>
+                                    <mat-option *ngFor="let configFile of configFiles | keyvalue" [value]="configFile.key">
+                                        {{ configFile.key }}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+    
+                            <!-- File editor -->
+                            <textarea #configFileDataModel="ngModel"
+                                        class="config-file-editor"
+                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                        [disabled]="!activeConfigFileModel.value"
+                                        [ngModel]="activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:null:true | async">
+                            </textarea>
+
+                            <!-- File actions -->
+                            <div class="config-file-actions">
+                                <button *ngIf="activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async"
+                                        mat-icon-button
+                                        matTooltip="Open in external file editor"
+                                        matColor="accent"
+                                        (click)="openConfigFile(activeConfigFileModel.value)">
+                                    <mat-icon>file_open</mat-icon>
+                                </button>
+
+                                <button mat-icon-button
+                                        matTooltip="Reload file contents"
+                                        matColor="accent"
+                                        (click)="reloadConfigFile(activeConfigFileModel.value, configFileDataModel.control)">
+                                    <mat-icon>sync</mat-icon>
+                                </button>
+
+                                <button mat-flat-button
+                                        class="config-save-button"
+                                        color="accent"
+                                        (click)="updateConfigFile(activeConfigFileModel.value, configFileDataModel.value); configFileDataModel.control.markAsPristine()">
+                                    Save
+                                </button>
+                            </div>
+                        </ng-container>
+                    }
+                }
             </mat-card-content>
         </mat-card>
     
+        <!-- Actions -->
         <mat-expansion-panel #profileActionsPanel
                              id="profile-actions"
                              class="control-card mat-elevation-z3"
                              [expanded]="true"
-                             [hideToggle]="!showPluginList"
-                             [disabled]="!showPluginList"
-                             [attr.fixed]="showPluginList ? null : true">
+                             [hideToggle]="!activeDataAction"
+                             [disabled]="!activeDataAction"
+                             [attr.fixed]="activeDataAction ? null : true">
             <mat-expansion-panel-header>
                 <mat-panel-title *ngIf="profileActionsPanel.expanded">Actions</mat-panel-title>
 
@@ -240,14 +334,16 @@
                             Game Folder
                         </button>
         
-                        <button *ngIf="'app:verifyPathExists' | appSendElectronMsg$:{ path: gameDetails?.gameConfigFiles | appValues | appFlatten } | async"
-                                mat-stroked-button
-                                id="game-config-button"
-                                (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
-                            <mat-icon>settings_app</mat-icon>
-                            Config Files&nbsp;&nbsp;
-                            <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                        </button>
+                        @if (!activeProfile.manageConfigFiles) {
+                            <button *ngIf="'app:verifyPathExists' | appSendElectronMsg$:{ path: gameDetails?.gameConfigFiles | appValues | appFlatten } | async"
+                                    mat-stroked-button
+                                    id="game-config-button"
+                                    (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
+                                <mat-icon>settings_app</mat-icon>
+                                Config Files&nbsp;&nbsp;
+                                <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                            </button>
+                        }
                     </div>
         
                     <div class="spacer"></div>

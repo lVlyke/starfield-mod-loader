@@ -11,6 +11,7 @@ import { AppDelayPipe } from "./delay.pipe";
 import { AppFilterDefinedPipe } from "./filter-defined.pipe";
 import { AppAsObservablePipe } from "./as-observable.pipe";
 import { AppIsDebugPipe } from "./is-debug.pipe";
+import { AppProfileConfigFilePipe } from "./profile-config-file.pipe";
 
 const PIPES = [
     AppProfileActiveModCountPipe,
@@ -23,7 +24,8 @@ const PIPES = [
     AppDelayPipe,
     AppFilterDefinedPipe,
     AppAsObservablePipe,
-    AppIsDebugPipe
+    AppIsDebugPipe,
+    AppProfileConfigFilePipe
 ];
 
 @NgModule({

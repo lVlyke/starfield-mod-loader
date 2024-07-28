@@ -56,6 +56,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_SETTINGS_FILE = "profile.json";
     static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
     static /** @type {string} */ PROFILE_MODS_DIR = "mods";
+    static /** @type {string} */ PROFILE_CONFIG_DIR = "config";
     static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
     static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
@@ -285,6 +286,7 @@ class ElectronLoader {
             const gameDirVerifyResult = this.verifyProfilePathExists(profile.gameBaseDir);
             const gameBinaryPathVerifyResult = this.verifyProfilePathExists(profile.gameBinaryPath);
             const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
+            const configFilePathVerifyResult = profile.configFilePath ? this.verifyProfilePathExists(profile.configFilePath) : VERIFY_SUCCESS;
 
             if (!profile.deployed) {
                 gameBinaryPathVerifyResult.error = false;
@@ -301,11 +303,13 @@ class ElectronLoader {
                 modBaseDir: modDirVerifyResult,
                 gameBinaryPath: gameBinaryPathVerifyResult,
                 pluginListPath: pluginListPathVerifyResult,
+                configFilePath: configFilePathVerifyResult,
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
                 externalFiles: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
+                manageConfigFiles: VERIFY_SUCCESS,
                 linkMode: VERIFY_SUCCESS, // TODO
                 deployed: VERIFY_SUCCESS
             };
@@ -319,24 +323,30 @@ class ElectronLoader {
 
         ipcMain.handle("app:findBestProfileDefaults", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"app:findBestProfileDefaults">} */ { gameDetails }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:findBestProfileDefaults">} */ { gameId }
         ) => {
+            const gameDb = this.loadGameDatabase();
+            const gameDetails = gameDb[gameId];
             const result = {};
 
-            if (gameDetails.modBaseDirs) {
+            if (gameDetails?.modBaseDirs) {
                 result.modBaseDir = this.#firstValidPath(gameDetails.modBaseDirs);
             }
 
-            if (gameDetails.gameBaseDirs) {
+            if (gameDetails?.gameBaseDirs) {
                 result.gameBaseDir = this.#firstValidPath(gameDetails.gameBaseDirs);
             }
 
-            if (gameDetails.gameBinaryPaths) {
+            if (gameDetails?.gameBinaryPaths) {
                 result.gameBinaryPath = this.#firstValidPath(gameDetails.gameBinaryPaths);
             }
 
-            if (gameDetails.pluginListPaths) {
+            if (gameDetails?.pluginListPaths) {
                 result.pluginListPath = this.#firstValidPath(gameDetails.pluginListPaths, listPath => path.dirname(listPath));
+            }
+
+            if (gameDetails?.configFilePaths) {
+                result.configFilePath = this.#firstValidPath(gameDetails.configFilePaths);
             }
 
             return result;
@@ -537,6 +547,17 @@ class ElectronLoader {
             shell.openPath(path.resolve(profileModsDir));
         });
 
+        ipcMain.handle("profile:showProfileConfigDirInFileExplorer", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileConfigDirInFileExplorer">} */ { profile }
+        ) => {
+            const profileConfigDir = path.resolve(this.getProfileConfigDir(profile.name));
+
+            if (fs.existsSync(profileConfigDir)) {
+                shell.openPath(profileConfigDir);
+            }
+        });
+
         ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
@@ -568,6 +589,31 @@ class ElectronLoader {
             /** @type {import("./app/models/app-message").AppMessageData<"profile:openGameConfigFile">} */ { configPaths }
         ) => {
             await this.openGameConfigFile(configPaths);
+        });
+
+        ipcMain.handle("profile:openProfileConfigFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:openProfileConfigFile">} */ { profile, configFileName }
+        ) => {
+            const profileConfigFilePath = this.getGameConfigFilePath(profile, configFileName);
+
+            if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
+                return shell.openPath(path.resolve(profileConfigFilePath));
+            }
+        });
+
+        ipcMain.handle("profile:readConfigFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readConfigFile">} */ { profile, fileName, loadDefaults }
+        ) => {
+            return this.readProfileConfigFile(profile, fileName, loadDefaults);
+        });
+
+        ipcMain.handle("profile:updateConfigFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:updateConfigFile">} */ { profile, fileName, data }
+        ) => {
+            this.updateProfileConfigFile(profile, fileName, data);
         });
     }
 
@@ -792,6 +838,11 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
+    getProfileConfigDir(/** @type {string} */ profileNameOrPath) {
+        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_CONFIG_DIR);
+    }
+
+    /** @returns {string} */
     getProfileModsDir(/** @type {string} */ profileNameOrPath) {
         return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_DIR);
     }
@@ -869,6 +920,39 @@ class ElectronLoader {
         const profileDir = this.getProfileDir(profile.name);
 
         return fs.rmdirSync(profileDir, { recursive: true });
+    }
+
+    /** @returns {string} */
+    readProfileConfigFile(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ fileName,
+        /** @type {boolean} */ loadDefaults
+    ) {
+        const profileConfigDir = this.getProfileConfigDir(profile.name);
+        const profileConfigFilePath = path.join(profileConfigDir, fileName);
+        
+        if (!fs.existsSync(profileConfigFilePath)) {
+            // Attempt to load default config values if profile file doesn't exist yet
+            if (loadDefaults && !!profile.configFilePath) {
+                const defaultConfigFilePath = path.join(profile.configFilePath, fileName);
+                if (fs.existsSync(defaultConfigFilePath)) {
+                    return fs.readFileSync(defaultConfigFilePath, "utf8");
+                }
+            }
+
+            return "";
+        }
+
+        return fs.readFileSync(profileConfigFilePath, "utf8");
+    }
+
+    /** @returns {void} */
+    updateProfileConfigFile(/** @type {AppProfile} */ profile, /** @type {string} */ fileName, /** @type {string} */ data) {
+        const profileConfigDir = this.getProfileConfigDir(profile.name);
+        const profileConfigFilePath = path.join(profileConfigDir, fileName);
+        
+        fs.mkdirpSync(profileConfigDir);
+        fs.writeFileSync(profileConfigFilePath, data, "utf8");
     }
 
     /** @returns {AppProfile} */
@@ -1563,8 +1647,21 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    getGameConfigFilePath(/** @type {GameDetails} */ gameDetails, /** @type {string} */ configFileName) {
-        const configFilePaths = gameDetails.gameConfigFiles?.[configFileName] ?? [];
+    getGameConfigFilePath(/** @type {AppProfile} */ profile, /** @type {string} */ configFileName) {
+        if (profile.manageConfigFiles) {
+            const profileConfigFilePath = path.join(this.getProfileConfigDir(profile.name), configFileName);
+
+            if (fs.existsSync(profileConfigFilePath)) {
+                return profileConfigFilePath;
+            }
+        }
+
+        if (!!profile.configFilePath) {
+            return path.join(profile.configFilePath, configFileName);
+        }
+
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        const configFilePaths = gameDetails?.gameConfigFiles?.[configFileName] ?? [];
         for (let configFilePath of configFilePaths) {
             configFilePath = this.#expandPath(configFilePath);
             if (fs.existsSync(configFilePath)) {
@@ -1585,7 +1682,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.getGameConfigFilePath(gameDetails, configFileName);
+            const configFilePath = this.getGameConfigFilePath(profile, configFileName);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -1614,7 +1711,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.getGameConfigFilePath(gameDetails, configFileName);
+            const configFilePath = this.getGameConfigFilePath(profile, configFileName);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -1826,6 +1923,36 @@ class ElectronLoader {
     }
 
     /** @returns {Promise<string[]>} */
+    async writeConfigFiles(/** @type {AppProfile} */ profile) {
+        if (!profile.configFilePath || !fs.existsSync(profile.configFilePath)) {
+            throw new Error(`Unable to write config files: Profile's Config File Path "${profile.configFilePath}" is not valid.`);
+        }
+
+        const deployConfigDir = profile.configFilePath;
+        const backupDir = path.join(deployConfigDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
+        const profileConfigDir = this.getProfileConfigDir(profile.name);
+
+        if (!fs.existsSync(profileConfigDir)) {
+            return [];
+        }
+
+        const profileConfigFiles = fs.readdirSync(profileConfigDir);
+        
+        return Promise.all(profileConfigFiles.map(async (configFileName) => {
+            const configSrcPath = path.join(profileConfigDir, configFileName);
+            const configDestPath = path.join(deployConfigDir, configFileName);
+
+            // Backup any existing config files
+            if (fs.existsSync(configDestPath)) {
+                fs.moveSync(configDestPath, path.join(backupDir, configFileName));
+            }
+
+            await fs.copyFile(configSrcPath, configDestPath);
+            return configDestPath;
+        }));
+    }
+
+    /** @returns {Promise<string[]>} */
     async processDeployedFiles(/** @type {AppProfile} */ profile, /** @type {string[]} */ profileModFiles) {
         const gameDetails = this.#getGameDetails(profile.gameId);
 
@@ -1870,6 +1997,10 @@ class ElectronLoader {
             if (deployPlugins && profile.plugins.length > 0) {
                 // Write plugin list
                 profileModFiles.push(await this.writePluginList(profile));
+            }
+
+            if (profile.manageConfigFiles) {
+                profileModFiles.push(... await this.writeConfigFiles(profile));
             }
 
             // Write game resources
@@ -1940,7 +2071,8 @@ class ElectronLoader {
 
             const extFilesBackupDirs = [
                 path.join(profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
-                path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)
+                path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
+                ... profile.configFilePath ? [path.join(profile.configFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : []
             ];
             
             // Restore original external files, if any were moved

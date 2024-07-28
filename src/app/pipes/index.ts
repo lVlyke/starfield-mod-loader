@@ -11,3 +11,4 @@ export * from "./delay.pipe";
 export * from "./filter-defined.pipe";
 export * from "./as-observable.pipe";
 export * from "./is-debug.pipe";
+export * from "./profile-config-file.pipe";

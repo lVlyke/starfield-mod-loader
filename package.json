@@ -3,7 +3,7 @@
   "author": "Mychal Thompson <mychal.r.thompson@gmail.com>",
   "repository": "https://github.com/lVlyke/starfield-mod-loader",
   "license": "GPL-3.0",
-  "version": "0.8.0-beta.1",
+  "version": "0.8.0-beta.2",
   "main": "electron.js",
   "scripts": {
     "app:build-dist": "npm run build:release && npm run package",

@@ -102,6 +102,31 @@
             </button>
         </mat-form-field>
 
+        <mat-form-field *ngIf="formModel.manageConfigFiles" appearance="fill">
+            <mat-label>Config Files Directory</mat-label>
+            <input #configFilePathModel="ngModel"
+                matInput
+                type="text" 
+                name="configFilePath"
+                [required]="formModel.manageConfigFiles"
+                [(ngModel)]="formModel.configFilePath"
+                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === configFilePathModel.name">
+
+            <button mat-icon-button 
+                    matSuffix
+                    type="button"
+                    color="accent"
+                    (click)="chooseDirectory(configFilePathModel)">
+                <mat-icon>folder</mat-icon>
+            </button>
+        </mat-form-field>
+
+        <div>
+            <mat-checkbox name="manageConfigFiles" [(ngModel)]="formModel.manageConfigFiles">
+                Manage Config/INI Files <mat-icon matTooltip="Create profile-specific INI files. Existing INI files are used if this is disabled.">help</mat-icon>
+            </mat-checkbox>
+        </div>
+
         <div>
             <mat-checkbox name="linkMode" [(ngModel)]="formModel.linkMode">
                 Link Mode <mat-icon matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>

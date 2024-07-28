@@ -27,6 +27,10 @@
             "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
         ],
+        "configFilePaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Fallout4",
+            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4"
+        ],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
         "pinnedPlugins": [
@@ -81,6 +85,10 @@
         "pluginListPaths": [
             "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/AppData/Local/FalloutNV/plugins.txt"
+        ],
+        "configFilePaths": [
+            "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
+            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV"
         ],
         "pluginListType": "Gamebryo",
         "pluginFormats": ["esm", "esp"],
@@ -150,6 +158,10 @@
         "pluginListPaths": [
             "%LOCALAPPDATA%\\Starfield\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
+        ],
+        "configFilePaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Starfield",
+            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield"
         ],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],

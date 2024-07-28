@@ -52,6 +52,10 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
             this.errors.push("Invalid Plugin List Path");
         }
 
+        if (verificationResults.configFilePath.error) {
+            this.errors.push("Invalid Config File Path");
+        }
+
         if (verificationResults.mods.error || verificationResults.rootMods.error) {
             this.errors.push("Invalid or missing mod files");
         }
