@@ -1438,8 +1438,13 @@ class ElectronLoader {
                     srcFilePath = path.join(modPath, srcFilePath);
 
                     if (!fs.lstatSync(srcFilePath).isDirectory()) {
-                        // Normalize path to the data subdir
-                        const rootFilePath = modSubdirRoot ? destBasePath.replace(`${modSubdirRoot}${path.sep}`, "") : destBasePath;
+                        // Normalize path to the mod subdir root
+                        const modSubdirPrefix = `${modSubdirRoot}${path.sep}`.toLowerCase();
+                        let rootFilePath = destBasePath;
+                        if (modSubdirRoot && rootFilePath.toLowerCase().startsWith(modSubdirPrefix)) {
+                            rootFilePath = rootFilePath.slice(modSubdirPrefix.length);
+                        }
+                        
                         const destFilePath = path.join(modProfilePath, rootFilePath);
                         
                         // Copy all enabled files to the final mod folder

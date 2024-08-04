@@ -48,6 +48,10 @@
             }
         ],
         "gameConfigFiles": {
+            "Fallout4.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4.ini",
+                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4.ini"
+            ],
             "Fallout4Custom.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
                 "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
@@ -180,6 +184,10 @@
             }
         ],
         "gameConfigFiles": {
+            "Starfield.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Starfield\\Starfield.ini",
+                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Starfield.ini"
+            ],
             "StarfieldCustom.ini": [
                 "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldCustom.ini",
                 "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldCustom.ini"
