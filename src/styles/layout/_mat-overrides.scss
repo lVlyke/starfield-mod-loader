@@ -1,5 +1,13 @@
 @mixin declare() {
 
+    mat-checkbox {
+
+        .mdc-label {
+            display: flex;
+            align-items: center;
+        }
+    }
+
     mat-action-list {
         
         .mat-mdc-list-item-unscoped-content {

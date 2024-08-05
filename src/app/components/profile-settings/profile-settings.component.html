@@ -26,119 +26,60 @@
                    [(ngModel)]="formModel.name">
         </mat-form-field>
 
-        <mat-form-field appearance="fill">
-            <mat-label>Mod Base Directory</mat-label>
-            <input #modBaseDirModel="ngModel"
-                matInput
-                type="text"
-                name="modBaseDir"
-                [required]="true"
-                [(ngModel)]="formModel.modBaseDir"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === modBaseDirModel.name">
-
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    (click)="chooseDirectory(modBaseDirModel)">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
-
-        <mat-form-field appearance="fill">
-            <mat-label>Game Base Directory</mat-label>
-            <input #gameBaseDirModel="ngModel"
-                matInput
-                type="text" 
-                name="gameBaseDir"
-                [required]="true"
-                [(ngModel)]="formModel.gameBaseDir"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === gameBaseDirModel.name">
-
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    (click)="chooseDirectory(gameBaseDirModel)">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
-
-        <mat-form-field appearance="fill">
-            <mat-label>Game Executable</mat-label>
-            <input #gameBinaryPathModel="ngModel"
-                matInput
-                type="text" 
-                name="gameBinaryPath"
-                [required]="true"
-                [(ngModel)]="formModel.gameBinaryPath"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === gameBinaryPathModel.name">
-
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    (click)="chooseFile(gameBinaryPathModel, ['exe', 'bat', 'cmd', 'lnk'])">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
-
-        <mat-form-field *ngIf="isPluginsEnabled" appearance="fill">
-            <mat-label>Plugin List Path</mat-label>
-            <input #pluginListPathModel="ngModel"
-                matInput
-                type="text" 
-                name="pluginListPath"
-                [required]="isPluginsEnabled"
-                [(ngModel)]="formModel.pluginListPath"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === pluginListPathModel.name">
-
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    (click)="chooseFile(pluginListPathModel, ['txt'])">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
-
-        <mat-form-field *ngIf="formModel.manageConfigFiles" appearance="fill">
-            <mat-label>Config Files Directory</mat-label>
-            <input #configFilePathModel="ngModel"
-                matInput
-                type="text" 
-                name="configFilePath"
-                [required]="formModel.manageConfigFiles"
-                [(ngModel)]="formModel.configFilePath"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === configFilePathModel.name">
-
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    (click)="chooseDirectory(configFilePathModel)">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
+        @for (fieldInfo of form.valueChanges | async | appProfileSettingsStandardPathFields; track fieldInfo) {
+            <mat-form-field appearance="fill">
+                <mat-label>{{ fieldInfo.title }}</mat-label>
+                <input #fieldModel="ngModel"
+                    matInput
+                    type="text"
+                    [name]="fieldInfo.formId"
+                    [required]="true"
+                    [(ngModel)]="formModel[fieldInfo.formId]"
+                    cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === fieldModel.name">
+        
+                <button *ngIf="defaultPaths?.[fieldInfo.formId] as defaultPath"
+                        mat-icon-button 
+                        matSuffix
+                        type="button"
+                        color="accent"
+                        matTooltip="Reset to Default Value"
+                        (click)="fieldModel.control.setValue(defaultPath)">
+                    <mat-icon>refresh</mat-icon>
+                </button>
+        
+                <button mat-icon-button 
+                        matSuffix
+                        type="button"
+                        color="accent"
+                        matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
+                        (click)="choosePath(fieldModel, fieldInfo.fileTypes)">
+                    <mat-icon>folder</mat-icon>
+                </button>
+            </mat-form-field>
+        }
 
         <div>
             <mat-checkbox name="manageConfigFiles" [(ngModel)]="formModel.manageConfigFiles">
-                Manage Config/INI Files <mat-icon matTooltip="Create profile-specific INI files. Existing INI files are used if this is disabled.">help</mat-icon>
+                Manage Config/INI Files
+                <mat-icon class="tooltip-icon" matTooltip="Create profile-specific INI files. Existing INI files are used if this is disabled.">help</mat-icon>
             </mat-checkbox>
         </div>
 
         <div>
             <mat-checkbox name="linkMode" [(ngModel)]="formModel.linkMode">
-                Link Mode <mat-icon matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
+                Link Mode
+                <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
             </mat-checkbox>
         </div>
 
-        <div>
-            <mat-checkbox *ngIf="archiveInvalidationSupported"
-                        [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
-                        (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
-                Archive Invalidation
-            </mat-checkbox>
-        </div>
+        <ng-container *ngIf="gameDb[formModel.gameId] as gameDetails">
+            <div *ngIf="gameDetails.archiveInvalidation">
+                <mat-checkbox [disabled]="!(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
+                              [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
+                              (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
+                    Archive Invalidation
+                </mat-checkbox>
+            </div>
+        </ng-container>
     </ng-container>
 </form>

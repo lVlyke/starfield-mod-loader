@@ -139,7 +139,7 @@ class ElectronLoader {
             const result = await dialog.showOpenDialog({
                 filters: fileTypes ? [
                     {
-                        name: "Files",
+                        name: `Files (${fileTypes.length === 1 ? fileTypes[0] : fileTypes.join(", ")})`,
                         extensions: fileTypes
                     }
                 ] : [],

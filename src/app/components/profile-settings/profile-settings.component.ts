@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild
 import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
-import { forkJoin, Observable, of } from "rxjs";
+import { combineLatest, forkJoin, Observable, of } from "rxjs";
 import { distinctUntilChanged, filter, map, switchMap, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
@@ -15,8 +15,8 @@ import { AppState } from "../../state";
 import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
-
-type DefaultProfilePaths = Pick<AppProfile, "modBaseDir" | "gameBaseDir" | "gameBinaryPath" | "pluginListPath" | "configFilePath">;
+import { LangUtils } from "../../util/lang-utils";
+import { DefaultProfilePaths } from "./profile-standard-path-fields.pipe";
 
 @Component({
     selector: "app-profile-settings",
@@ -43,6 +43,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @AsyncState()
     public readonly isPluginsEnabled!: boolean;
 
+    @ViewChild(NgForm)
+    public readonly form!: NgForm;
+
     @Input()
     public profile!: AppProfile;
 
@@ -52,15 +55,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @Input()
     public remedyMode: (keyof AppProfile) | boolean = false;
 
-    @ViewChild(NgForm)
-    public readonly form!: NgForm;
+    protected gameIds: GameId[] = [];
 
     @DeclareState("formModel")
     private _formModel!: AppProfile;
 
-    protected gameIds: GameId[] = [];
-    protected archiveInvalidationSupported = false;
-    protected defaultPaths?: DefaultProfilePaths;
+    @DeclareState("defaultPaths")
+    private _defaultPaths?: DefaultProfilePaths;
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -79,13 +80,6 @@ export class AppProfileSettingsComponent extends BaseComponent {
             this._formModel = _.cloneDeep(profile);
         });
 
-        // Check if archive invalidation is supported for the current game
-        stateRef.get("form").pipe(
-            filterDefined(),
-            switchMap(form => form.valueChanges!),
-            map(() => !!this.gameDb[this.formModel.gameId]?.archiveInvalidation)
-        ).subscribe(archiveInvalidationSupported => this.archiveInvalidationSupported = archiveInvalidationSupported);
-
         // Get the default profile paths for the current game
         stateRef.get("form").pipe(
             filterDefined(),
@@ -94,18 +88,26 @@ export class AppProfileSettingsComponent extends BaseComponent {
             filter((gameId): gameId is string => !!gameId),
             distinctUntilChanged(),
             switchMap(gameId => ElectronUtils.invoke<DefaultProfilePaths>("app:findBestProfileDefaults", { gameId }))
-        ).subscribe(profileDefaults => this.defaultPaths = profileDefaults);
+        ).subscribe(profileDefaults => this._defaultPaths = profileDefaults);
 
         // Attempt to apply default profile path values for any empty and clean path controls
         stateRef.get("form").pipe(
             filterDefined(),
-            switchMap(form => form.valueChanges!),
-            map(() => Object.keys(this.defaultPaths ?? {}) as Array<keyof DefaultProfilePaths>)
+            switchMap(form => combineLatest([
+                stateRef.get("defaultPaths"),
+                form.valueChanges!
+            ])),
+            distinctUntilChanged((x, y) => LangUtils.isEqual(x, y)),
+            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof DefaultProfilePaths>)
         ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
             const control = this.form.controls[pathId];
             const defaultValue = this.defaultPaths![pathId];
-            if (control && control.untouched && !control.dirty && !control.value && !!defaultValue) {
-                control.setValue(defaultValue);
+            if (control && control.untouched && !control.dirty && (this.createMode || !control.value)) {
+                if (!!defaultValue) {
+                    control.setValue(defaultValue);
+                } else {
+                    control.reset();
+                }
             }
         }));
 
@@ -157,6 +159,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return this._formModel;
     }
 
+    public get defaultPaths(): DefaultProfilePaths | undefined {
+        return this._defaultPaths;
+    }
+
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
         const formModelName = ngModel.name as K;
 
@@ -180,5 +186,16 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 this._formModel = Object.assign(this.formModel, { [formModelName]: filePath as AppProfile[K] });
             })
         ));
+    }
+
+    protected choosePath<K extends keyof AppProfile>(
+        ngModel: NgModel,
+        fileTypes?: string[]
+    ): Observable<any> {
+        if (!!fileTypes) {
+            return this.chooseFile<K>(ngModel, fileTypes);
+        } else {
+            return this.chooseDirectory<K>(ngModel);
+        }
     }
 }

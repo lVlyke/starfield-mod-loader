@@ -64,9 +64,10 @@
     <ng-container matColumnDef="order">
         <th mat-header-cell *matHeaderCellDef>Load Order</th>
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-load-order">
-            <ng-container>
-                <div>{{ pluginEntry.order ?? "--" }}</div>
-            </ng-container>
+            <div [matTooltip]="(pluginEntry.order - 1) | appHex"
+                 [matTooltipDisabled]="pluginEntry.order === undefined || !profile.manageExternalPlugins">
+                {{ pluginEntry.order ?? "--" }}
+            </div>
         </td>
     </ng-container>
 

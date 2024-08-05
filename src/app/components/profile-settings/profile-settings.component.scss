@@ -6,6 +6,10 @@
         mat-form-field {
             display: block;
         }
+
+        .tooltip-icon {
+            margin-left: 0.5rem;
+        }
     }
 
     @at-root app-game-badge {

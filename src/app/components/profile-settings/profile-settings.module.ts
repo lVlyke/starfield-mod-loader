@@ -12,10 +12,12 @@ import { AppProfileSettingsComponent } from "./profile-settings.component";
 import { MatSelectModule } from "@angular/material/select";
 import { AppPipesModule } from "../../pipes";
 import { AppGameBadgeComponentModule } from "../game-badge/game-badge.module";
+import { AppProfileSettingsStandardPathFieldsPipe } from "./profile-standard-path-fields.pipe";
 
 @NgModule({
     declarations: [
-        AppProfileSettingsComponent
+        AppProfileSettingsComponent,
+        AppProfileSettingsStandardPathFieldsPipe
     ],
     imports: [
         CommonModule,

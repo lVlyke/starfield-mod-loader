@@ -335,7 +335,7 @@
                         </button>
         
                         @if (!activeProfile.manageConfigFiles) {
-                            <button *ngIf="'app:verifyPathExists' | appSendElectronMsg$:{ path: gameDetails?.gameConfigFiles | appValues | appFlatten } | async"
+                            <button *ngIf="gameDetails | appGameConfigFilesFound$ | async"
                                     mat-stroked-button
                                     id="game-config-button"
                                     (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
