@@ -8,7 +8,7 @@ import { ThemeContainer } from "@lithiumjs/ngx-material-theming";
 import { AppProfile } from "../../models/app-profile";
 import { GameDetails } from "../../models/game-details";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { AppState } from "../../state";
 import { ProfileUtils } from "../../util/profile-utils";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
@@ -35,9 +35,7 @@ export class AppProfilePluginListComponent extends BaseComponent {
 
     public readonly assign = Object.assign;
     public readonly showPluginContextMenu$ = new ManagedSubject<[MouseEvent, PluginListEntry]>(this);
-
-    @Select(AppState.getActiveGameDetails)
-    public readonly activeGameDetails$!: Observable<GameDetails>;
+    public readonly activeGameDetails$: Observable<GameDetails | undefined>;
 
     @Output("pluginChange")
     public readonly pluginChange$ = new EventEmitter<PluginListEntry>;
@@ -52,7 +50,7 @@ export class AppProfilePluginListComponent extends BaseComponent {
     public readonly pluginTypeChange$ = new EventEmitter<[GamePluginProfileRef, string]>();
 
     @AsyncState()
-    public readonly activeGameDetails!: GameDetails;
+    public readonly activeGameDetails?: GameDetails;
 
     @Input()
     public profile!: AppProfile;
@@ -80,10 +78,13 @@ export class AppProfilePluginListComponent extends BaseComponent {
         injector: Injector,
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfilePluginListComponent>,
+        store: Store,
         overlayHelpers: OverlayHelpers,
         protected readonly themeContainer: ThemeContainer
     ) {
         super({ cdRef });
+
+        this.activeGameDetails$ = store.select(AppState.getActiveGameDetails);
 
         stateRef.get("profile").subscribe((profile) => {
             let pluginIndex = 0;
@@ -95,8 +96,8 @@ export class AppProfilePluginListComponent extends BaseComponent {
                 return {
                     pluginRef,
                     order: pluginRef.enabled ? pluginIndex : undefined,
-                    typeIndex: ProfileUtils.getPluginTypeIndex(pluginRef, this.activeGameDetails.pluginFormats) ?? 0,
-                    required: !!this.activeGameDetails.pinnedPlugins?.find((pinnedPlugin) => {
+                    typeIndex: ProfileUtils.getPluginTypeIndex(pluginRef, this.activeGameDetails!.pluginFormats) ?? 0,
+                    required: !!this.activeGameDetails!.pinnedPlugins?.find((pinnedPlugin) => {
                         return pinnedPlugin.required && pluginRef.plugin === pinnedPlugin.plugin;
                     })
                 };

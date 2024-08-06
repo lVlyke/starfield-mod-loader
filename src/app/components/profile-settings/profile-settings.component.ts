@@ -2,7 +2,7 @@ import * as _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
-import { Select } from "@ngxs/store";
+import { Select, Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
 import { delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -32,9 +32,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile>>(this, {});
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
-
-    @Select(AppState.getGameDb)
-    public readonly gameDb$!: Observable<GameDatabase>;
+    public readonly gameDb$: Observable<GameDatabase>;
 
     @AsyncState()
     public readonly gameDb!: GameDatabase;
@@ -59,10 +57,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
+        store: Store,
         private readonly dialogManager: DialogManager,
         protected readonly profileManager: ProfileManager
     ) {
         super({ cdRef });
+
+        this.gameDb$ = store.select(AppState.getGameDb);
 
         this.gameDb$.pipe(
             this.managedSource()

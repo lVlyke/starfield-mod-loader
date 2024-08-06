@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, ViewChild } from "@angular/core";
 import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, ValidationErrors } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { BehaviorSubject, EMPTY, Observable, combineLatest } from "rxjs";
@@ -44,21 +44,15 @@ type FileTreeNodeRecord = Record<string, FileTreeNode>;
 export class AppModImportOptionsComponent extends BaseComponent implements ControlValueAccessor {
 
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
-
-    @Select(AppState.getActiveProfile)
-    public readonly activeProfile$!: Observable<AppProfile>;
-
-    @Select(AppState.getActiveGameDetails)
-    public readonly gameDetails$!: Observable<GameDetails | undefined>;
-
-    @Select(AppState.isPluginsEnabled)
-    public readonly isPluginsEnabled$!: Observable<boolean>;
+    public readonly activeProfile$: Observable<AppProfile | undefined>;
+    public readonly gameDetails$: Observable<GameDetails | undefined>;
+    public readonly isPluginsEnabled$: Observable<boolean>;
 
     @Output("importRequestChange")
     public readonly importRequestChange$ = new EventEmitter<ModImportRequest>();
 
     @AsyncState()
-    public readonly activeProfile!: AppProfile;
+    public readonly activeProfile?: AppProfile;
 
     @AsyncState()
     public readonly gameDetails?: GameDetails;
@@ -109,10 +103,15 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModImportOptionsComponent>,
+        store: Store,
         dialogManager: DialogManager,
         appStateMgmt: AppStateBehaviorManager
     ) {
         super({ cdRef });
+
+        this.activeProfile$ = store.select(AppState.getActiveProfile);
+        this.gameDetails$ = store.select(AppState.getActiveGameDetails);
+        this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
 
         // Create a nested array of `FileTreeNode` objects based on `importRequest.modFilePaths`
         stateRef.get("importRequest").pipe(
@@ -212,7 +211,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
             filterDefined(),
             take(1),
             switchMap((scriptExtender) => {
-                const gameBinaryPath = this.normalizePath(this.activeProfile.gameBinaryPath, "/");
+                const gameBinaryPath = this.normalizePath(this.activeProfile!.gameBinaryPath, "/");
                 const usingScriptExtender = scriptExtender.binaries.find(binary => gameBinaryPath.endsWith(this.normalizePath(binary, "/")));
 
                 if (!usingScriptExtender) {

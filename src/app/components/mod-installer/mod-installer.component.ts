@@ -13,7 +13,7 @@ import {
 import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/forms";
 import { CdkPortal } from "@angular/cdk/portal";
 import { MatStep, MatStepper } from "@angular/material/stepper";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
 import { concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
@@ -46,9 +46,7 @@ export class AppModInstallerComponent extends BaseComponent {
     public readonly STEP_DISABLED_COLOR = "warn"; // TODO - Find a better way of doing this
     public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
     public readonly isLoading$: Observable<boolean>;
-
-    @Select(AppState.getActiveProfile)
-    public readonly activeProfile$!: Observable<AppProfile>;
+    public readonly activeProfile$: Observable<AppProfile | undefined>;
 
     @Output("importRequestChange")
     public readonly importRequestChange$ = new EventEmitter<ModImportRequest>();
@@ -72,7 +70,7 @@ export class AppModInstallerComponent extends BaseComponent {
     protected readonly fullscreenPluginPreviewPortal!: CdkPortal;
 
     @AsyncState()
-    public readonly activeProfile!: AppProfile;
+    public readonly activeProfile?: AppProfile;
 
     protected readonly PluginGroupType = ModInstaller.PluginGroup.Type;
     protected readonly PluginType = ModInstaller.PluginType.Name;
@@ -99,12 +97,14 @@ export class AppModInstallerComponent extends BaseComponent {
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModInstallerComponent>,
+        store: Store,
         dialogManager: DialogManager,
         private readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers
     ) {
         super({ cdRef });
 
+        this.activeProfile$ = store.select(AppState.getActiveProfile);
         this.isLoading$ = stateRef.get("installSteps").pipe(
             map(installSteps => !this.importRequest.installer!.zeroConfig && !installSteps?.length)
         );
@@ -454,9 +454,9 @@ export class AppModInstallerComponent extends BaseComponent {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
-        const externalModFiles = this.activeProfile.externalFilesCache?.modDirFiles ?? [];
+        const externalModFiles = this.activeProfile!.externalFilesCache?.modDirFiles ?? [];
         if (this.importRequest.root) {
-            externalModFiles.push(...this.activeProfile.externalFilesCache?.gameDirFiles ?? []);
+            externalModFiles.push(...this.activeProfile!.externalFilesCache?.gameDirFiles ?? []);
         }
 
         const externalMatch = externalModFiles?.find((externalFile) => {
@@ -468,7 +468,7 @@ export class AppModInstallerComponent extends BaseComponent {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
-        const profileMods = this.activeProfile.mods;
+        const profileMods = this.activeProfile!.mods;
         return from(profileMods.entries()).pipe(
             mergeMap(([modName, modEntry]) => this.readModFilePaths(modName).pipe(
                 map(modFilePaths => modFilePaths.some((rawModFilePath) => {

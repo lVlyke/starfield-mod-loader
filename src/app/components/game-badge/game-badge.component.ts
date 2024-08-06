@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input } from "@angular/core";
 import { Observable, combineLatest } from "rxjs";
 import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { AppState } from "../../state";
 import { BaseComponent } from "../../core/base-component";
 import { GameDetails } from "../../models/game-details";
@@ -20,8 +20,7 @@ import { GameDatabase } from "../../models/game-database";
 })
 export class AppGameBadgeComponent extends BaseComponent {
 
-    @Select(AppState.getGameDb)
-    public readonly gameDb$!: Observable<GameDatabase>;
+    public readonly gameDb$: Observable<GameDatabase>;
 
     @AsyncState()
     public readonly gameDb!: GameDatabase;
@@ -31,8 +30,14 @@ export class AppGameBadgeComponent extends BaseComponent {
 
     protected gameDetails?: GameDetails;
 
-    constructor(cdRef: ChangeDetectorRef, stateRef: ComponentStateRef<AppGameBadgeComponent>) {
+    constructor(
+        cdRef: ChangeDetectorRef,
+        stateRef: ComponentStateRef<AppGameBadgeComponent>,
+        store: Store
+    ) {
         super({ cdRef });
+
+        this.gameDb$ = store.select(AppState.getGameDb);
 
         combineLatest(stateRef.getAll("gameId", "gameDb")).subscribe(([gameId, gameDb]) => {
             this.gameDetails = gameDb[gameId];

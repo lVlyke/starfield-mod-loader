@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, Injector } from "@angular/core";
 import { CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { Observable, combineLatest } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
 import { AsyncState, ComponentState, ComponentStateRef, ManagedSubject } from "@lithiumjs/angular";
@@ -37,9 +37,7 @@ export class AppProfileModListComponent extends BaseComponent {
     public readonly defaultColumns = AppData.DEFAULT_MOD_LIST_COLUMNS;
     public readonly defaultColumnOrder = AppData.DEFAULT_MOD_LIST_COLUMN_ORDER;
     public readonly showModContextMenu$ = new ManagedSubject<[MouseEvent, ModListEntry]>(this);
-
-    @Select(AppState.getModListColumns)
-    public readonly modListColumns$!: Observable<string[] | undefined>;
+    public readonly modListColumns$: Observable<string[] | undefined>;
 
     @Output("modChange")
     public readonly modChange$ = new EventEmitter<ModListEntry>;
@@ -68,10 +66,13 @@ export class AppProfileModListComponent extends BaseComponent {
         injector: Injector,
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileModListComponent>,
+        store: Store,
         private readonly overlayHelpers: OverlayHelpers,
         protected readonly themeContainer: ThemeContainer
     ) {
         super({ cdRef });
+
+        this.modListColumns$ = store.select(AppState.getModListColumns);
 
         combineLatest(stateRef.getAll(
             "profile",

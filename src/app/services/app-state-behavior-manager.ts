@@ -1,8 +1,8 @@
 import * as _ from "lodash";
-import { Inject, Injectable, forwardRef } from "@angular/core";
-import { Select, Store } from "@ngxs/store";
+import { Injectable } from "@angular/core";
+import { Store } from "@ngxs/store";
 import { EMPTY, Observable, of, throwError } from "rxjs";
-import { catchError, delay, distinctUntilChanged, filter, map, skip, switchMap, take } from "rxjs/operators";
+import { catchError, distinctUntilChanged, filter, map, skip, switchMap, take } from "rxjs/operators";
 import { AppMessage, AppMessageData } from "../models/app-message";
 import { AppActions, AppState } from "../state";
 import { AppMessageHandler } from "./app-message-handler";
@@ -24,32 +24,29 @@ import { AppPreferencesModal } from "../modals/app-preferences";
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
 
-    @Select(AppState)
-    public readonly appState$!: Observable<AppData>;
-
-    @Select(AppState.isDeployInProgress)
-    public readonly isDeployInProgress$!: Observable<boolean>;
+    private readonly appState$: Observable<AppData>;
+    private readonly isDeployInProgress$: Observable<boolean>;
 
     constructor(
         messageHandler: AppMessageHandler,
-        @Inject(forwardRef(() => Store)) private readonly store: Store,
+        private readonly store: Store,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogManager: DialogManager,
     ) {
         let deployInProgressOverlayRef: OverlayHelpersRef | undefined;
 
-        // Wait for NGXS to load
-        of(true).pipe(delay(0)).subscribe(() => {
-            // Save app settings to disk on changes
-            this.appState$.pipe(
-                filterDefined(),
-                skip(1),
-                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap(() => this.saveSettings().pipe(
-                    catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
-                ))
-            ).subscribe();
-        });
+        this.appState$ = store.select(AppState.get);
+        this.isDeployInProgress$ = store.select(AppState.isDeployInProgress);
+
+        // Save app settings to disk on changes
+        this.appState$.pipe(
+            filterDefined(),
+            skip(1),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            switchMap(() => this.saveSettings().pipe(
+                catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
+            ))
+        ).subscribe();
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:showPreferences"),
@@ -185,7 +182,9 @@ export class AppStateBehaviorManager {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
             switchMap((gameDb) => {
                 if (!!gameDb) {
-                    return this.store.dispatch(new AppActions.updateGameDb(gameDb))
+                    return this.store.dispatch(new AppActions.updateGameDb(gameDb)).pipe(
+                        map(() => gameDb)
+                    );
                 } else {
                     const errorText = "Unable to open game database file.";
                     this.dialogManager.createDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();

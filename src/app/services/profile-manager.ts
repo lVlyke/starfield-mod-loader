@@ -1,12 +1,11 @@
 import * as _ from "lodash";
-import { Inject, Injectable, forwardRef } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Select, Store } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { AppMessageHandler } from "./app-message-handler";
 import {
     catchError,
     concatMap,
-    delay,
     distinctUntilChanged,
     filter,
     finalize,
@@ -51,27 +50,25 @@ import { AppProfileVerificationResultsModal } from "../modals/profile-verificati
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
 
-    @Select(AppState)
-    public readonly appState$!: Observable<AppData>;
-
-    @Select(AppState.getActiveProfile)
-    public readonly activeProfile$!: Observable<AppProfile | undefined>;
-
-    @Select(AppState.getActiveGameDetails)
-    public readonly activeGameDetails$!: Observable<GameDetails | undefined>;
-
-    @Select(AppState.isPluginsEnabled)
-    public readonly isPluginsEnabled$!: Observable<boolean>;
+    public readonly appState$: Observable<AppData>;
+    public readonly activeProfile$: Observable<AppProfile | undefined>;
+    public readonly activeGameDetails$: Observable<GameDetails | undefined>;
+    public readonly isPluginsEnabled$: Observable<boolean>;
 
     constructor(
         messageHandler: AppMessageHandler,
-        @Inject(forwardRef(() => Store)) private readonly store: Store,
+        private readonly store: Store,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogs: AppDialogs,
         private readonly dialogManager: DialogManager,
         private readonly snackbar: MatSnackBar,
         private readonly appManager: AppStateBehaviorManager
     ) {
+        this.appState$ = store.select(AppState.get);
+        this.activeProfile$ = store.select(AppState.getActiveProfile);
+        this.activeGameDetails$ = store.select(AppState.getActiveGameDetails);
+        this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
+
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:newProfile"),
             switchMap(() => this.createProfileFromUser().pipe(
@@ -100,160 +97,157 @@ export class ProfileManager {
             ))
         ).subscribe();
         
-        // Wait for NGXS to load
-        of(true).pipe(delay(0)).subscribe(() => {
-            // Load required data at app start
-            forkJoin([
-                this.appManager.loadSettings(),
-                this.appManager.updateGameDatabase(),
-                this.appManager.loadProfileList()
-            ]).pipe(
-                // Set initial active profile state
-                switchMap(([settings, _gameDb, profileList]) => {
-                    return of(settings?.activeProfile).pipe(
-                        // First try loading profile from settings
-                        switchMap((profileDesc) => {
-                            if (profileDesc && _.size(profileDesc) > 0) {
-                                return this.loadProfile(
-                                    // BC:<=0.6.0: Assume gameId is Starfield if not defined
-                                    typeof profileDesc === "string"
-                                        ? { name: profileDesc, gameId: GameId.STARFIELD, deployed: false }
-                                        : profileDesc,
-                                    true,
-                                    settings?.verifyProfileOnStart ?? true
-                                );
-                            }
+        // Load required data at app start
+        forkJoin([
+            this.appManager.loadSettings(),
+            this.appManager.updateGameDatabase(),
+            this.appManager.loadProfileList()
+        ]).pipe(
+            // Set initial active profile state
+            switchMap(([settings, _gameDb, profileList]) => {
+                return of(settings?.activeProfile).pipe(
+                    // First try loading profile from settings
+                    switchMap((profileDesc) => {
+                        if (profileDesc && _.size(profileDesc) > 0) {
+                            return this.loadProfile(
+                                // BC:<=0.6.0: Assume gameId is Starfield if not defined
+                                typeof profileDesc === "string"
+                                    ? { name: profileDesc, gameId: GameId.STARFIELD, deployed: false }
+                                    : profileDesc,
+                                true,
+                                settings?.verifyProfileOnStart ?? true
+                            );
+                        }
 
-                            return of(null);
-                        }),
-                        // Fall back to try loading first profile in list
-                        switchMap((profile) => {
-                            if (!profile && profileList?.length > 0) {
-                                return this.loadProfile(profileList[0]);
-                            }
+                        return of(null);
+                    }),
+                    // Fall back to try loading first profile in list
+                    switchMap((profile) => {
+                        if (!profile && profileList?.length > 0) {
+                            return this.loadProfile(profileList[0]);
+                        }
 
-                            return of(profile);
-                        }),
-                        // Fall back to creating a new profile
-                        switchMap((profile) => {
-                            if (!profile) {
-                                this.appManager.saveSettings();
-                                return this.createProfileFromUser();
-                            }
+                        return of(profile);
+                    }),
+                    // Fall back to creating a new profile
+                    switchMap((profile) => {
+                        if (!profile) {
+                            this.appManager.saveSettings();
+                            return this.createProfileFromUser();
+                        }
 
-                            return of(profile);
-                        })
-                    );
-                })
-            ).subscribe();
+                        return of(profile);
+                    })
+                );
+            })
+        ).subscribe();
 
-            // Save profile settings to disk on changes
-            this.activeProfile$.pipe(
-                filterDefined(),
+        // Save profile settings to disk on changes
+        this.activeProfile$.pipe(
+            filterDefined(),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            switchMap((profile) => this.saveProfile(profile).pipe(
+                catchError((err) => (console.error("Failed to save profile: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        // Make sure that `manageExternalPlugins` is true if the game requires external plugin management
+        this.activeGameDetails$.pipe(
+            map(gameDetails => !!gameDetails?.requireExternalPlugins),
+            distinctUntilChanged(),
+            filterTrue(),
+            switchMap(() => this.manageExternalPlugins(true))
+        ).subscribe();
+
+        // Monitor mod changes for new/removed plugins and update the plugins list
+        this.activeProfile$.pipe(
+            filterDefined(),
+        map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFilesCache")),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            switchMap(() => this.reconcileActivePluginList())
+        ).subscribe();
+
+        // When plugins are enabled, make sure the active profile gets a valid `pluginListPath`
+        combineLatest([
+            this.isPluginsEnabled$,
+            this.activeProfile$
+        ]).pipe(
+            map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.pluginListPath),
+            distinctUntilChanged(),
+            filterTrue(),
+            withLatestFrom(this.activeGameDetails$),
+            switchMap(([, activeGameDetails]) => ElectronUtils.invoke("app:verifyPathExists", {
+                path: activeGameDetails?.pluginListPaths ?? [],
+                dirname: true
+            })),
+            switchMap((pluginListPath) => {
+                if (!!pluginListPath) {
+                    return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
+                } else {
+                    return this.showProfileSettings({ remedy: "pluginListPath" });
+                }
+            })
+        ).subscribe();
+
+        // Handle automatic mod redeployment when the active profile is deployed
+        this.activeProfile$.pipe(
+            filterDefined(),
+            map(profile => _.pick(profile, "name", "deployed")),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            switchMap(() => combineLatest([this.activeProfile$, this.appState$]).pipe(
+                filter(([profile]) => !!profile?.deployed),
+                map(([profile, appState]) => ([
+                    // Monitor these profile properties:
+                    _.pick(profile,
+                        "gameId",
+                        "name",
+                        "modBaseDir",
+                        "pluginListPath",
+                        "configFilePath",
+                        "mods",
+                        "rootMods",
+                        "plugins",
+                        "manageExternalPlugins",
+                        "manageConfigFiles",
+                        "linkMode"
+                    ),
+    
+                    // Monitor these app settings:
+                    _.pick(appState,
+                        "pluginsEnabled",
+                        "normalizePathCasing"
+                    )
+                ])),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap((profile) => this.saveProfile(profile).pipe(
-                    catchError((err) => (console.error("Failed to save profile: ", err), EMPTY))
-                ))
-            ).subscribe();
+                skip(1)
+            )),
+            // Queue update requests for 250ms to avoid back-to-back updates
+            throttleTime(250, asyncScheduler, { leading: false, trailing: true }),
+            switchMap(() => this.refreshDeployedMods().pipe(
+                catchError((err) => (console.error("Mod redeployment error: ", err), EMPTY))
+            ))
+        ).subscribe();
 
-            // Make sure that `manageExternalPlugins` is true if the game requires external plugin management
-            this.activeGameDetails$.pipe(
-                map(gameDetails => !!gameDetails?.requireExternalPlugins),
-                distinctUntilChanged(),
-                filterTrue(),
-                switchMap(() => this.manageExternalPlugins(true))
-            ).subscribe();
-
-            // Monitor mod changes for new/removed plugins and update the plugins list
-            this.activeProfile$.pipe(
-                filterDefined(),
-            map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFilesCache")),
-                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap(() => this.reconcileActivePluginList())
-            ).subscribe();
-
-            // When plugins are enabled, make sure the active profile gets a valid `pluginListPath`
-            combineLatest([
-                this.isPluginsEnabled$,
-                this.activeProfile$
-            ]).pipe(
-                map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.pluginListPath),
-                distinctUntilChanged(),
-                filterTrue(),
-                withLatestFrom(this.activeGameDetails$),
-                switchMap(([, activeGameDetails]) => ElectronUtils.invoke("app:verifyPathExists", {
-                    path: activeGameDetails?.pluginListPaths ?? [],
-                    dirname: true
-                })),
-                switchMap((pluginListPath) => {
-                    if (!!pluginListPath) {
-                        return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
-                    } else {
-                        return this.showProfileSettings({ remedy: "pluginListPath" });
-                    }
-                })
-            ).subscribe();
-
-            // Handle automatic mod redeployment when the active profile is deployed
-            this.activeProfile$.pipe(
-                filterDefined(),
-                map(profile => _.pick(profile, "name", "deployed")),
-                distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                switchMap(() => combineLatest([this.activeProfile$, this.appState$]).pipe(
-                    filter(([profile]) => !!profile?.deployed),
-                    map(([profile, appState]) => ([
-                        // Monitor these profile properties:
-                        _.pick(profile,
-                            "gameId",
-                            "name",
-                            "modBaseDir",
-                            "pluginListPath",
-                            "configFilePath",
-                            "mods",
-                            "rootMods",
-                            "plugins",
-                            "manageExternalPlugins",
-                            "manageConfigFiles",
-                            "linkMode"
-                        ),
-        
-                        // Monitor these app settings:
-                        _.pick(appState,
-                            "pluginsEnabled",
-                            "normalizePathCasing"
-                        )
-                    ])),
-                    distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
-                    skip(1)
-                )),
-                // Queue update requests for 250ms to avoid back-to-back updates
-                throttleTime(250, asyncScheduler, { leading: false, trailing: true }),
-                switchMap(() => this.refreshDeployedMods().pipe(
-                    catchError((err) => (console.error("Mod redeployment error: ", err), EMPTY))
-                ))
-            ).subscribe();
-
-            // Enable dragging and dropping mods to add/import them
-            fromEvent<DragEvent>(document, "drop").pipe(
-                filter(event => !!event.dataTransfer?.files.length),
-                tap((event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }),
-                switchMap(event => from(event.dataTransfer!.files).pipe(
-                    concatMap((file) => this.addModFromUser({
-                        modPath: file.path,
-                        externalImport: !file.type && !file.size // `file` is a dir if no type & size
-                    }).pipe(
-                        catchError((err) => (console.error(err), EMPTY))
-                    ))
-                ))
-            ).subscribe();
-
-            fromEvent<DragEvent>(document, "dragover").subscribe((event) => {
+        // Enable dragging and dropping mods to add/import them
+        fromEvent<DragEvent>(document, "drop").pipe(
+            filter(event => !!event.dataTransfer?.files.length),
+            tap((event) => {
                 event.preventDefault();
                 event.stopPropagation();
-            });
+            }),
+            switchMap(event => from(event.dataTransfer!.files).pipe(
+                concatMap((file) => this.addModFromUser({
+                    modPath: file.path,
+                    externalImport: !file.type && !file.size // `file` is a dir if no type & size
+                }).pipe(
+                    catchError((err) => (console.error(err), EMPTY))
+                ))
+            ))
+        ).subscribe();
+
+        fromEvent<DragEvent>(document, "dragover").subscribe((event) => {
+            event.preventDefault();
+            event.stopPropagation();
         });
     }
 

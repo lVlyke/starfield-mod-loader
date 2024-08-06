@@ -20,10 +20,15 @@ import { GameDetails } from "../models/game-details";
         normalizePathCasing: false,
         verifyProfileOnStart: true
     },
-    children: [ActiveProfileState]
+    children: [ActiveProfileState] // TODO - NGXS child states are deprecated
 })
 @Injectable()
 export class AppState {
+
+    @Selector()
+    public static get(state: AppData): AppData {
+        return state;
+    }
 
     @Selector()
     public static getProfileDescriptions(state: AppData): AppProfile.Description[] {

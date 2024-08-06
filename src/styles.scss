@@ -3,7 +3,7 @@
 @use "styles/layout";
 
 @include mat.core();
-@include mat-theming.all-static-component-dimensions();
+@include mat-theming.m2-all-static-component-dimensions();
 
 @include layout.declare();
 

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
 import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef, ManagedBehaviorSubject } from "@lithiumjs/angular";
-import { Select } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
 import { MatExpansionPanel } from "@angular/material/expansion";
 import { MatSelect } from "@angular/material/select";
@@ -32,29 +32,14 @@ import { LangUtils } from "../../util/lang-utils";
 })
 export class AppModsOverviewPage extends BasePage {
 
-    @Select(AppState.getProfileDescriptions)
-    public readonly profiles$!: Observable<AppProfile.Description[]>;
-
-    @Select(AppState.getActiveProfile)
-    public readonly activeProfile$!: Observable<AppProfile | undefined>;
-
-    @Select(AppState.isPluginsEnabled)
-    public readonly isPluginsEnabled$!: Observable<boolean>;
-
-    @Select(AppState.isDeployInProgress)
-    public readonly isDeployInProgress$!: Observable<boolean>;
-
-    @Select(AppState.getActiveGameDetails)
-    public readonly gameDetails$!: Observable<GameDetails | undefined>;
-
-    @Select(ActiveProfileState.isDeployed)
-    public readonly isProfileDeployed$!: Observable<boolean>;
-
-    @Select(ActiveProfileState.isManageConfigFiles)
-    public readonly isManageConfigFiles$!: Observable<boolean>;
-
-    @Select(ActiveProfileState.getPlugins)
-    public readonly activeProfilePlugins$!: Observable<GamePluginProfileRef[] | undefined>;
+    public readonly profiles$: Observable<AppProfile.Description[]>;
+    public readonly activeProfile$: Observable<AppProfile | undefined>;
+    public readonly isPluginsEnabled$: Observable<boolean>;
+    public readonly isDeployInProgress$: Observable<boolean>;
+    public readonly gameDetails$: Observable<GameDetails | undefined>;
+    public readonly isProfileDeployed$: Observable<boolean>;
+    public readonly isManageConfigFiles$: Observable<boolean>;
+    public readonly activeProfilePlugins$: Observable<GamePluginProfileRef[] | undefined>;
 
     @AsyncState()
     public readonly profiles!: AppProfile.Description[];
@@ -127,12 +112,22 @@ export class AppModsOverviewPage extends BasePage {
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModsOverviewPage>,
+        store: Store,
         protected readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogManager: DialogManager,
         private readonly dialogs: AppDialogs
     ) {
         super({ cdRef });
+
+        this.profiles$ = store.select(AppState.getProfileDescriptions);
+        this.activeProfile$ = store.select(AppState.getActiveProfile);
+        this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
+        this.isDeployInProgress$ = store.select(AppState.isDeployInProgress);
+        this.gameDetails$ = store.select(AppState.getActiveGameDetails);
+        this.isProfileDeployed$ = store.select(ActiveProfileState.isDeployed);
+        this.isManageConfigFiles$ = store.select(ActiveProfileState.isManageConfigFiles);
+        this.activeProfilePlugins$ = store.select(ActiveProfileState.getPlugins);
 
         stateRef.get("currentProfileSelect").pipe(
             filterDefined(),

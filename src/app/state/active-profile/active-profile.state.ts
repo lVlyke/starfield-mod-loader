@@ -6,7 +6,7 @@ import { ActiveProfileActions } from "./active-profile.actions";
 import { ProfileUtils } from "../../util/profile-utils";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 
-@State<AppProfile | null>({
+@State<ActiveProfileState.Model>({
     name: "activeProfile",
     defaults: null,
     children: []
@@ -15,23 +15,23 @@ import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 export class ActiveProfileState {
 
     @Selector()
-    public static getExternalFilesCache(state: AppProfile): AppProfile.ExternalFiles | undefined {
-        return state.externalFilesCache;
+    public static getExternalFilesCache(state: ActiveProfileState.Model): AppProfile.ExternalFiles | undefined {
+        return state?.externalFilesCache;
     }
 
     @Selector()
-    public static getPlugins(state: AppProfile): GamePluginProfileRef[] | undefined {
-        return state.plugins;
+    public static getPlugins(state: ActiveProfileState.Model): GamePluginProfileRef[] | undefined {
+        return state?.plugins;
     }
 
     @Selector()
-    public static isDeployed(state: AppProfile): boolean {
-        return !!state.deployed;
+    public static isDeployed(state: ActiveProfileState.Model): boolean {
+        return !!state?.deployed;
     }
 
     @Selector()
-    public static isManageConfigFiles(state: AppProfile): boolean {
-        return !!state.manageConfigFiles;
+    public static isManageConfigFiles(state: ActiveProfileState.Model): boolean {
+        return !!state?.manageConfigFiles;
     }
 
     @Action(ActiveProfileActions.AddMod)
@@ -260,5 +260,7 @@ export class ActiveProfileState {
 
 export namespace ActiveProfileState {
 
-    export type Context = StateContext<AppProfile | null>;
+    export type Model = AppProfile | null;
+
+    export type Context = StateContext<Model>;
 }

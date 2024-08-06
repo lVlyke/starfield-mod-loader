@@ -1,7 +1,27 @@
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { enableProdMode } from "@angular/core";
+import { bootstrapApplication } from "@angular/platform-browser";
+import { provideAnimations } from "@angular/platform-browser/animations";
+import { provideRouter } from "@angular/router";
+import { provideStore } from "@ngxs/store";
+import { withNgxsReduxDevtoolsPlugin } from "@ngxs/devtools-plugin";
+import { environment } from "./environments/environment";
+import { APP_ROUTES } from "./app/app.routes";
+import { AppComponent } from "./app/app.component";
+import { appStates } from "./app/state";
 
-import { AppModule } from './app/app.module';
 
+if (environment.production) {
+  enableProdMode();
+}
 
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err));
+bootstrapApplication(AppComponent, {
+  providers: [
+      provideAnimations(),
+      provideStore(
+        appStates,
+        { developmentMode: !environment.production },
+        withNgxsReduxDevtoolsPlugin({ disabled: environment.production})
+      ),
+      provideRouter(APP_ROUTES)
+  ]
+}).catch(err => console.log(err));

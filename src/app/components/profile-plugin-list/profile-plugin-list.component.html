@@ -5,10 +5,10 @@
        (cdkDropListDropped)="dropReorder($event)">
     <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef>
-            <button *ngIf="!activeGameDetails.requireExternalPlugins"
+            <button *ngIf="!activeGameDetails!.requireExternalPlugins"
                     mat-icon-button
                     matTooltip="Manage External Plugins"
-                    [color]="profile.manageExternalPlugins || activeGameDetails.requireExternalPlugins ? 'accent' : null"
+                    [color]="profile.manageExternalPlugins || activeGameDetails!.requireExternalPlugins ? 'accent' : null"
                     (click)="pluginExternalManagementChange$.emit()">
                 <mat-icon>travel_explore</mat-icon>
             </button>
@@ -107,7 +107,7 @@
 
                         <mat-select-trigger>Plugin Type: {{ pluginTypeSelect.value | uppercase }}</mat-select-trigger>
 
-                        @for (pluginType of activeGameDetails.pluginFormats; track $index) {
+                        @for (pluginType of activeGameDetails!.pluginFormats; track $index) {
                             <mat-option [value]="pluginType">
                                 {{ pluginType | uppercase }}
                                 @if (pluginType === defaultPluginType) {

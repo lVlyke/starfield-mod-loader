@@ -9,7 +9,7 @@
     $theme-warn,
     $is-dark
 ) {
-    @include mat-theming.declare-theme(
+    @include mat-theming.m2-declare-theme(
         $theme-name,
         $theme-primary,
         $theme-accent,

@@ -7,7 +7,7 @@
 
         tr {
             &.mod-unverified {
-                background: mat.get-color-from-palette($warn, 400);
+                background: mat.m2-get-color-from-palette($warn, 400);
             }
         }
 
