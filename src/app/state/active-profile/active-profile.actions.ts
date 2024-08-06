@@ -77,7 +77,7 @@ export namespace ActiveProfileActions {
         public static readonly type = `[activeProfile] update external files`;
 
         constructor(
-            public externalFiles: AppProfile.ExternalFiles
+            public externalFilesCache: AppProfile.ExternalFiles
         ) {}
     }
 

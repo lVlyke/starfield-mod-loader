@@ -9,6 +9,7 @@ export interface AppData {
     gameDb: GameDatabase;
     pluginsEnabled: boolean;
     normalizePathCasing: boolean;
+    verifyProfileOnStart: boolean;
     modListColumns?: string[];
     deployInProgress?: boolean;
 }

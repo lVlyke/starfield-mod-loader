@@ -1,13 +1,24 @@
 <form #preferencesForm="ngForm" id="preferences-form" (ngSubmit)="onFormSubmit$.next(preferencesForm)">
     <ng-container *ngIf="!!formModel">
         <span>
-            <mat-checkbox name="pluginsEnabled" [(ngModel)]="formModel.pluginsEnabled" />
-            <mat-label>Plugins Enabled</mat-label>
+            <mat-checkbox name="normalizePathCasing"
+                          [(ngModel)]="formModel.normalizePathCasing">
+                Normalize mod file path
+                &nbsp;<mat-icon matTooltip="Recommended for Linux">help</mat-icon>
+            </mat-checkbox>
         </span>
 
         <span>
-            <mat-checkbox name="normalizePathCasing" [(ngModel)]="formModel.normalizePathCasing" />
-            <mat-label>Normalize Mod File Path Case</mat-label>
+            <mat-checkbox name="verifyProfileOnStart" [(ngModel)]="formModel.verifyProfileOnStart">
+                Verify active profile on app startup
+                &nbsp;<mat-icon matTooltip="Disable this if verification is taking too long during startup">help</mat-icon>
+            </mat-checkbox>
+        </span>
+
+        <span>
+            <mat-checkbox name="pluginsEnabled" [(ngModel)]="formModel.pluginsEnabled">
+                Enable game plugins
+            </mat-checkbox>
         </span>
 
         <mat-form-field appearance="fill">

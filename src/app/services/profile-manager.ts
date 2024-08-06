@@ -119,7 +119,8 @@ export class ProfileManager {
                                     typeof profileDesc === "string"
                                         ? { name: profileDesc, gameId: GameId.STARFIELD, deployed: false }
                                         : profileDesc,
-                                    true
+                                    true,
+                                    settings?.verifyProfileOnStart ?? true
                                 );
                             }
 
@@ -270,14 +271,14 @@ export class ProfileManager {
         ));
     }
 
-    public loadProfile(profile: AppProfile.Description, setActive: boolean = true): Observable<AppProfile | undefined> {
+    public loadProfile(profile: AppProfile.Description, setActive: boolean = true, verify: boolean = true): Observable<AppProfile | undefined> {
         return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile>("app:loadProfile", {
             name: profile.name,
             gameId: profile.gameId
         }).pipe(
             switchMap((profile) => {
                 if (profile && setActive) {
-                    this.setActiveProfile(profile);
+                    this.setActiveProfile(profile, verify);
                 }
 
                 return of(profile);
@@ -330,7 +331,7 @@ export class ProfileManager {
     public verifyActiveProfile(options: {
         showSuccessMessage?: boolean;
         showErrorMessage?: boolean;
-        updateManualMods?: boolean;
+        updateExternalFiles?: boolean;
         updateActivePlugins?: boolean;
         updateModErrorState?: boolean;
     } = {}): Observable<boolean> {
@@ -338,14 +339,14 @@ export class ProfileManager {
         options = Object.assign({
             showErrorMessage: true,
             showSuccessMessage: true,
-            updateManualMods: true,
+            updateExternalFiles: true,
             updateActivePlugins: true,
             updateModErrorState: true,
         }, options);
 
         const loadingIndicator = this.appManager.showLoadingIndicator("Verifying Profile...");
         let result$ = of<unknown>(true);
-        if (options.updateManualMods) {
+        if (options.updateExternalFiles) {
             result$ = forkJoin([result$, this.updateActiveProfileExternalFiles()]);
         }
 
@@ -956,7 +957,11 @@ export class ProfileManager {
 
     private deployActiveMods(): Observable<boolean> {
         // First make sure the active profile is verified before deployment
-        return ObservableUtils.hotResult$(this.verifyActiveProfile({ showSuccessMessage: false, updateModErrorState: false }).pipe(
+        return ObservableUtils.hotResult$(this.verifyActiveProfile({
+            showSuccessMessage: false,
+            updateModErrorState: false,
+            updateExternalFiles: false
+        }).pipe(
             switchMap((verified) => {
                 if (verified) {
                     return this.activeProfile$.pipe(

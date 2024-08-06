@@ -454,9 +454,9 @@ export class AppModInstallerComponent extends BaseComponent {
             return of(fileState === ModInstaller.DependencyState.Active);
         }
 
-        const externalModFiles = this.activeProfile.externalFiles?.modDirFiles ?? [];
+        const externalModFiles = this.activeProfile.externalFilesCache?.modDirFiles ?? [];
         if (this.importRequest.root) {
-            externalModFiles.push(...this.activeProfile.externalFiles?.gameDirFiles ?? []);
+            externalModFiles.push(...this.activeProfile.externalFilesCache?.gameDirFiles ?? []);
         }
 
         const externalMatch = externalModFiles?.find((externalFile) => {

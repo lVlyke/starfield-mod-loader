@@ -79,8 +79,8 @@ export class AppProfileModListComponent extends BaseComponent {
             "showManualMods"
         )).subscribe(([profile, root, showManualMods]) => {
             this.externalModFiles = (root
-                ? profile.externalFiles?.gameDirFiles
-                : profile.externalFiles?.modDirFiles) ?? [];
+                ? profile.externalFilesCache?.gameDirFiles
+                : profile.externalFilesCache?.modDirFiles) ?? [];
 
             // Create list entries
             let modIndex = 0;

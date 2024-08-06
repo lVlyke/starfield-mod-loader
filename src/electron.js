@@ -308,7 +308,7 @@ class ElectronLoader {
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
-                externalFiles: VERIFY_SUCCESS,
+                externalFilesCache: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
                 manageConfigFiles: VERIFY_SUCCESS,
                 linkMode: VERIFY_SUCCESS, // TODO
@@ -1866,9 +1866,10 @@ class ElectronLoader {
         /** @type {boolean} */ normalizePathCasing
     ) {
         const profileModFiles = [];
-        const modBaseDir = path.resolve(root ? profile.gameBaseDir : profile.modBaseDir);
-        const extFilesBackupDir = path.join(root ? profile.gameBaseDir : profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
-        const extFilesList = root ? profile.externalFiles?.gameDirFiles : profile.externalFiles?.modDirFiles;
+        const relModDir = root ? profile.gameBaseDir : profile.modBaseDir;
+        const modBaseDir = path.resolve(relModDir);
+        const extFilesBackupDir = path.join(relModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
+        const extFilesList = await this.findProfileExternalFilesInDir(profile, relModDir, !root);
         const gameDb = this.loadGameDatabase();
         const gameDetails = gameDb[profile.gameId];
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];

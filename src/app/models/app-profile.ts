@@ -13,11 +13,11 @@ export interface AppProfile {
     mods: AppProfile.ModList;
     rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
-    externalFiles?: AppProfile.ExternalFiles;
     manageExternalPlugins?: boolean;
     manageConfigFiles?: boolean;
     linkMode?: boolean;
     deployed: boolean;
+    externalFilesCache?: AppProfile.ExternalFiles;
 }
 
 export type AppProfileVerificationResult = AppProfile.VerificationResult;

@@ -17,7 +17,8 @@ import { GameDetails } from "../models/game-details";
         theme: AppTheme.Dark,
         gameDb: {},
         pluginsEnabled: true,
-        normalizePathCasing: false
+        normalizePathCasing: false,
+        verifyProfileOnStart: true
     },
     children: [ActiveProfileState]
 })
@@ -111,6 +112,11 @@ export class AppState {
 
     @Action(AppActions.setNormalizePathCasing)
     public setNormalizePathCasing(context: AppState.Context, state: AppActions.NormalizePathCasingAction): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
+    @Action(AppActions.setVerifyProfileOnStart)
+    public setVerifyProfileOnStart(context: AppState.Context, state: AppActions.VerifyProfileOnStartAction): void {
         context.patchState(_.cloneDeep(state));
     }
 

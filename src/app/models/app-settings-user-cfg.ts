@@ -5,4 +5,5 @@ export interface AppSettingsUserCfg {
     pluginsEnabled: boolean;
     normalizePathCasing: boolean;
     modListColumns?: string[];
+    verifyProfileOnStart: boolean;
 }

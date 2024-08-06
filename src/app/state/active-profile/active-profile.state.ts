@@ -15,8 +15,8 @@ import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 export class ActiveProfileState {
 
     @Selector()
-    public static getExternalFiles(state: AppProfile): AppProfile.ExternalFiles | undefined {
-        return state.externalFiles;
+    public static getExternalFilesCache(state: AppProfile): AppProfile.ExternalFiles | undefined {
+        return state.externalFilesCache;
     }
 
     @Selector()
@@ -94,7 +94,7 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.UpdateExternalFiles)
-    public updateExternalFiles(
+    public updateExternalFilesCache(
         context: ActiveProfileState.Context,
         state: ActiveProfileActions.UpdateExternalFiles
     ): void {
@@ -162,7 +162,7 @@ export class ActiveProfileState {
                 }
 
                 // Check if external plugin file still exists
-                return state.externalFiles?.pluginFiles.includes(existingPlugin.plugin);
+                return state.externalFilesCache?.pluginFiles.includes(existingPlugin.plugin);
             }
         });
 
@@ -170,7 +170,7 @@ export class ActiveProfileState {
 
         // Add missing external plugins
         if (state.manageExternalPlugins) {
-            state.externalFiles?.pluginFiles.forEach((externalPluginFile) => {
+            state.externalFilesCache?.pluginFiles.forEach((externalPluginFile) => {
                 if (!_.find(state.plugins, plugin => plugin.plugin === externalPluginFile)) {
                     processedPlugins.push({ modId: undefined, plugin: externalPluginFile, enabled: true });
                 }

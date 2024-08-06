@@ -143,8 +143,14 @@ export class AppStateBehaviorManager {
                     stateActions.push(new AppActions.setNormalizePathCasing(settings.normalizePathCasing));
                 }
 
+                if (settings?.verifyProfileOnStart !== undefined) {
+                    stateActions.push(new AppActions.setVerifyProfileOnStart(settings.verifyProfileOnStart));
+                }
+
                 if (stateActions.length > 0) {
-                    return this.store.dispatch(stateActions).pipe(map(() => settings));
+                    return this.store.dispatch(stateActions).pipe(
+                        map(() => settings)
+                    );
                 } else {
                     return of(settings);
                 }
@@ -238,7 +244,8 @@ export class AppStateBehaviorManager {
             activeProfile: _.pick(appData.activeProfile ?? {}, "name", "gameId") as AppProfile.Description,
             pluginsEnabled: appData.pluginsEnabled,
             normalizePathCasing: appData.normalizePathCasing,
-            modListColumns: appData.modListColumns
+            modListColumns: appData.modListColumns,
+            verifyProfileOnStart: appData.verifyProfileOnStart
         };
     }
 }

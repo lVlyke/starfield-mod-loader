@@ -54,6 +54,7 @@ To install Starfield Mod Loader, simply download the latest release from the [re
 >   * [**External plugin files**](#external-plugins)
 >   * [**Backup/restore load order**](#backuprestore-plugin-order)
 > * [**Config file management**](#config-file-management)
+> * [**App settings**](#app-settings)
 > * [**Launching games**](#launch-the-game)
 > * [**Troubleshooting**](#troubleshooting)
 
@@ -177,6 +178,8 @@ You can backup and restore the plugin load order using the buttons at the top ri
 
 If you enabled the **Manage Config/INI Files** option for your profile, you will be able to select the "Config" option from the dropdown at the top of the Plugins list. From this section you can edit your profile-specific config/INI files.
 
+If profile-managed config/INI files are disabled, you will see an option in the "Actions" section to view external config files if any are found.
+
 ## Activate your mods
 
 To enable mods in the game you must first activate them. Press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
@@ -185,7 +188,11 @@ Mods will now remain active until you press the **Deactivate Mods** button, even
 
 **IMPORTANT NOTE:** If Link Mode is disabled for the profile and you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the **Refresh Files** button after, otherwise your changes will not be applied.
 
-**Tip (Linux):** It is recommended to enable the **Normalize path case** option under **File > Preferences** when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
+## App settings
+
+App settings can be changed via **File > Preferences** from the menu bar.
+
+**Tip (Linux):** It is recommended to enable the **Normalize path case** setting when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
 
 ## Launch the game
 
@@ -218,6 +225,10 @@ bEnableMessageOfTheDay=0
 [Display]
 sPhotoModeFolder=Photos
 ```
+
+### The app sits on the "Verifying Profile..." loading screen for a long time during startup
+
+This can happen when very large profiles are activated. If profile verification is taking too long, you can disable verification on app startup via the menu bar under **File > Preferences**.
 
 ### **(Linux)** Some mods are not loading/strange behavior when loading some mods <a name="normalizePathCase"></a>
 
