@@ -11,7 +11,7 @@ export interface DefaultProfilePathField {
 
 const STANDARD_PATH_FIELDS: Readonly<DefaultProfilePathField[]> = [
     { formId: "modBaseDir", title: "Mod Base Directory" },
-    { formId: "gameBaseDir", title: "MGame Base Directory" },
+    { formId: "gameBaseDir", title: "Game Base Directory" },
     { formId: "gameBinaryPath", title: "Game Executable", fileTypes: ["exe", "bat", "cmd", "lnk", "sh"] },
     { formId: "pluginListPath", title: "Plugin List Path", fileTypes: ["txt"] }
 ];
@@ -22,7 +22,7 @@ const CONFIG_FILE_PATH_FIELD: DefaultProfilePathField = { formId: "configFilePat
 })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
-    public transform(formModel?: AppProfile): Readonly<DefaultProfilePathField[]> {
+    public transform(formModel?: Partial<AppProfile> | null): Readonly<DefaultProfilePathField[]> {
         let result = STANDARD_PATH_FIELDS;
 
         if (formModel?.manageConfigFiles) {

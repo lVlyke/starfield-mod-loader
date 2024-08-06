@@ -1,4 +1,4 @@
-<mat-card *ngIf="!!profile">
+<mat-card>
     <mat-card-header>
         <mat-card-title>
             Profile Settings&nbsp;-&nbsp;{{profile.name}}
@@ -17,7 +17,7 @@
                 type="submit"
                 form="profile-form"
                 color="primary"
-                [disabled]="(profileSettingsComponent.form.statusChanges | async) !== 'VALID'">
+                [disabled]="(profileSettingsComponent.onFormStatusChange$ | async) !== 'VALID'">
                 {{ createMode ? "Create" : "Save" }}
         </button>
 

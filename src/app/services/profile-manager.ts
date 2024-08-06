@@ -529,6 +529,10 @@ export class ProfileManager {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             map((activeProfile) => {
+                if (!activeProfile) {
+                    throw new Error("No profile active.");
+                }
+
                 const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
                     center: true,
                     hasBackdrop: true,
@@ -554,12 +558,11 @@ export class ProfileManager {
         
         return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
             switchMap((overlayRef) => {
-                overlayRef.component.instance.profile = defaults as AppProfile;
+                overlayRef.component.instance.profile = defaults!;
                 overlayRef.component.instance.createMode = true;
                 overlayRef.component.changeDetectorRef.detectChanges();
 
                 return overlayRef.component.instance.onFormSubmit$.pipe(
-                    map(() => overlayRef.component.instance.profileSettingsComponent.formModel),
                     switchMap(newProfile => this.setActiveProfile(newProfile, verify)),
                 );
             })
@@ -859,11 +862,8 @@ export class ProfileManager {
         )
     }
 
-    public readConfigFile(fileName: string, loadDefaults: boolean = false): Observable<string> {
-        return this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke<string>("profile:readConfigFile", { profile, fileName, loadDefaults }))
-        );
+    public readConfigFile(profile: AppProfile, fileName: string, loadDefaults: boolean = false): Observable<string> {
+        return ElectronUtils.invoke<string>("profile:readConfigFile", { profile, fileName, loadDefaults });
     }
 
     public updateConfigFile(fileName: string, data: string): Observable<void> {

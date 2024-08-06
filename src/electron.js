@@ -60,6 +60,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
     static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
+    static /** @type {string} */ PROFILE_LINK_SUPPORT_TEST_FILE = ".sml_link_test";
     static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
     
     /** @type {BrowserWindow} */ mainWindow;
@@ -615,6 +616,58 @@ class ElectronLoader {
         ) => {
             this.updateProfileConfigFile(profile, fileName, data);
         });
+
+        ipcMain.handle("profile:linkModeSupported", (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:linkModeSupported">} */ { profile }
+        ) => {
+            if (!profile || !profile.modBaseDir || !profile.gameBaseDir) {
+                return false;
+            }
+
+            const testFileSrc = ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE;
+            const modDirTestFileDest = path.join(profile.modBaseDir, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+            const gameDirTestFileDest = path.join(profile.gameBaseDir, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+
+            try {
+                if (!fs.existsSync(testFileSrc)) {
+                    fs.writeFileSync(testFileSrc, "");
+                }
+
+                if (!fs.existsSync(profile.modBaseDir)) {
+                    fs.mkdirpSync(profile.modBaseDir);
+                }
+
+                // Create a test link to modBaseDir
+                fs.linkSync(testFileSrc, modDirTestFileDest);
+
+                if (!fs.existsSync(profile.gameBaseDir)) {
+                    fs.mkdirpSync(profile.gameBaseDir);
+                }
+
+                // Create a test link to gameBaseDir
+                fs.linkSync(testFileSrc, gameDirTestFileDest);
+
+                return true;
+            } catch (err) {
+                log.info("Link mode not supported reason: ", err);
+                return false;
+            } finally {
+                try {
+                    fs.rmSync(modDirTestFileDest);
+                } catch (err) {}
+
+                try {
+                    fs.rmSync(gameDirTestFileDest);
+                } catch (err) {}
+
+                try {
+                    fs.rmSync(testFileSrc);
+                } catch (err) {}
+            }
+
+            return false;
+        });
     }
 
     initWindow() {
@@ -848,6 +901,11 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
+    getProfileTmpDir(/** @type {string} */ profileNameOrPath) {
+        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_STAGING_DIR);
+    }
+
+    /** @returns {string} */
     getProfileModDir(/** @type {string} */ profileNameOrPath, /** @type {string} */ modName) {
         return path.join(this.getProfileModsDir(profileNameOrPath), modName);
     }
@@ -919,7 +977,7 @@ class ElectronLoader {
     deleteProfile(/** @type {AppProfile} */ profile) {
         const profileDir = this.getProfileDir(profile.name);
 
-        return fs.rmdirSync(profileDir, { recursive: true });
+        return fs.rmSync(profileDir, { recursive: true });
     }
 
     /** @returns {string} */
@@ -1078,7 +1136,7 @@ class ElectronLoader {
 
             const fileType = path.extname(filePath);
             const modName = path.basename(filePath, fileType);
-            const modDirStagingPath = path.join(this.getProfileDir(profile.name), ElectronLoader.PROFILE_MODS_STAGING_DIR, modName);
+            const modDirStagingPath = path.join(this.getProfileTmpDir(profile.name), modName);
             /** @type Promise */ let decompressOperation;
 
             // Clear the staging dir

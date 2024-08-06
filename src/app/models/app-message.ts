@@ -428,6 +428,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface LinkModeSupported extends Base {
+        id: `${ProfileMessage.Prefix}:linkModeSupported`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export type ProfileMessage = ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
@@ -458,7 +465,8 @@ export namespace AppMessage {
                                | OpenGameConfigFile
                                | OpenProfileConfigFile
                                | ReadConfigFile
-                               | UpdateConfigFile;
+                               | UpdateConfigFile
+                               | LinkModeSupported;
 
     // Message record:
 
@@ -514,6 +522,7 @@ export namespace AppMessage {
         "profile:openGameConfigFile",
         "profile:openProfileConfigFile",
         "profile:readConfigFile",
-        "profile:updateConfigFile"
+        "profile:updateConfigFile",
+        "profile:linkModeSupported"
     ];
 }

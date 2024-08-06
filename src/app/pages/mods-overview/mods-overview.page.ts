@@ -201,7 +201,7 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected reloadConfigFile(fileName: string, control: AbstractControl): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.profileManager.readConfigFile(fileName, true).pipe(
+        return ObservableUtils.hotResult$(this.profileManager.readConfigFile(this.activeProfile!, fileName, true).pipe(
             tap(fileData => control.setValue(fileData)),
             tap(() => this.configFileUpdate$.next(new Date()))
         ));

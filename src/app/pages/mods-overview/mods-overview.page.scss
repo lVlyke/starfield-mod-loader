@@ -42,7 +42,7 @@
         }
 
         #profile-mod-list {
-            flex: 1 1 75%;
+            flex: 1 1 66%;
 
             > #profile-mgmt-controls {
                 display: flex;
@@ -116,6 +116,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            max-width: 34%;
 
             > * {
                 height: 1px;

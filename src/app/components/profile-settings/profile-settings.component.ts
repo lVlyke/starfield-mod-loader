@@ -1,10 +1,10 @@
 import * as _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { NgForm, NgModel } from "@angular/forms";
-import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
+import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
 import { Select } from "@ngxs/store";
-import { combineLatest, forkJoin, Observable, of } from "rxjs";
-import { distinctUntilChanged, filter, map, switchMap, tap } from "rxjs/operators";
+import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
+import { delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ObservableUtils } from "../../util/observable-utils";
@@ -29,25 +29,21 @@ import { DefaultProfilePaths } from "./profile-standard-path-fields.pipe";
 })
 export class AppProfileSettingsComponent extends BaseComponent {
 
-    public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
+    public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile>>(this, {});
+    public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
+    public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
 
     @Select(AppState.getGameDb)
     public readonly gameDb$!: Observable<GameDatabase>;
 
-    @Select(AppState.isPluginsEnabled)
-    public readonly isPluginsEnabled$!: Observable<boolean>;
-
     @AsyncState()
     public readonly gameDb!: GameDatabase;
-
-    @AsyncState()
-    public readonly isPluginsEnabled!: boolean;
 
     @ViewChild(NgForm)
     public readonly form!: NgForm;
 
-    @Input()
-    public profile!: AppProfile;
+    @Input("profile")
+    public initialProfile!: Partial<AppProfile>;
 
     @Input()
     public createMode = false;
@@ -57,16 +53,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     protected gameIds: GameId[] = [];
 
-    @DeclareState("formModel")
-    private _formModel!: AppProfile;
-
     @DeclareState("defaultPaths")
     private _defaultPaths?: DefaultProfilePaths;
 
     constructor(
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
-        dialogManager: DialogManager,
+        private readonly dialogManager: DialogManager,
         protected readonly profileManager: ProfileManager
     ) {
         super({ cdRef });
@@ -75,15 +68,23 @@ export class AppProfileSettingsComponent extends BaseComponent {
             this.managedSource()
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
 
-        // Clone the input profile so we don't mutate it during editing
-        stateRef.get("profile").subscribe((profile) => {
-            this._formModel = _.cloneDeep(profile);
-        });
-
-        // Get the default profile paths for the current game
         stateRef.get("form").pipe(
             filterDefined(),
-            switchMap(form => form.valueChanges!),
+            switchMap(form => form.statusChanges!)
+        ).subscribe(this.onFormStatusChange$);
+
+        stateRef.get("form").pipe(
+            filterDefined(),
+            switchMap(form => form.valueChanges!.pipe(
+                map(() => form.control.getRawValue()),
+                startWith(form.control.getRawValue())
+            )),
+            map(formValue => Object.assign({}, this.initialProfile, formValue)),
+            distinctUntilChanged((x, y) => LangUtils.isEqual(x, y))
+        ).subscribe(formModel => this.formModel$.next(formModel));
+
+        // Get the default profile paths for the current game
+        this.formModel$.pipe(
             map((profile: Partial<AppProfile>) => profile.gameId),
             filter((gameId): gameId is string => !!gameId),
             distinctUntilChanged(),
@@ -91,14 +92,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ).subscribe(profileDefaults => this._defaultPaths = profileDefaults);
 
         // Attempt to apply default profile path values for any empty and clean path controls
-        stateRef.get("form").pipe(
-            filterDefined(),
-            switchMap(form => combineLatest([
-                stateRef.get("defaultPaths"),
-                form.valueChanges!
-            ])),
+        combineLatest([
+            stateRef.get("defaultPaths"),
+            this.formModel$
+        ]).pipe(
             distinctUntilChanged((x, y) => LangUtils.isEqual(x, y)),
-            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof DefaultProfilePaths>)
+            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof DefaultProfilePaths>),
+            delay(0)
         ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
             const control = this.form.controls[pathId];
             const defaultValue = this.defaultPaths![pathId];
@@ -110,53 +110,6 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 }
             }
         }));
-
-        // Update/create the profile on form submit
-        this.onFormSubmit$.pipe(
-            filter(form => !!form.valid),
-            switchMap(() => {
-                if (this.createMode) {
-                    profileManager.saveProfile(this.formModel);
-                    return profileManager.addProfile(this.formModel);
-                } else {
-                    return profileManager.updateActiveProfile(this.formModel);
-                }
-            }),
-            switchMap(() => {
-                const gameDetails = this.gameDb[this.formModel.gameId];
-
-                // Check if profile-specific config files need to be created
-                if (this.formModel.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
-                    // Check if any profile-specific config files exist
-                    return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
-                        return profileManager.readConfigFile(configFile);
-                    })).pipe(map(configData => !configData.some(Boolean)));
-                } else {
-                    return of(false);
-                }
-            }),
-            filterTrue(),
-            switchMap(() => dialogManager.createDefault(
-                "No config files exist for this profile. Do you want to create them now?",
-                [DialogManager.YES_ACTION_PRIMARY, DialogManager.NO_ACTION], {
-                    hasBackdrop: true
-                }
-            )),
-            filter(result => result === DialogManager.YES_ACTION_PRIMARY),
-            switchMap(() => {
-                // Write default config files
-                const gameDetails = this.gameDb[this.formModel.gameId];
-                return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
-                    return profileManager.readConfigFile(configFile, true).pipe(
-                        switchMap(fileData => profileManager.updateConfigFile(configFile, fileData))
-                    );
-                }));
-            })
-        ).subscribe();
-    }
-
-    public get formModel(): AppProfile {
-        return this._formModel;
     }
 
     public get defaultPaths(): DefaultProfilePaths | undefined {
@@ -164,13 +117,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
     }
 
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
-        const formModelName = ngModel.name as K;
-
-        return ObservableUtils.hotResult$(ElectronUtils.chooseDirectory(ngModel.value).pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
             filterDefined(),
-            tap((directory) => {
-                this._formModel = Object.assign(this.formModel, { [formModelName]: directory as AppProfile[K] });
-            })
+            tap((directory) => ngModel.control.setValue(directory as AppProfile[K]))
         ));
     }
 
@@ -178,13 +127,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ngModel: NgModel,
         fileTypes: string[]
     ): Observable<any> {
-        const formModelName = ngModel.name as K;
-
-        return ObservableUtils.hotResult$(ElectronUtils.chooseFilePath(ngModel.value, fileTypes).pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.chooseFilePath(ngModel.value || undefined, fileTypes).pipe(
             filterDefined(),
-            tap((filePath) => {
-                this._formModel = Object.assign(this.formModel, { [formModelName]: filePath as AppProfile[K] });
-            })
+            tap((filePath) => ngModel.control.setValue(filePath as AppProfile[K]))
         ));
     }
 
@@ -197,5 +142,60 @@ export class AppProfileSettingsComponent extends BaseComponent {
         } else {
             return this.chooseDirectory<K>(ngModel);
         }
+    }
+
+    protected submitForm(form: NgForm): Observable<unknown> {
+        if (!form.valid) {
+            return EMPTY;
+        }
+
+        return ObservableUtils.hotResult$(this.formModel$.pipe(
+            take(1),
+            map((formModel): AppProfile => formModel as AppProfile),
+            switchMap((formModel) => (() => {
+                // Add/update profile data on submit
+                if (this.createMode) {
+                    this.profileManager.saveProfile(formModel);
+                    return this.profileManager.addProfile(formModel);
+                } else if (!LangUtils.isEqual(this.initialProfile, formModel)) {
+                    return this.profileManager.updateActiveProfile(formModel);
+                } else {
+                    // Skip updates if no changes were made
+                    return of(formModel);
+                }
+            })().pipe(
+                finalize(() => this.onFormSubmit$.next(formModel)),
+                switchMap(() => {
+                    const gameDetails = this.gameDb[formModel.gameId];
+    
+                    // Check if profile-specific config files need to be created
+                    if (formModel.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
+                        // Check if any profile-specific config files exist
+                        return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
+                            return this.profileManager.readConfigFile(formModel, configFile, false);
+                        })).pipe(map(configData => !configData.some(Boolean)));
+                    } else {
+                        return of(false);
+                    }
+                }),
+                filterTrue(),
+                switchMap(() => this.dialogManager.createDefault(
+                    "No config files exist for this profile. Do you want to create them now?",
+                    [DialogManager.YES_ACTION_PRIMARY, DialogManager.NO_ACTION], {
+                        hasBackdrop: true
+                    }
+                )),
+                filter(result => result === DialogManager.YES_ACTION_PRIMARY),
+                switchMap(() => {
+                    // Write default config files
+                    const gameDetails = this.gameDb[formModel.gameId];
+                    return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
+                        return this.profileManager.readConfigFile(formModel, configFile, true).pipe(
+                            mergeMap(fileData => this.profileManager.updateConfigFile(configFile, fileData))
+                        );
+                    }));
+                })
+            ))
+        ));
     }
 }

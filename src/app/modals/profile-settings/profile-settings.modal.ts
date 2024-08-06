@@ -1,16 +1,17 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject, ViewChild } from "@angular/core";
-import { AfterViewInit, ComponentState, DeclareState, ManagedSubject } from "@lithiumjs/angular";
+import { ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { CommonModule } from "@angular/common";
-import { FormsModule, NgForm } from "@angular/forms";
+import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { MatDividerModule } from "@angular/material/divider";
 import { Observable } from "rxjs";
-import { filter, switchMap } from "rxjs/operators";
+import { share, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { AppProfileSettingsComponent, AppProfileSettingsComponentModule } from "../../components/profile-settings";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
+import { filterDefined } from "src/app/core/operators";
 
 @Component({
     templateUrl: "./profile-settings.modal.html",
@@ -33,10 +34,11 @@ import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-help
 })
 export class AppProfileSettingsModal extends BaseComponent {
 
-    public readonly onFormSubmit$ = new ManagedSubject<NgForm>(this);
+    public readonly onFormSubmit$!: Observable<AppProfile>;
+    public readonly formModel$!: Observable<Partial<AppProfile>>;
 
     @DeclareState()
-    public profile?: AppProfile;
+    public profile!: Partial<AppProfile>;
 
     @DeclareState()
     public createMode = false;
@@ -44,24 +46,29 @@ export class AppProfileSettingsModal extends BaseComponent {
     @DeclareState()
     public remedyMode: (keyof AppProfile) | boolean = false;
 
-    @ViewChild(AppProfileSettingsComponent)
+    @ViewChild(AppProfileSettingsComponent, { static: true })
     public readonly profileSettingsComponent!: AppProfileSettingsComponent;
-
-    @AfterViewInit()
-    public readonly afterViewInit$!: Observable<void>;
 
     constructor(
         @Inject(OverlayRefSymbol) public readonly overlayRef: OverlayHelpersRef,
+        stateRef: ComponentStateRef<AppProfileSettingsModal>,
         cdRef: ChangeDetectorRef
     ) {
         super({ cdRef });
 
-        this.afterViewInit$.pipe(
-            switchMap(() => this.profileSettingsComponent.onFormSubmit$),
-            filter(form => !!form.valid),
-        ).subscribe((form) => {
-            this.onFormSubmit$.next(form);
-            overlayRef.close();
-        });
+        const profileSettingsComponent$ = stateRef.get("profileSettingsComponent").pipe(
+            filterDefined()
+        );
+
+        this.onFormSubmit$ = profileSettingsComponent$.pipe(
+            switchMap(profileSettingsComponent => profileSettingsComponent.onFormSubmit$),
+            share()
+        );
+
+        this.formModel$ = profileSettingsComponent$.pipe(
+            switchMap(profileSettingsComponent => profileSettingsComponent.formModel$)
+        );
+
+        this.onFormSubmit$.subscribe(() => overlayRef.close());
     }
 }
