@@ -38,7 +38,7 @@
                                   class="plugin-prommoted-icon"
                                   matTooltip="Plugin promoted to {{ pluginEntry.pluginRef.promotedType | uppercase }}"
                                   color="primary">
-                            swap_vertical
+                            import_export
                         </mat-icon>
 
                         <mat-icon *ngIf="!!pluginEntry.pluginRef.verificationError"
@@ -98,7 +98,7 @@
                 </button>
 
                 <mat-list-item *ngIf="getDefaultPluginType(activeContextEntry!) as defaultPluginType" (click)="pluginTypeSelect.open()">
-                    <mat-icon matListIcon>swap_vertical</mat-icon>
+                    <mat-icon matListIcon>import_export</mat-icon>
                     <mat-select #pluginTypeSelect
                                 matLine
                                 placeholder="Plugin Type: {{ pluginTypeSelect.value | uppercase }}"

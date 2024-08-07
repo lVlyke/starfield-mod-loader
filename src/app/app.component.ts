@@ -1,6 +1,8 @@
 import { APP_INITIALIZER, Component, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/core";
+import { RouterModule } from "@angular/router";
 import { AsyncState, ComponentState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
+import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { NgxMaterialThemingModule } from "@lithiumjs/ngx-material-theming";
 import { Observable } from "rxjs";
 import { BaseComponent } from "./core/base-component";
@@ -10,7 +12,6 @@ import { AppTheme } from "./models/app-theme";
 import { ProfileManager } from "./services/profile-manager";
 import { AppMessageHandler } from "./services/app-message-handler";
 import { AppStateBehaviorManager } from "./services/app-state-behavior-manager";
-import { RouterModule } from "@angular/router";
 
 const STARTUP_SERVICES = [
     AppMessageHandler,
@@ -26,6 +27,7 @@ const STARTUP_SERVICES = [
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         RouterModule,
+        MatIconModule,
         NgxMaterialThemingModule
     ],
     providers: [
@@ -46,8 +48,11 @@ export class AppComponent extends BaseComponent {
     @AsyncState()
     public readonly theme!: AppTheme;
 
-    constructor (cdRef: ChangeDetectorRef, store: Store) {
+    constructor (cdRef: ChangeDetectorRef, store: Store, iconRegistry: MatIconRegistry) {
         super({ cdRef });
+
+        // Register Material Icons font
+        iconRegistry.setDefaultFontSetClass("material-icons-font-set");
 
         this.theme$ = store.select(AppState.getTheme);
     }

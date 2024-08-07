@@ -2,14 +2,19 @@
 @use "@lithiumjs/ngx-material-theming" as mat-theming;
 @use "styles/layout";
 
+// Declare core Material theming styles
 @include mat.core();
 @include mat-theming.m2-all-static-component-dimensions();
 
+// Declare layout styles
 @include layout.declare();
 
-// Use normalize.css
+// Load normalize.css
 @import "normalize.css/normalize";
 
-// Bundle the default and dark themes with the app itself
+// Load fonts
+@import "styles/fonts";
+
+// Load default and dark themes
 @import "styles/themes/default";
 @import "styles/themes/dark";
