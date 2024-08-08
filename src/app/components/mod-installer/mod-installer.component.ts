@@ -16,7 +16,7 @@ import { MatStep, MatStepper } from "@angular/material/stepper";
 import { Store } from "@ngxs/store";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
-import { concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
+import { catchError, concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
 import { AppModInstaller } from "./mod-installer.types";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined, filterFalse, filterTrue } from "../../core/operators";
@@ -419,8 +419,8 @@ export class AppModInstallerComponent extends BaseComponent {
                 }
     
                 if (gameDependency && gameDependency.length > 0) {
-                    // TODO - Check `gameDependency`
-                    log.warn("WARNING - Ignoring unsupported FOMOD gameDependency check: ", gameDependency);
+                    // TODO - Make game version dependencies optional?
+                    conditions.push(this.resolveGameVersionDependency(gameDependency[0]));
                 }
     
                 if (fommDependency && fommDependency.length > 0) {
@@ -494,6 +494,23 @@ export class AppModInstallerComponent extends BaseComponent {
                                 ? matches.length === 0
                                 : matches.length > 0
             )
+        );
+    }
+
+    private resolveGameVersionDependency(verionDependency: ModInstaller.VersionDependency): Observable<boolean> {
+        return this.profileManager.resolveGameBinaryVersion().pipe(
+            catchError((error) => {
+                log.error(error);
+                return of(undefined);
+            }),
+            map((resolvedVersion) => {
+                if (resolvedVersion === undefined) {
+                    log.warn("Unable to resolve game binary version.");
+                    return true;
+                }
+
+                return resolvedVersion === verionDependency.version[0];
+            })
         );
     }
 

@@ -14,15 +14,6 @@
             "C:\\XboxGames\\Fallout 4\\Content",
             "~/.local/share/Steam/steamapps/common/Fallout 4"
         ],
-        "gameBinaryPaths": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Fallout4.exe",
-            "C:\\XboxGames\\Fallout 4\\Content\\Fallout4.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/f4se_loader.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/Fallout4.exe"
-        ],
         "pluginListPaths": [
             "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
@@ -31,6 +22,7 @@
             "%USERPROFILE%\\Documents\\My Games\\Fallout4",
             "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4"
         ],
+        "gameBinary": ["Fallout4.exe", "f4se_loader.exe"],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
         "pinnedPlugins": [
@@ -77,15 +69,6 @@
             "C:\\XboxGames\\Fallout New Vegas\\Content",
             "~/.local/share/Steam/steamapps/common/Fallout New Vegas"
         ],
-        "gameBinaryPaths": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\nvse_loader.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\nvse_loader.exe",
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\FalloutNV.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\FalloutNV.exe",
-            "C:\\XboxGames\\Fallout New Vegas\\Content\\FalloutNV.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/nvse_loader.exe",
-            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/FalloutNV.exe"
-        ],
         "pluginListPaths": [
             "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/AppData/Local/FalloutNV/plugins.txt"
@@ -94,6 +77,7 @@
             "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
             "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV"
         ],
+        "gameBinary": ["FalloutNV.exe", "nvse_loader.exe"],
         "pluginListType": "Gamebryo",
         "pluginFormats": ["esm", "esp"],
         "pinnedPlugins": [
@@ -150,15 +134,6 @@
             "C:\\XboxGames\\Starfield\\Content",
             "~/.local/share/Steam/steamapps/common/Starfield"
         ],
-        "gameBinaryPaths": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\sfse_loader.exe",
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Starfield.exe",
-            "C:\\XboxGames\\Starfield\\Content\\Starfield.exe",
-            "~/.local/share/Steam/steamapps/common/Starfield/sfse_loader.exe",
-            "~/.local/share/Steam/steamapps/common/Starfield/Starfield.exe"
-        ],
         "pluginListPaths": [
             "%LOCALAPPDATA%\\Starfield\\plugins.txt",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
@@ -167,6 +142,7 @@
             "%USERPROFILE%\\Documents\\My Games\\Starfield",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield"
         ],
+        "gameBinary": ["Starfield.exe", "sfse_loader.exe"],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
         "pinnedPlugins": [

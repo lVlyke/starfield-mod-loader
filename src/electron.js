@@ -39,6 +39,7 @@ const sevenBin = require("7zip-bin");
 const which = require("which");
 const xml2js = require("xml2js");
 const mime = require("mime-types");
+const winVersionInfo = require("win-version-info");
 // @ts-ignore
 const detectFileEncodingAndLanguage = /** @type {typeof import("detect-file-encoding-and-language").default} */ (
     require("detect-file-encoding-and-language")
@@ -350,8 +351,9 @@ class ElectronLoader {
                 result.gameBaseDir = this.#firstValidPath(gameDetails.gameBaseDirs);
             }
 
-            if (gameDetails?.gameBinaryPaths) {
-                result.gameBinaryPath = this.#firstValidPath(gameDetails.gameBinaryPaths);
+            if (!!gameDetails?.gameBinary && result.gameBaseDir !== undefined) {
+                const binaryPath = result.gameBaseDir;
+                result.gameBinaryPath = this.#firstValidPath(gameDetails.gameBinary.reverse().map(binaryName => path.join(binaryPath, binaryName)));
             }
 
             if (gameDetails?.pluginListPaths) {
@@ -679,6 +681,30 @@ class ElectronLoader {
             }
 
             return false;
+        });
+
+        ipcMain.handle("profile:resolveGameBinaryVersion", (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:resolveGameBinaryVersion">} */ { profile }
+        ) => {
+            if (!profile.gameBaseDir) {
+                return undefined;
+            }
+
+            const gameDetails = this.#getGameDetails(profile.gameId);
+            if (!gameDetails) {
+                return undefined;
+            }
+
+            const gameBinaryName = gameDetails.gameBinary.find(binaryName => fs.existsSync(path.join(profile.gameBaseDir, binaryName)));
+            if (!gameBinaryName) {
+                return undefined;
+            }
+
+            const gameBinaryPath = path.join(profile.gameBaseDir, gameBinaryName);
+            const gameBinaryVersionInfo = winVersionInfo(gameBinaryPath);
+            
+            return gameBinaryVersionInfo?.FileVersion;
         });
     }
 

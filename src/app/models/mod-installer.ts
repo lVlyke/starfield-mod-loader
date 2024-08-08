@@ -19,6 +19,7 @@ export namespace ModInstaller {
     export type FileList = Fomod.FileList;
     export type FileSystemItem = Fomod.FileSystemItem;
     export type FileDependency = Fomod.FileDependency;
+    export type VersionDependency = Fomod.VersionDependency;
     export type InstallStep = Fomod.InstallStep;
 
     export namespace InstallStep {

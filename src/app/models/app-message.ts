@@ -435,6 +435,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface ResolveGameBinaryVersion extends Base {
+        id: `${ProfileMessage.Prefix}:resolveGameBinaryVersion`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export type ProfileMessage = ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
@@ -466,7 +473,8 @@ export namespace AppMessage {
                                | OpenProfileConfigFile
                                | ReadConfigFile
                                | UpdateConfigFile
-                               | LinkModeSupported;
+                               | LinkModeSupported
+                               | ResolveGameBinaryVersion;
 
     // Message record:
 
@@ -523,6 +531,7 @@ export namespace AppMessage {
         "profile:openProfileConfigFile",
         "profile:readConfigFile",
         "profile:updateConfigFile",
-        "profile:linkModeSupported"
+        "profile:linkModeSupported",
+        "profile:resolveGameBinaryVersion"
     ];
 }

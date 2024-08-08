@@ -8,9 +8,9 @@ export interface GameDetails {
     fgColor?: string;
     modBaseDirs?: string[];
     gameBaseDirs?: string[];
-    gameBinaryPaths?: string[];
     pluginListPaths?: string[];
     configFilePaths?: string[];
+    gameBinary: string[];
     pluginListType?: GamePluginListType;
     pinnedPlugins?: GameDetails.PinnedPlugin[];
     gameConfigFiles?: Record<string, string[]>;

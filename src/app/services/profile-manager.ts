@@ -885,6 +885,13 @@ export class ProfileManager {
         ));
     }
 
+    public resolveGameBinaryVersion(): Observable<string | undefined> {
+        return this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke<string | undefined>("profile:resolveGameBinaryVersion", { profile }))
+        );
+    }
+
     public showModInFileExplorer(modName: string): Observable<void> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
