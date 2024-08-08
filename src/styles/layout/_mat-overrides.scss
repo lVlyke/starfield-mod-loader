@@ -12,7 +12,7 @@
         // Fixes for font-based icons:
         &.material-icons-font-set {
             font-size: 24px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
         }

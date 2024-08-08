@@ -21,7 +21,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "start": "npm run serve",
-    "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^27.0.0 && unset npm_config_platform"
+    "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^31.3.1 && unset npm_config_platform"
   },
   "private": true,
   "dependencies": {

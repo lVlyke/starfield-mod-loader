@@ -425,7 +425,7 @@ export class AppModInstallerComponent extends BaseComponent {
     
                 if (fommDependency && fommDependency.length > 0) {
                     // TODO - Check `fommDependency`
-                    log.warn("WARNING - Ignoring unsupported FOMOD fommDependency check: ", fommDependency);
+                    log.warn("Ignoring unsupported FOMOD fommDependency check: ", fommDependency);
                 }
 
                 return forkJoin(conditions).pipe(
@@ -506,7 +506,7 @@ export class AppModInstallerComponent extends BaseComponent {
             map((resolvedVersion) => {
                 if (resolvedVersion === undefined) {
                     log.warn("Unable to resolve game binary version.");
-                    return true;
+                    return true; // Skip game version checks if unable to resolve version
                 }
 
                 return resolvedVersion === verionDependency.version[0];
