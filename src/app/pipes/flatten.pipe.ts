@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { Pipe, PipeTransform } from "@angular/core";
 
 @Pipe({
@@ -7,6 +6,6 @@ import { Pipe, PipeTransform } from "@angular/core";
 export class AppFlattenPipe implements PipeTransform {
 
     public transform<T>(values: T[][]): T[] {
-        return _.flatten(values);
+        return values.flat();
     }
 }

@@ -32,6 +32,7 @@ const os = require("os");
 const { spawn } = require("child_process");
 const fs = require("fs-extra");
 const fsPromises = require("fs").promises;
+const chokidar = require("chokidar");
 const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
@@ -44,6 +45,7 @@ const detectFileEncodingAndLanguage = /** @type {typeof import("detect-file-enco
 );
 
 const DEBUG_MODE = !app.isPackaged;
+const BUILD_DATE_FILE = `${__dirname}/lastbuild.txt`;
 
 class ElectronLoader {
 
@@ -105,12 +107,22 @@ class ElectronLoader {
             }
         });
 
-        ipcMain.handle("app:reload", () => this.loadApp());
-
         ipcMain.handle("app:syncUiState", (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"app:syncUiState">} */ { appState, modListCols, defaultModListCols }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:syncUiState">} */ {
+                appState,
+                modListCols,
+                defaultModListCols
+            }
         ) => {
+            // Update window title
+            if (appState.activeProfile) {
+                const gameId = appState.activeProfile.gameId;
+                const gameTitle = appState.gameDb[gameId]?.title ?? gameId ?? "Unknown";
+
+                this.mainWindow.setTitle(`${appState.activeProfile.name} [${gameTitle}] - SML`);
+            }
+
             // Sync mod list column menu checkbox state
             const activeModListCols = appState.modListColumns ?? defaultModListCols;
             modListCols.forEach((col) => {
@@ -676,11 +688,23 @@ class ElectronLoader {
             width: 1280,
             height: 720,
             webPreferences: {
-                nodeIntegration: true,
-                contextIsolation: false, // TODO
-                // Enable HMR in debug mode
-                preload: DEBUG_MODE ? path.join(__dirname, "electron-watcher.js") : undefined
+                nodeIntegration: false,
+                contextIsolation: true,
+                preload: path.join(__dirname, "electron-preload.js")
             }
+        });
+
+        // Enable HMR in debug mode
+        if (DEBUG_MODE) {
+            this.enableHotReload();
+        }
+
+        // Load the web app
+        this.loadApp();
+
+        // Disable page navigation
+        this.mainWindow.webContents.on("will-navigate", (event) => {
+            event.preventDefault();
         });
 
         // Open all renderer links in the user's browser instead of the app
@@ -688,8 +712,6 @@ class ElectronLoader {
             shell.openExternal(url);
             return { action: "deny" };
         });
-    
-        this.loadApp();
     }
 
     loadApp() {
@@ -701,6 +723,18 @@ class ElectronLoader {
                 slashes: true
             })
         );
+    }
+
+    enableHotReload() {
+        chokidar.watch(BUILD_DATE_FILE, {
+            interval: 500,
+            usePolling: true,
+            awaitWriteFinish: true
+        }).on("change", () => {
+            console.info("Changes detected, reloading app...");
+    
+            this.loadApp();
+        });
     }
 
     /** @requires Menu */

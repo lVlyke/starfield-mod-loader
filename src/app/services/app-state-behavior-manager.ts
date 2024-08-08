@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { Injectable } from "@angular/core";
 import { Store } from "@ngxs/store";
 import { EMPTY, Observable, of, throwError } from "rxjs";
@@ -20,6 +20,7 @@ import { LangUtils } from "../util/lang-utils";
 import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { GameDatabase } from "../models/game-database";
 import { AppPreferencesModal } from "../modals/app-preferences";
+import { log } from "../util/logger";
 
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
@@ -44,14 +45,14 @@ export class AppStateBehaviorManager {
             skip(1),
             distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
             switchMap(() => this.saveSettings().pipe(
-                catchError((err) => (console.error("Failed to save app settings: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to save app settings: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:showPreferences"),
             switchMap(() => this.showAppPreferences().pipe(
-                catchError((err) => (console.error("Failed to show app settings menu: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to show app settings menu: ", err), EMPTY))
             ))
         ).subscribe();
 

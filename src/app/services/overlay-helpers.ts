@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { Injectable, ElementRef, ComponentRef, ViewRef, Injector, InjectionToken } from '@angular/core';
 import {
     Overlay,
@@ -182,7 +182,7 @@ export class OverlayHelpers {
     ): OverlayHelpersComponentRef<T> | OverlayHelpersViewRef {
 
         function appendBackdropClass(className: string) {
-            config.backdropClass = _.flatten([config.backdropClass ?? [], className]);
+            config.backdropClass = [config.backdropClass ?? [], className].flat();
         }
 
         if (!injectionTokens) {

@@ -8,6 +8,7 @@ import { environment } from "./environments/environment";
 import { APP_ROUTES } from "./app/app.routes";
 import { AppComponent } from "./app/app.component";
 import { appStates } from "./app/state";
+import { log } from "./app/util/logger";
 
 
 if (environment.production) {
@@ -24,4 +25,4 @@ bootstrapApplication(AppComponent, {
       ),
       provideRouter(APP_ROUTES)
   ]
-}).catch(err => console.log(err));
+}).catch(err => log.error(err));

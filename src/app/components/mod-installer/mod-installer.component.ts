@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import {
     Component,
     ChangeDetectionStrategy,
@@ -28,6 +28,7 @@ import { AppState } from "../../state";
 import { ProfileManager } from "../../services/profile-manager";
 import { ObservableUtils } from "../../util/observable-utils";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
+import { log } from "../../util/logger";
 
 @Component({
     selector: "app-mod-installer",
@@ -118,7 +119,7 @@ export class AppModInstallerComponent extends BaseComponent {
             switchMap((importRequest) => {
                 const ignoreAction = { label: "Ignore" };
 
-                console.info("FOMOD installer dependency check failed: ", importRequest.installer!.config?.moduleDependencies);
+                log.info("FOMOD installer dependency check failed: ", importRequest.installer!.config?.moduleDependencies);
 
                 // TODO - Show missing deps
                 return dialogManager.createDefault(
@@ -419,12 +420,12 @@ export class AppModInstallerComponent extends BaseComponent {
     
                 if (gameDependency && gameDependency.length > 0) {
                     // TODO - Check `gameDependency`
-                    console.warn("WARNING - Ignoring unsupported FOMOD gameDependency check: ", gameDependency);
+                    log.warn("WARNING - Ignoring unsupported FOMOD gameDependency check: ", gameDependency);
                 }
     
                 if (fommDependency && fommDependency.length > 0) {
                     // TODO - Check `fommDependency`
-                    console.warn("WARNING - Ignoring unsupported FOMOD fommDependency check: ", fommDependency);
+                    log.warn("WARNING - Ignoring unsupported FOMOD fommDependency check: ", fommDependency);
                 }
 
                 return forkJoin(conditions).pipe(

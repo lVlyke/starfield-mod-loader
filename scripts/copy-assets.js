@@ -10,7 +10,7 @@ const ASSETS = {
     "package.json": "package.json",
     "game-db.json": "game-db.json",
     "src/electron.js": "electron.js",
-    "src/electron-watcher.js": "electron-watcher.js"
+    "src/electron-preload.js": "electron-preload.js"
 };
 
 fs.mkdirSync(BUILD_DIR, { recursive: true })

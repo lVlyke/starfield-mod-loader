@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { Injectable } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { Store } from "@ngxs/store";
@@ -46,6 +46,7 @@ import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
 import { AppMessage } from "../models/app-message";
 import { AppProfileVerificationResultsModal } from "../modals/profile-verification-results";
+import { log } from "../util/logger";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -72,28 +73,28 @@ export class ProfileManager {
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:newProfile"),
             switchMap(() => this.createProfileFromUser().pipe(
-                catchError((err) => (console.error("Failed to create new profile: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to create new profile: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModAdd => message.id === "profile:beginModAdd"),
             switchMap(({ data }) => this.addModFromUser({ root: data?.root }).pipe(
-                catchError((err) => (console.error("Failed to add mod: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to add mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModExternalImport => message.id === "profile:beginModExternalImport"),
             switchMap(({ data }) => this.addModFromUser({ root: data?.root, externalImport: true }).pipe(
-                catchError((err) => (console.error("Failed to import mod: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to import mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:settings"),
             switchMap(() => this.showProfileSettings().pipe(
-                catchError((err) => (console.error("Failed to show settings menu: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to show settings menu: ", err), EMPTY))
             ))
         ).subscribe();
         
@@ -147,7 +148,7 @@ export class ProfileManager {
             filterDefined(),
             distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
             switchMap((profile) => this.saveProfile(profile).pipe(
-                catchError((err) => (console.error("Failed to save profile: ", err), EMPTY))
+                catchError((err) => (log.error("Failed to save profile: ", err), EMPTY))
             ))
         ).subscribe();
 
@@ -224,7 +225,7 @@ export class ProfileManager {
             // Queue update requests for 250ms to avoid back-to-back updates
             throttleTime(250, asyncScheduler, { leading: false, trailing: true }),
             switchMap(() => this.refreshDeployedMods().pipe(
-                catchError((err) => (console.error("Mod redeployment error: ", err), EMPTY))
+                catchError((err) => (log.error("Mod redeployment error: ", err), EMPTY))
             ))
         ).subscribe();
 
@@ -240,7 +241,7 @@ export class ProfileManager {
                     modPath: file.path,
                     externalImport: !file.type && !file.size // `file` is a dir if no type & size
                 }).pipe(
-                    catchError((err) => (console.error(err), EMPTY))
+                    catchError((err) => (log.error(err), EMPTY))
                 ))
             ))
         ).subscribe();
@@ -508,6 +509,8 @@ export class ProfileManager {
     }
 
     public setActiveProfile(profile: AppProfile, verify: boolean = true): Observable<AppProfile> {
+        log.info(`Switching to profile ${profile.name}`);
+
         return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
             switchMap(() => verify ? this.verifyActiveProfile({ showSuccessMessage: false }) : of(true)),
             map(() => profile)
