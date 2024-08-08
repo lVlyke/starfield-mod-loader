@@ -167,7 +167,7 @@ export class ProfileManager {
             // Monitor mod changes for new/removed plugins and update the plugins list
             this.activeProfile$.pipe(
                 filterDefined(),
-            map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFiles")),
+            map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFilesCache")),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
                 switchMap(() => this.reconcileActivePluginList())
             ).subscribe();
