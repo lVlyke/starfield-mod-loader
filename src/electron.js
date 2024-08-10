@@ -31,7 +31,6 @@ const path = require("path");
 const os = require("os");
 const { spawn } = require("child_process");
 const fs = require("fs-extra");
-const fsPromises = require("fs").promises;
 const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
@@ -59,6 +58,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_METADATA_FILE = ".sml.json";
     static /** @type {string} */ PROFILE_MODS_DIR = "mods";
     static /** @type {string} */ PROFILE_CONFIG_DIR = "config";
+    static /** @type {string} */ PROFILE_SAVE_DIR = "save";
     static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
     static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
@@ -300,6 +300,7 @@ class ElectronLoader {
             const gameBinaryPathVerifyResult = this.verifyProfilePathExists(profile.gameBinaryPath);
             const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
             const configFilePathVerifyResult = profile.configFilePath ? this.verifyProfilePathExists(profile.configFilePath) : VERIFY_SUCCESS;
+            const saveFolderPathVerifyResult = profile.saveFolderPath ? this.verifyProfilePathExists(profile.saveFolderPath) : VERIFY_SUCCESS;
 
             if (!profile.deployed) {
                 gameBinaryPathVerifyResult.error = false;
@@ -317,12 +318,14 @@ class ElectronLoader {
                 gameBinaryPath: gameBinaryPathVerifyResult,
                 pluginListPath: pluginListPathVerifyResult,
                 configFilePath: configFilePathVerifyResult,
+                saveFolderPath: saveFolderPathVerifyResult,
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
                 externalFilesCache: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
                 manageConfigFiles: VERIFY_SUCCESS,
+                manageSaveFiles: VERIFY_SUCCESS,
                 linkMode: VERIFY_SUCCESS, // TODO
                 deployed: VERIFY_SUCCESS
             };
@@ -361,6 +364,10 @@ class ElectronLoader {
 
             if (gameDetails?.configFilePaths) {
                 result.configFilePath = this.#firstValidPath(gameDetails.configFilePaths);
+            }
+
+            if (gameDetails?.saveFolderPaths) {
+                result.saveFolderPath = this.#firstValidPath(gameDetails.saveFolderPaths, listPath => path.dirname(listPath));
             }
 
             return result;
@@ -957,6 +964,11 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
+    getProfileSaveDir(/** @type {string} */ profileNameOrPath) {
+        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_SAVE_DIR);
+    }
+
+    /** @returns {string} */
     getProfileModsDir(/** @type {string} */ profileNameOrPath) {
         return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_DIR);
     }
@@ -1270,7 +1282,7 @@ class ElectronLoader {
                     log.error(`Error occurred while adding mod ${modName}: `, err);
 
                     // Erase the staging data
-                    await fsPromises.rm(modDirStagingPath, { force: true });
+                    await fs.remove(modDirStagingPath);
 
                     throw err;
                 }
@@ -2078,6 +2090,89 @@ class ElectronLoader {
     }
 
     /** @returns {Promise<string[]>} */
+    async writeSaveFiles(/** @type {AppProfile} */ profile) {
+        if (!profile.saveFolderPath || !fs.existsSync(profile.saveFolderPath)) {
+            throw new Error(`Unable to write save files: Profile's Save Folder Path "${profile.saveFolderPath}" is not valid.`);
+        }
+
+        const deploySaveDir = profile.saveFolderPath;
+        const rootBackupDir = path.join(path.dirname(profile.saveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
+        const savesBackupDir = path.join(rootBackupDir, path.basename(profile.saveFolderPath));
+        const profileSaveDir = this.getProfileSaveDir(profile.name);
+
+        // Backup existing saves
+        if (fs.existsSync(deploySaveDir)) {
+            fs.moveSync(deploySaveDir, savesBackupDir);
+        }
+
+        // Make sure profile save folder exists
+        fs.mkdirpSync(profileSaveDir);
+
+        if (profile.linkMode) {
+            await fs.symlink(
+                path.resolve(profileSaveDir),
+                path.resolve(deploySaveDir),
+                "junction"
+            );
+        } else {
+            // Create dest save folder
+            fs.mkdirpSync(deploySaveDir);
+
+            const profileSaveFiles = fs.readdirSync(profileSaveDir);
+            
+            // Copy profile saves
+            await Promise.all(profileSaveFiles.map(async (saveFileName) => {
+                const saveSrcPath = path.join(profileSaveDir, saveFileName);
+                const saveDestPath = path.join(deploySaveDir, saveFileName);
+
+                // TODO - Check that links are possible to `deploySaveDir`
+                if (profile.linkMode) {
+                    await fs.link(saveSrcPath, saveDestPath);
+                } else {
+                    await fs.copyFile(saveSrcPath, saveDestPath);
+                }
+            }));
+        }
+
+        // Create helper symlink for easy access to backed up saves
+        const backupDirHelperLink = `${profile.saveFolderPath.replace(/[/\\]$/, "")}.original`;
+        if (fs.existsSync(savesBackupDir)) {
+            await fs.symlink(
+                path.resolve(savesBackupDir),
+                path.resolve(backupDirHelperLink),
+                "dir"
+            );
+        }
+
+        return [deploySaveDir, backupDirHelperLink];
+    }
+
+    /** @returns {Promise<unknown>} */
+    async importSaveFilesToProfile(/** @type {AppProfile} */ profile, /** @type {string} */ savesDirPath) {
+        const profileSaveDir = this.getProfileSaveDir(profile.name);
+
+        const importedSaveFiles = await fs.readdir(savesDirPath);
+        
+        return Promise.all(importedSaveFiles.map(async (saveFileName) => {
+            const saveSrcPath = path.join(savesDirPath, saveFileName);
+            const saveDestPath = path.join(profileSaveDir, saveFileName);
+
+            if ((await fs.lstat(saveSrcPath)).isFile()) {
+                if (await fs.exists(saveDestPath)) {
+                    await fs.remove(saveDestPath);
+                }
+
+                // TODO - Check that links are possible
+                if (profile.linkMode) {
+                    await fs.link(saveSrcPath, saveDestPath);
+                } else {
+                    await fs.copyFile(saveSrcPath, saveDestPath);
+                }
+            }
+        }));
+    }
+
+    /** @returns {Promise<string[]>} */
     async processDeployedFiles(/** @type {AppProfile} */ profile, /** @type {string[]} */ profileModFiles) {
         const gameDetails = this.#getGameDetails(profile.gameId);
 
@@ -2128,6 +2223,10 @@ class ElectronLoader {
                 profileModFiles.push(... await this.writeConfigFiles(profile));
             }
 
+            if (profile.manageSaveFiles) {
+                profileModFiles.push(... await this.writeSaveFiles(profile));
+            }
+
             // Write game resources
             profileModFiles.push(... await this.deployGameResources(profile, normalizePathCasing));
 
@@ -2171,7 +2270,28 @@ class ElectronLoader {
                 return;
             }
 
+            // A deployed profile is orphaned if it is not known by the running instance of the application
+            let orphanedDeploy = false;
+
+            if (deploymentMetadata.profile !== profile.name) {
+                const originalProfile = this.loadProfile(deploymentMetadata.profile);
+                if (originalProfile) {
+                    profile = originalProfile;
+                } else {
+                    orphanedDeploy = true;
+                }
+            }
+
             log.info("Undeploying profile", deploymentMetadata.profile);
+
+            if (orphanedDeploy) {
+                log.warn("The profile being undeployed is orphaned. Data loss may occur.");
+            }
+
+            // Copy any new saves back to the profile folder if in link mode
+            if (!orphanedDeploy && !profile.linkMode && profile.manageSaveFiles && profile.saveFolderPath) {
+                await this.importSaveFilesToProfile(profile, profile.saveFolderPath);
+            }
 
             // Only remove files managed by this profile
             const undeployJobs = deploymentMetadata.profileModFiles.map(async (existingFile) => {
@@ -2180,7 +2300,7 @@ class ElectronLoader {
                     : path.join(profile.modBaseDir, existingFile);
 
                 if (fs.existsSync(fullExistingPath)) {
-                    await fsPromises.rm(fullExistingPath, { force: true, recursive: true });
+                    await fs.remove(fullExistingPath);
                 }
 
                 // Recursively remove empty parent directories
@@ -2197,7 +2317,8 @@ class ElectronLoader {
             const extFilesBackupDirs = [
                 path.join(profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
-                ... profile.configFilePath ? [path.join(profile.configFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : []
+                ... profile.configFilePath ? [path.join(profile.configFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
+                ... profile.saveFolderPath ? [path.join(path.dirname(profile.saveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
             ];
             
             // Restore original external files, if any were moved

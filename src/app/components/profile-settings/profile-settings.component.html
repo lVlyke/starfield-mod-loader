@@ -65,6 +65,13 @@
     </div>
 
     <div>
+        <mat-checkbox name="manageSaveFiles" [ngModel]="initialProfile.manageSaveFiles">
+            Manage Save Files
+            <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
+        </mat-checkbox>
+    </div>
+
+    <div>
         <mat-checkbox name="linkMode"
                       [disabled]="!('profile:linkModeSupported' | appSendElectronMsg$:{ profile: formModel$ | async } | async)"
                       [ngModel]="initialProfile.linkMode">

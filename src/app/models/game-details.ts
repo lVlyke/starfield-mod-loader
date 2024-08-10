@@ -10,6 +10,7 @@ export interface GameDetails {
     gameBaseDirs?: string[];
     pluginListPaths?: string[];
     configFilePaths?: string[];
+    saveFolderPaths?: string[];
     gameBinary: string[];
     pluginListType?: GamePluginListType;
     pinnedPlugins?: GameDetails.PinnedPlugin[];

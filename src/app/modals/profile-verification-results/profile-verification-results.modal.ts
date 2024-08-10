@@ -56,6 +56,10 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
             this.errors.push("Invalid Config File Path");
         }
 
+        if (verificationResults.saveFolderPath.error) {
+            this.errors.push("Invalid Save Folder Path");
+        }
+
         if (verificationResults.mods.error || verificationResults.rootMods.error) {
             this.errors.push("Invalid or missing mod files");
         }

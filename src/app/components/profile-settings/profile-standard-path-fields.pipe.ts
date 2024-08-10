@@ -1,7 +1,10 @@
 import { Pipe, PipeTransform } from "@angular/core";
 import { AppProfile } from "../../models/app-profile";
 
-export type DefaultProfilePaths = Pick<AppProfile, "modBaseDir" | "gameBaseDir" | "gameBinaryPath" | "pluginListPath" | "configFilePath">;
+export type DefaultProfilePaths = Pick<
+    AppProfile,
+    "modBaseDir" | "gameBaseDir" | "gameBinaryPath" | "pluginListPath" | "configFilePath" | "saveFolderPath"
+>;
 
 export interface DefaultProfilePathField {
     formId: keyof DefaultProfilePaths,
@@ -16,6 +19,7 @@ const STANDARD_PATH_FIELDS: Readonly<DefaultProfilePathField[]> = [
     { formId: "pluginListPath", title: "Plugin List Path", fileTypes: ["txt"] }
 ];
 const CONFIG_FILE_PATH_FIELD: DefaultProfilePathField = { formId: "configFilePath", title: "Config Files Directory" };
+const SAVE_FOLDER_PATH_FIELD: DefaultProfilePathField = { formId: "saveFolderPath", title: "Saves Directory" };
 
 @Pipe({
     name: "appProfileSettingsStandardPathFields"
@@ -27,6 +31,10 @@ export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
         if (formModel?.manageConfigFiles) {
             result = result.concat([CONFIG_FILE_PATH_FIELD]);
+        }
+
+        if (formModel?.manageSaveFiles) {
+            result = result.concat([SAVE_FOLDER_PATH_FIELD]);
         }
 
         return result;

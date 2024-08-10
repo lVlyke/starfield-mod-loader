@@ -205,11 +205,13 @@ export class ProfileManager {
                         "modBaseDir",
                         "pluginListPath",
                         "configFilePath",
+                        "saveFolderPath",
                         "mods",
                         "rootMods",
                         "plugins",
                         "manageExternalPlugins",
                         "manageConfigFiles",
+                        "manageSaveFiles",
                         "linkMode"
                     ),
     

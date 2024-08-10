@@ -22,6 +22,10 @@
             "%USERPROFILE%\\Documents\\My Games\\Fallout4",
             "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4"
         ],
+        "saveFolderPaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Saves",
+            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Saves"
+        ],
         "gameBinary": ["Fallout4.exe", "f4se_loader.exe"],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
@@ -76,6 +80,10 @@
         "configFilePaths": [
             "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
             "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV"
+        ],
+        "saveFolderPaths": [
+            "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Saves",
+            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/Saves"
         ],
         "gameBinary": ["FalloutNV.exe", "nvse_loader.exe"],
         "pluginListType": "Gamebryo",
@@ -141,6 +149,10 @@
         "configFilePaths": [
             "%USERPROFILE%\\Documents\\My Games\\Starfield",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield"
+        ],
+        "saveFolderPaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Saves",
+            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Saves"
         ],
         "gameBinary": ["Starfield.exe", "sfse_loader.exe"],
         "pluginListType": "CreationEngine",
