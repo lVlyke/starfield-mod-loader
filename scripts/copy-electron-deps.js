@@ -30,7 +30,10 @@ const DEPENDENCIES = [
     "xmlbuilder",
     "detect-file-encoding-and-language",
     "mime-types",
-    "mime-db"
+    "mime-db",
+    "win-version-info",
+    "napi-macros",
+    "node-gyp-build"
 ];
 
 execSync(

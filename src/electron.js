@@ -32,7 +32,6 @@ const os = require("os");
 const { spawn } = require("child_process");
 const fs = require("fs-extra");
 const fsPromises = require("fs").promises;
-const chokidar = require("chokidar");
 const _ = require("lodash");
 const Seven = require("node-7z");
 const sevenBin = require("7zip-bin");
@@ -752,6 +751,8 @@ class ElectronLoader {
     }
 
     enableHotReload() {
+        const chokidar = require("chokidar");
+
         chokidar.watch(BUILD_DATE_FILE, {
             interval: 500,
             usePolling: true,
