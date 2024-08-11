@@ -3,8 +3,8 @@
         <mat-label>Game</mat-label>
         <mat-select name="gameId"
                     [required]="true"
-                    [disabled]="!createMode"
-                    [ngModel]="initialProfile.gameId">
+                    [disabled]="!createMode || !!initialProfile.gameId"
+                    [ngModel]="initialProfile.gameId ?? GameId.STARFIELD">
             <mat-select-trigger *ngIf="formModel$ | async as formModel">
                 <app-game-badge [gameId]="formModel.gameId!" />
             </mat-select-trigger>

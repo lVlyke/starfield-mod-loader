@@ -240,7 +240,7 @@
                         <button id="mod-activate-button-compact"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
-                                [matTooltip]="isProfileDeployed ? 'Deactivate Mods' : 'Activate Mods'"
+                                [matTooltip]="isProfileDeployed ? 'Deactivate Profile' : 'Activate Profile'"
                                 (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
                                 
                             @if (isDeployInProgress) {
@@ -251,7 +251,9 @@
                                 </mat-icon>
                             }
         
-                            ({{ activeProfile | appProfileActiveModCount }})
+                            @if ((activeProfile | appProfileActiveModCount) > 0) {
+                                ({{ activeProfile | appProfileActiveModCount }})
+                            }
                         </button>
 
                         <button id="mod-refresh-button-compact"
@@ -295,7 +297,11 @@
                                 </mat-icon>
                             }
         
-                            {{ isProfileDeployed ? "Deactivate Mods" : "Activate Mods" }}&nbsp;({{ activeProfile | appProfileActiveModCount }})
+                            {{ isProfileDeployed ? "Deactivate Profile" : "Activate Profile" }}
+
+                            @if ((activeProfile | appProfileActiveModCount) > 0) {
+                                ({{ activeProfile | appProfileActiveModCount }})
+                            }
                         </button>
         
                         <button id="mod-refresh-button"
