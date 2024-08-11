@@ -29,6 +29,7 @@ import { DefaultProfilePaths } from "./profile-standard-path-fields.pipe";
 })
 export class AppProfileSettingsComponent extends BaseComponent {
 
+    public readonly GameId = GameId;
     public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile>>(this, {});
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
@@ -103,7 +104,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
             const control = this.form.controls[pathId];
             const defaultValue = this.defaultPaths![pathId];
-            if (control && control.untouched && !control.dirty && (this.createMode || !control.value)) {
+            if (control && control.untouched && !control.dirty && !control.value) {
                 if (!!defaultValue) {
                     control.setValue(defaultValue);
                 } else {

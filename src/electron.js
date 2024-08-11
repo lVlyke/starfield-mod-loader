@@ -274,9 +274,22 @@ class ElectronLoader {
             const srcModsDir = this.getProfileModsDir(srcProfile.name);
             const destModsDir = this.getProfileModsDir(destProfile.name);
 
-            fs.mkdirpSync(destModsDir);
-            fs.copySync(srcModsDir, destModsDir);
+            // Copy profile mods
+            if (fs.existsSync(srcModsDir)) {
+                fs.mkdirpSync(destModsDir);
+                fs.copySync(srcModsDir, destModsDir);
+            }
 
+            const srcConfigDir = this.getProfileConfigDir(srcProfile.name);
+            const destConfigDir = this.getProfileConfigDir(destProfile.name);
+
+            // Copy config files
+            if (fs.existsSync(srcConfigDir)) {
+                fs.mkdirpSync(destConfigDir);
+                fs.copySync(srcConfigDir, destConfigDir);
+            }
+
+            // Copy plugin order backups
             const srcBackupsDir = this.getProfileBackupsDir(srcProfile.name);
             if (fs.existsSync(srcBackupsDir)) {
                 const destBackupsDir = this.getProfileBackupsDir(destProfile.name);

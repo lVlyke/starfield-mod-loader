@@ -552,7 +552,7 @@ export class ProfileManager {
     }
 
     public showNewProfileWizard(defaults?: Partial<AppProfile>, verify: boolean = true): Observable<AppProfile | undefined> {
-        defaults ??= AppProfile.create("New Profile", GameId.STARFIELD); // TODO
+        defaults ??= AppProfile.create("New Profile");
         
         return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
             switchMap((overlayRef) => {

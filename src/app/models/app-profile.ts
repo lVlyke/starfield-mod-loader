@@ -66,7 +66,9 @@ export namespace AppProfile {
         backupDate: Date;
     }
 
-    export function create(name: string, gameId: GameId): AppProfile {
+    export function create(name: string, gameId: GameId): AppProfile;
+    export function create(name: string): Partial<AppProfile>;
+    export function create(name: string, gameId?: GameId): Partial<AppProfile> {
         return {
             name,
             gameId,
