@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
-import { Injectable, ElementRef, ComponentRef, ViewRef, Injector, InjectionToken } from '@angular/core';
+import * as _ from "lodash";
+import { Injectable, ElementRef, ComponentRef, ViewRef, Injector, InjectionToken } from "@angular/core";
 import {
     Overlay,
     OverlayRef,
@@ -7,20 +7,22 @@ import {
     OverlayPositionBuilder,
     ConnectedPosition,
     GlobalPositionStrategy
-} from '@angular/cdk/overlay';
-import { ComponentPortal, ComponentType, Portal, TemplatePortal, PortalInjector } from '@angular/cdk/portal';
-import { Observable, of } from 'rxjs';
-import { delay, tap, skip } from 'rxjs/operators';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ObservableUtils } from '../util/observable-utils';
-import { vec2 } from '../util/vec';
+} from "@angular/cdk/overlay";
+import { ComponentPortal, ComponentType, Portal, TemplatePortal, PortalInjector } from "@angular/cdk/portal";
+import { Observable, of } from "rxjs";
+import { delay, tap, skip } from "rxjs/operators";
+import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
+import { ObservableUtils } from "../util/observable-utils";
+import { vec2 } from "../util/vec";
 
-export const OverlayRefSymbol = new InjectionToken<OverlayHelpersRef>('OverlayRefSymbol');
+export const OverlayRefSymbol = new InjectionToken<OverlayHelpersRef>("OverlayRefSymbol");
 
 export interface OverlayHelpersConfig extends OverlayConfig {
     disposeOnBackdropClick?: boolean;
     disposeOnBreakpointChange?: boolean;
     center?: boolean;
+    centerHorizontally?: boolean;
+    centerVertically?: boolean;
     injector?: Injector;
     autoResize?: boolean;
     managed?: boolean;
@@ -45,17 +47,17 @@ export interface OverlayHelpersViewRef extends OverlayHelpersRef {
 }
 
 @Injectable({
-    providedIn: 'root'
+    providedIn: "root"
 })
 export class OverlayHelpers {
 
     public static readonly DefaultConnectionPosition: ConnectedPosition = {
         offsetX: 0,
         offsetY: 0,
-        originX: 'center',
-        originY: 'bottom',
-        overlayX: 'center',
-        overlayY: 'top'
+        originX: "center",
+        originY: "bottom",
+        overlayX: "center",
+        overlayY: "top"
     };
 
     public readonly position = this.overlay.position;
@@ -81,7 +83,7 @@ export class OverlayHelpers {
         if (this.overlayStack.length > 0) {
             _.last(this.overlayStack)?.close();
         } else {
-            throw new Error('No overlays are open.');
+            throw new Error("No overlays are open.");
         }
     }
 
@@ -109,7 +111,7 @@ export class OverlayHelpers {
     ): OverlayHelpersComponentRef<T> | OverlayHelpersViewRef {
 
         // Set the overlay width to the width of the parent element if specified
-        if (config && config.width === 'parent') {
+        if (config && config.width === "parent") {
             if (anchor instanceof ElementRef || anchor instanceof HTMLElement) {
                 config.width = ((anchor instanceof ElementRef) ? anchor.nativeElement : anchor).clientWidth;
             } else {
@@ -142,10 +144,14 @@ export class OverlayHelpers {
         config?: OverlayHelpersConfig,
         injectionTokens?: OverlayHelpers.InjetorTokens
     ): OverlayHelpersComponentRef<T> | OverlayHelpersViewRef {
-        config = Object.assign({}, { width: '100%', height: '100%'}, config);
+        config = Object.assign({}, { width: "100%", height: "100%"}, config);
 
-        if (config.center === undefined) {
-            config.center = true;
+        if (config.centerHorizontally === undefined) {
+            config.centerHorizontally = config.center ?? true;
+        }
+
+        if (config.centerVertically === undefined) {
+            config.centerVertically = config.center ?? true;
         }
 
         if (config.autoResize === undefined) {
@@ -155,9 +161,13 @@ export class OverlayHelpers {
         // Create an overlay that covers the entire view area
         const positionStrategy = config.positionStrategy ?? this.overlayPositionBuilder.global();
 
-        if (config.center) {
+        if (config.centerHorizontally) {
             (positionStrategy as GlobalPositionStrategy)
-                .centerHorizontally()
+                .centerHorizontally();
+        }
+
+        if (config.centerVertically) {
+            (positionStrategy as GlobalPositionStrategy)
                 .centerVertically();
         }
 
@@ -195,13 +205,13 @@ export class OverlayHelpers {
         }
 
         if (config.hasBackdrop && config.backdropClass === undefined) {
-            appendBackdropClass('backdrop-dark');
+            appendBackdropClass("backdrop-dark");
         }
 
         if (config.disposeOnBackdropClick === undefined && config.hasBackdrop !== false) {
-            // Make the backdrop clear if one wasn't given originally
+            // Make the backdrop clear if one wasn"t given originally
             if (config.hasBackdrop !== true && !config.backdropClass) {
-                config.backdropClass = 'backdrop-clear';
+                config.backdropClass = "backdrop-clear";
             }
 
             // Dispose the overlay on backdrop click
@@ -218,7 +228,7 @@ export class OverlayHelpers {
         }
 
         if (config.autoResize) {
-            appendBackdropClass('backdrop-auto-size');
+            appendBackdropClass("backdrop-auto-size");
         }
 
         // Close the previous managed overlay if open

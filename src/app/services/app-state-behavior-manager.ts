@@ -111,10 +111,10 @@ export class AppStateBehaviorManager {
             width: "auto",
             height: "auto",
             minHeight: "10%",
-            center: true,
+            centerHorizontally: true,
+            centerVertically: false,
             hasBackdrop: true,
-            disposeOnBackdropClick: false,
-            panelClass: "mat-app-background"
+            disposeOnBackdropClick: false
         }, [[LOADING_MSG_TOKEN, loadingMsg]]);
     }
 
