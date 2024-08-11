@@ -2,7 +2,7 @@
 
 A cross-platform mod manager for Starfield and other games.
 
-![Starfield Mod Loader](/docs/app.png)
+![Starfield Mod Loader](/docs/app1.png)
 
 # Features
 

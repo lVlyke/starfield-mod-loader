@@ -2146,11 +2146,11 @@ class ElectronLoader {
             // Wait for all files to be removed
             await Promise.all(undeployJobs);
 
-            const extFilesBackupDirs = [
+            const extFilesBackupDirs = _.uniq([
                 path.join(profile.modBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 path.join(profile.gameBaseDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 ... profile.configFilePath ? [path.join(profile.configFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : []
-            ];
+            ]);
             
             // Restore original external files, if any were moved
             for (const extFilesBackupDir of extFilesBackupDirs) {
