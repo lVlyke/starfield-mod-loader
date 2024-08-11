@@ -289,6 +289,15 @@ class ElectronLoader {
                 fs.copySync(srcConfigDir, destConfigDir);
             }
 
+            const srcSaveDir = this.getProfileSaveDir(srcProfile.name);
+            const destSaveDir = this.getProfileSaveDir(destProfile.name);
+
+            // Copy save files
+            if (fs.existsSync(srcSaveDir)) {
+                fs.mkdirpSync(destSaveDir);
+                fs.copySync(srcSaveDir, destSaveDir);
+            }
+
             // Copy plugin order backups
             const srcBackupsDir = this.getProfileBackupsDir(srcProfile.name);
             if (fs.existsSync(srcBackupsDir)) {
