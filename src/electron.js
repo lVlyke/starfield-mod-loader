@@ -857,6 +857,10 @@ class ElectronLoader {
      * @returns {AppProfileDescription[]}
      */
     loadProfileList() {
+        if (!fs.existsSync(ElectronLoader.APP_PROFILES_DIR)) {
+            return [];
+        }
+
         const profileNames = _.sortBy(fs.readdirSync(ElectronLoader.APP_PROFILES_DIR));
         return profileNames.map((profileName) => {
             const profile = this.loadProfile(profileName);
