@@ -93,7 +93,7 @@ export class ProfileManager {
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:settings"),
-            switchMap(() => this.showProfileSettings().pipe(
+            switchMap(() => this.showProfileWizard().pipe(
                 catchError((err) => (log.error("Failed to show settings menu: ", err), EMPTY))
             ))
         ).subscribe();
@@ -185,7 +185,7 @@ export class ProfileManager {
                 if (!!pluginListPath) {
                     return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
                 } else {
-                    return this.showProfileSettings({ remedy: "pluginListPath" });
+                    return this.showProfileWizard({ remedy: "pluginListPath" });
                 }
             })
         ).subscribe();
@@ -523,16 +523,12 @@ export class ProfileManager {
         return this.setActiveProfile(profileChanges);
     }
 
-    public showProfileSettings(
+    public showProfileWizard(
         options?: { remedy?: boolean | (keyof AppProfile) }
     ): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
             map((activeProfile) => {
-                if (!activeProfile) {
-                    throw new Error("No profile active.");
-                }
-
                 const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
                     center: true,
                     hasBackdrop: true,
@@ -547,7 +543,10 @@ export class ProfileManager {
                     modContextMenuRef.component.instance.remedyMode = options.remedy;
                 }
 
-                modContextMenuRef.component.instance.profile = activeProfile;
+                if (!!activeProfile) {
+                    modContextMenuRef.component.instance.profile = activeProfile;
+                }
+                
                 return modContextMenuRef;
             })
         ));
@@ -556,7 +555,7 @@ export class ProfileManager {
     public showNewProfileWizard(defaults?: Partial<AppProfile>, verify: boolean = true): Observable<AppProfile | undefined> {
         defaults ??= AppProfile.create("New Profile");
         
-        return ObservableUtils.hotResult$(this.showProfileSettings().pipe(
+        return ObservableUtils.hotResult$(this.showProfileWizard().pipe(
             switchMap((overlayRef) => {
                 overlayRef.component.instance.profile = defaults!;
                 overlayRef.component.instance.createMode = true;
