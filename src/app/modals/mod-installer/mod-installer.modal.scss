@@ -1,4 +1,5 @@
 @use "@angular/material" as mat;
+@use "../../../styles/mixins" as mixins;
 
 :host {
 
@@ -31,9 +32,7 @@
                     margin-left: 0.5rem;
 
                     mat-icon {
-                        width: $button-size;
-                        height: $button-size;
-                        font-size: $button-size;
+                        @include mixins.mat-icon-size($button-size);
                     }
                 }
             }

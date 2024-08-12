@@ -1,3 +1,5 @@
+@use "../../../styles/mixins" as mixins;
+
 :host {
     display: flex;
     height: 100vh;
@@ -282,9 +284,7 @@
             font-size: 1rem;
 
             > mat-icon {
-                width: 1.75rem;
-                height: 1.75rem;
-                font-size: 1.75rem;
+                @include mixins.mat-icon-size(1.75rem);
             }
         }
 
@@ -317,9 +317,7 @@
                 font-size: 1.5rem;
     
                 > mat-icon {
-                    width: 3rem;
-                    height: 3rem;
-                    font-size: 3rem;
+                    @include mixins.mat-icon-size(3rem);
                 }
             }
         }

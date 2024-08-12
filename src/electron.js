@@ -248,7 +248,9 @@ class ElectronLoader {
                 profilePath = pickedFile?.filePaths[0];
             }
 
-            return this.loadProfileFromPath(profilePath, profilePath);
+            if (profilePath) {
+                return this.loadProfileFromPath(profilePath, profilePath);
+            }
         });
 
         ipcMain.handle("app:saveProfile", async (
@@ -667,12 +669,14 @@ class ElectronLoader {
                 // Create a test link to modBaseDir
                 fs.linkSync(testFileSrc, modDirTestFileDest);
 
-                if (!fs.existsSync(profile.gameBaseDir)) {
-                    fs.mkdirpSync(profile.gameBaseDir);
-                }
+                if (modDirTestFileDest !== gameDirTestFileDest) {
+                    if (!fs.existsSync(profile.gameBaseDir)) {
+                        fs.mkdirpSync(profile.gameBaseDir);
+                    }
 
-                // Create a test link to gameBaseDir
-                fs.linkSync(testFileSrc, gameDirTestFileDest);
+                    // Create a test link to gameBaseDir
+                    fs.linkSync(testFileSrc, gameDirTestFileDest);
+                }
 
                 return true;
             } catch (err) {

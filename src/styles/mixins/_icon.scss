@@ -1,0 +1,14 @@
+@mixin mat-icon-width($width) {
+    font-size: $width !important;
+    width: $width !important;
+}
+
+@mixin mat-icon-height($height) {
+    font-size: $height !important;
+    height: $height !important;
+}
+
+@mixin mat-icon-size($size) {
+    @include mat-icon-width($size);
+    @include mat-icon-height($size);
+}
