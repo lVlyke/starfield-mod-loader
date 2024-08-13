@@ -9,9 +9,13 @@
     }
 
     mat-icon.mat-icon[role="img"] {
+        // Apply default icon size
+        @at-root .material-icons-font-set {
+            font-size: 24px;
+        }
+
         // Fixes for font-based icons:
         &.material-icons-font-set {
-            font-size: 24px;
             display: inline-flex;
             align-items: center;
             justify-content: center;

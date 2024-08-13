@@ -27,7 +27,7 @@ import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
 import { ModProfileRef } from "../models/mod-profile-ref";
-import { OverlayHelpers, OverlayHelpersComponentRef, OverlayHelpersRef } from "./overlay-helpers";
+import { OverlayHelpers } from "./overlay-helpers";
 import { AppProfileSettingsModal } from "../modals/profile-settings";
 import { AppDialogs } from "../services/app-dialogs";
 import { LangUtils } from "../util/lang-utils";
@@ -72,28 +72,34 @@ export class ProfileManager {
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:newProfile"),
-            switchMap(() => this.createProfileFromUser().pipe(
+            switchMap(() => this.showProfileWizard().pipe(
                 catchError((err) => (log.error("Failed to create new profile: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModAdd => message.id === "profile:beginModAdd"),
-            switchMap(({ data }) => this.addModFromUser({ root: data?.root }).pipe(
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([{ data }, activeProfile]) => this.addModFromUser(activeProfile!, { root: data?.root }).pipe(
                 catchError((err) => (log.error("Failed to add mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModExternalImport => message.id === "profile:beginModExternalImport"),
-            switchMap(({ data }) => this.addModFromUser({ root: data?.root, externalImport: true }).pipe(
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([{ data }, activeProfile]) => this.addModFromUser(activeProfile!, { root: data?.root, externalImport: true }).pipe(
                 catchError((err) => (log.error("Failed to import mod: ", err), EMPTY))
             ))
         ).subscribe();
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "profile:settings"),
-            switchMap(() => this.showProfileWizard().pipe(
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([, activeProfile]) => this.showProfileWizard(activeProfile).pipe(
                 catchError((err) => (log.error("Failed to show settings menu: ", err), EMPTY))
             ))
         ).subscribe();
@@ -134,7 +140,7 @@ export class ProfileManager {
                     switchMap((profile) => {
                         if (!profile) {
                             this.appManager.saveSettings();
-                            return this.createProfileFromUser();
+                            return this.showProfileWizard();
                         }
 
                         return of(profile);
@@ -181,11 +187,12 @@ export class ProfileManager {
                 path: activeGameDetails?.pluginListPaths ?? [],
                 dirname: true
             })),
-            switchMap((pluginListPath) => {
+            withLatestFrom(this.activeProfile$),
+            switchMap(([pluginListPath, activeProfile]) => {
                 if (!!pluginListPath) {
                     return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
                 } else {
-                    return this.showProfileWizard({ remedy: "pluginListPath" });
+                    return this.showProfileWizard(activeProfile, { remedy: "pluginListPath" });
                 }
             })
         ).subscribe();
@@ -238,8 +245,10 @@ export class ProfileManager {
                 event.preventDefault();
                 event.stopPropagation();
             }),
-            switchMap(event => from(event.dataTransfer!.files).pipe(
-                concatMap((file) => this.addModFromUser({
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([event, activeProfile]) => from(event.dataTransfer!.files).pipe(
+                concatMap((file) => this.addModFromUser(activeProfile!, {
                     modPath: file.path,
                     externalImport: !file.type && !file.size // `file` is a dir if no type & size
                 }).pipe(
@@ -436,36 +445,19 @@ export class ProfileManager {
                 if (activeProfile === profile) {
                     return this.appState$.pipe(
                         take(1),
-                        switchMap(({ profiles }) => profiles.length > 0
-                            ? this.loadProfile(profiles[0], true)
-                            : this.createProfileFromUser()
-                        )
+                        switchMap(({ profiles }) => {
+                            if (profiles.length > 0) {
+                                return this.loadProfile(profiles[0], true);
+                            } else {
+                                return this.showProfileWizard();
+                            }
+                        })
                     );
                 } else {
                     return of(true);
                 }
             })
         ));
-    }
-
-    public createProfile(
-        profileName: string,
-        gameId: GameId,
-        setActive: boolean = true
-    ): Observable<AppProfile> {
-        const profile = AppProfile.create(profileName, gameId);
-
-        if (setActive) {
-            this.setActiveProfile(profile);
-        }
-
-        this.addProfile(profile);
-
-        return this.saveProfile(profile);
-    }
-
-    public createProfileFromUser(defaults?: Partial<AppProfile>): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(this.showNewProfileWizard(defaults));
     }
 
     public importProfileFromUser(): Observable<AppProfile | undefined> {
@@ -485,11 +477,11 @@ export class ProfileManager {
         profileName: string = `${profileToCopy.name} - Copy`
     ): Observable<AppProfile | undefined> {
         return ObservableUtils.hotResult$(of(false).pipe(
-            switchMap(() => this.showNewProfileWizard({
+            switchMap(() => this.showProfileWizard({
                 ...profileToCopy,
                 name: profileName,
                 deployed: false
-            }, false)),
+            }, { createMode: true, verifyProfile: false })),
             switchMap((newProfile) => {
                 if (!!newProfile) {
                     // Copy mods to the newly created profile
@@ -524,67 +516,62 @@ export class ProfileManager {
     }
 
     public showProfileWizard(
-        options?: { remedy?: boolean | (keyof AppProfile) }
-    ): Observable<OverlayHelpersComponentRef<AppProfileSettingsModal>> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
-            take(1),
-            map((activeProfile) => {
-                const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
-                    center: true,
-                    hasBackdrop: true,
-                    disposeOnBackdropClick: false,
-                    minWidth: "24rem",
-                    width: "70%",
-                    height: "90%",
-                    panelClass: "mat-app-background"
-                });
+        profile?: Partial<AppProfile>,
+        options: {
+            createMode?: boolean,
+            verifyProfile?: boolean,
+            remedy?: boolean | (keyof AppProfile)
+        } = { createMode: !profile }
+    ): Observable<AppProfile> {
+        profile ??= AppProfile.create("New Profile");
 
-                if (!!options?.remedy) {
-                    modContextMenuRef.component.instance.remedyMode = options.remedy;
-                }
+        const modContextMenuRef = this.overlayHelpers.createFullScreen(AppProfileSettingsModal, {
+            center: true,
+            hasBackdrop: true,
+            disposeOnBackdropClick: false,
+            minWidth: "24rem",
+            width: "70%",
+            height: "90%",
+            panelClass: "mat-app-background"
+        });
 
-                if (!!activeProfile) {
-                    modContextMenuRef.component.instance.profile = activeProfile;
+        if (!!options.remedy) {
+            modContextMenuRef.component.instance.remedyMode = options.remedy;
+        }
+
+        modContextMenuRef.component.instance.createMode = options.createMode ?? false;
+        modContextMenuRef.component.instance.profile = profile;
+        modContextMenuRef.component.changeDetectorRef.detectChanges();
+
+        return ObservableUtils.hotResult$(modContextMenuRef.component.instance.onFormSubmit$.pipe(
+            switchMap((newProfile) => {
+                if (options.createMode) {
+                    return this.setActiveProfile(newProfile, options.verifyProfile !== false);
+                } else if (options.verifyProfile) {
+                    return this.verifyActiveProfile().pipe(map(() => newProfile));
+                } else {
+                    return of(newProfile);
                 }
-                
-                return modContextMenuRef;
             })
         ));
     }
 
-    public showNewProfileWizard(defaults?: Partial<AppProfile>, verify: boolean = true): Observable<AppProfile | undefined> {
-        defaults ??= AppProfile.create("New Profile");
-        
-        return ObservableUtils.hotResult$(this.showProfileWizard().pipe(
-            switchMap((overlayRef) => {
-                overlayRef.component.instance.profile = defaults!;
-                overlayRef.component.instance.createMode = true;
-                overlayRef.component.changeDetectorRef.detectChanges();
-
-                return overlayRef.component.instance.onFormSubmit$.pipe(
-                    switchMap(newProfile => this.setActiveProfile(newProfile, verify)),
-                );
-            })
-        ));
-    }
-
-    public addModFromUser(options?: {
+    public addModFromUser(profile: AppProfile, options?: {
         externalImport?: boolean;
         modPath?: string;
         root?: boolean;
     }): Observable<ModProfileRef | undefined> {
-        let loadingIndicatorRef: OverlayHelpersRef | undefined;
+        const loadingIndicatorRef = this.appManager.showLoadingIndicator("Reading mod data...");
 
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
-            take(1),
-            tap(() => loadingIndicatorRef = this.appManager.showLoadingIndicator("Reading mod data...")),
-            switchMap((activeProfile) => ElectronUtils.invoke<ModImportRequest | undefined>(
-                options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
-                { profile: activeProfile, modPath: options?.modPath, root: options?.root }
-            )),
+        return ObservableUtils.hotResult$(ElectronUtils.invoke<ModImportRequest | undefined>(
+            options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
+            { profile, modPath: options?.modPath, root: options?.root }
+        ).pipe(
             tap(() => loadingIndicatorRef?.close()),
             switchMap((importRequest) => {
-                if (!importRequest || importRequest.importStatus === "FAILED") {
+                if (!importRequest) {
+                    return of(undefined);
+                } else if (importRequest.importStatus === "FAILED") {
                     // TODO - Show error
                     return this.dialogManager.createDefault("Failed to add mod.", [
                         DialogManager.OK_ACTION
@@ -613,9 +600,12 @@ export class ProfileManager {
                     })
                 );
             }),
-            withLatestFrom(this.activeProfile$),
-            switchMap(([importRequest, activeProfile]) => {
-                const modList = importRequest.root ? activeProfile!.rootMods : activeProfile!.mods;
+            switchMap((importRequest) => {
+                if (!importRequest) {
+                    return of(undefined);
+                }
+
+                const modList = importRequest.root ? profile!.rootMods : profile!.mods;
                 const modAlreadyExists = Array.from(modList.keys()).includes(importRequest.modName);
 
                 // Check if this mod already exists in the active profile
@@ -678,6 +668,10 @@ export class ProfileManager {
                 return of(importRequest);
             }),
             switchMap((importRequest) => {
+                if (!importRequest) {
+                    return of(undefined);
+                }
+
                 const loadingIndicatorRef = this.appManager.showLoadingIndicator("Importing mod data...");
 
                 // Complete the mod import

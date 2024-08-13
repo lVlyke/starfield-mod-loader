@@ -103,10 +103,11 @@ export class AppProfileSettingsComponent extends BaseComponent {
             delay(0)
         ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
             const control = this.form.controls[pathId];
-            const defaultValue = this.defaultPaths![pathId];
-            if (control && control.untouched && !control.dirty && !control.value) {
-                if (!!defaultValue) {
-                    control.setValue(defaultValue);
+            const suggestedValue = this.defaultPaths![pathId];
+            const initialValue = this.initialProfile[pathId];
+            if (control && control.untouched && !control.dirty && (this.createMode ? !initialValue : !control.value)) {
+                if (!!suggestedValue) {
+                    control.setValue(suggestedValue);
                 } else {
                     control.reset();
                 }

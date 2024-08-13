@@ -1,7 +1,11 @@
 <mat-card>
     <mat-card-header>
         <mat-card-title>
-            {{createMode ? "Create Profile" : "Profile Settings"}}&nbsp;-&nbsp;{{profile.name}}
+            @if (createMode) {
+                Create Profile
+            } @else {
+                Profile Settings&nbsp;-&nbsp;{{profile.name}}
+            }
         </mat-card-title>
     </mat-card-header>
 

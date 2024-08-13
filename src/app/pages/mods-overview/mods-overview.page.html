@@ -63,7 +63,7 @@
                         <mat-icon>find_replace</mat-icon>
                     </button>
 
-                    <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileWizard()">
+                    <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileWizard(activeProfile)">
                         <mat-icon>settings</mat-icon>
                     </button>
                 </span>
@@ -381,22 +381,22 @@
     <mat-card class="mat-elevation-z3">
         <mat-card-content>
             <mat-action-list>
-                <button mat-list-item (click)="profileManager.addModFromUser(); addModMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!); addModMenuRef?.close()">
                     <mat-icon matListIcon color="accent">archive</mat-icon>
                     <span matLine>Add Mod</span>
                 </button>
 
-                <button mat-list-item (click)="profileManager.addModFromUser({ externalImport: true }); addModMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!, { externalImport: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="accent">folder</mat-icon>
                     <span matLine>Import Mod</span>
                 </button>
 
-                <button mat-list-item (click)="profileManager.addModFromUser({ root: true }); addModMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!, { root: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="primary">archive</mat-icon>
                     <span matLine>Add Root Mod</span>
                 </button>
 
-                <button mat-list-item (click)="profileManager.addModFromUser({ root: true, externalImport: true }); addModMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!, { root: true, externalImport: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="primary">folder</mat-icon>
                     <span matLine>Import Root Mod</span>
                 </button>
@@ -410,7 +410,7 @@
     <mat-card class="mat-elevation-z3">
         <mat-card-content>
             <mat-action-list>
-                <button mat-list-item (click)="profileManager.createProfileFromUser(); showProfileMgmtMenuRef?.close()">
+                <button mat-list-item (click)="profileManager.showProfileWizard(); showProfileMgmtMenuRef?.close()">
                     <mat-icon matListIcon color="primary">person_add</mat-icon>
                     <span matLine>Add Profile</span>
                 </button>
