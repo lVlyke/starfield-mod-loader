@@ -14,3 +14,4 @@ export * from "./is-debug.pipe";
 export * from "./profile-config-file.pipe";
 export * from "./hex.pipe";
 export * from "./game-config-files-found.pipe";
+export * from "./is-full-profile.pipe";

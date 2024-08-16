@@ -16,7 +16,7 @@
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-enabled">
             <ng-container>
                 <mat-checkbox [checked]="pluginEntry.pluginRef.enabled"
-                              [disabled]="pluginEntry.required || !!pluginEntry.pluginRef.verificationError"
+                              [disabled]="pluginEntry.required || !!pluginEntry.baseProfile || !!pluginEntry.pluginRef.verificationError"
                               (change)="pluginChange$.emit(assign({}, pluginEntry, { pluginRef: assign({}, pluginEntry.pluginRef, { enabled: $event.checked }) }))" />
             </ng-container>
         </td>
@@ -49,11 +49,17 @@
                         </mat-icon>
                     </div>
 
-                    <div class="plugin-line-mod-id">
+                    <div class="plugin-line-mod-name">
                         @if (!!pluginEntry.pluginRef.modId) {
-                            {{ pluginEntry.pluginRef.modId }}
+                            <span class="plugin-line-mod-id">{{ pluginEntry.pluginRef.modId }}</span>
+
+                            <span *ngIf="pluginEntry.baseProfile as baseProfile"
+                                  class="plugin-base-profile-marker"
+                                  matTooltip="Managed by {{baseProfile}}">
+                                <mat-icon class="plugin-base-profile-icon" color="accent">arrow_outward</mat-icon>
+                            </span>
                         } @else {
-                            [External]
+                            <span class="plugin-line-mod-id">[External]</span>
                         }
                     </div>
                 </span>
@@ -77,9 +83,10 @@
         mat-row
         cdkDrag
         [cdkDragData]="pluginEntry"
+        [cdkDragDisabled]="!!pluginEntry.baseProfile"
         [attr.li-theme]="themeContainer.theme"
         [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"
-        (contextmenu)="showPluginContextMenu$.next([$event, pluginEntry])"></tr>
+        (contextmenu)="!pluginEntry.baseProfile ? showPluginContextMenu$.next([$event, pluginEntry]) : null"></tr>
 </table>
 
 <!-- Plugin context menu portal -->

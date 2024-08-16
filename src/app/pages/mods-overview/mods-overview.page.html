@@ -69,7 +69,7 @@
                 </span>
             </div>
 
-            <ng-container *ngIf="activeProfile.rootMods.size > 0">
+            <ng-container *ngIf="activeProfile.rootMods.length > 0">
                 <mat-card-title class="sticky-title">Root Mods</mat-card-title>
 
                 <app-profile-mod-list [profile]="activeProfile"
@@ -78,7 +78,7 @@
                                     (modOrderChange)="reorderMods(true, $event)" />
             </ng-container>
 
-            <ng-container *ngIf="activeProfile.mods.size > 0; else emptyModListHint">
+            <ng-container *ngIf="activeProfile.mods.length > 0; else emptyModListHint">
                 <mat-card-title class="sticky-title">Mods</mat-card-title>
 
                 <app-profile-mod-list [profile]="activeProfile"
@@ -175,7 +175,7 @@
                                             (ngModelChange)="configFileDataModel.reset()">
                                     <mat-select-trigger>
                                         <span class="config-file-name"
-                                              [attr.new-file]="!(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async)">
+                                              [attr.new-file]="(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async) === undefined">
                                             {{ activeConfigFileModel.value }}
                                         </span>
                                         <span *ngIf="configFileDataModel.dirty" matColor="accent">*</span>
@@ -196,7 +196,7 @@
 
                             <!-- File actions -->
                             <div class="config-file-actions">
-                                <button *ngIf="activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async"
+                                <button *ngIf="(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async) !== undefined"
                                         mat-icon-button
                                         matTooltip="Open in external file editor"
                                         matColor="accent"
@@ -226,6 +226,7 @@
     
         <!-- Actions -->
         <mat-expansion-panel #profileActionsPanel
+                             *ngIf="activeProfile | appIsFullProfile"
                              id="profile-actions"
                              class="control-card mat-elevation-z3"
                              [expanded]="true"

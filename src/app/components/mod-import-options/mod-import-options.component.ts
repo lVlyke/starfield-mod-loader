@@ -207,16 +207,16 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         ).subscribe(detectedScriptExtender => this._detectedScriptExtender = detectedScriptExtender);
 
         // Warn user if a mod uses a script extender they don't appear to be using
-        stateRef.get("detectedScriptExtender").pipe(
-            filterDefined(),
+        combineLatest(stateRef.getAll("detectedScriptExtender", "activeProfile")).pipe(
+            filter(([detectedScriptExtender, activeProfile]) => !!detectedScriptExtender && AppProfile.isFullProfile(activeProfile)),
             take(1),
-            switchMap((scriptExtender) => {
+            switchMap(([scriptExtender]) => {
                 const gameBinaryPath = this.normalizePath(this.activeProfile!.gameBinaryPath, "/");
-                const usingScriptExtender = scriptExtender.binaries.find(binary => gameBinaryPath.endsWith(this.normalizePath(binary, "/")));
+                const usingScriptExtender = scriptExtender!.binaries.find(binary => gameBinaryPath.endsWith(this.normalizePath(binary, "/")));
 
                 if (!usingScriptExtender) {
                     return dialogManager.createDefault(
-                        `This mod requires the script extender ${scriptExtender.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`,
+                        `This mod requires the script extender ${scriptExtender!.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`,
                         [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION],
                         { hasBackdrop: true, disposeOnBackdropClick: false }
                     );

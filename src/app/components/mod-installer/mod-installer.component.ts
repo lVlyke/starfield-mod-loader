@@ -470,7 +470,7 @@ export class AppModInstallerComponent extends BaseComponent {
         }
 
         const profileMods = this.activeProfile!.mods;
-        return from(profileMods.entries()).pipe(
+        return from(profileMods).pipe(
             mergeMap(([modName, modEntry]) => this.readModFilePaths(modName).pipe(
                 map(modFilePaths => modFilePaths.some((rawModFilePath) => {
                     const modFilePath = rawModFilePath.replace(/[\\/]/g, this.importRequest.filePathSeparator);

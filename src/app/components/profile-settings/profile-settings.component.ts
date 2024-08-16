@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
-import { Select, Store } from "@ngxs/store";
+import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
 import { delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -30,7 +30,7 @@ import { DefaultProfilePaths } from "./profile-standard-path-fields.pipe";
 export class AppProfileSettingsComponent extends BaseComponent {
 
     public readonly GameId = GameId;
-    public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile>>(this, {});
+    public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile.Form>>(this, {});
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
     public readonly gameDb$: Observable<GameDatabase>;
@@ -46,6 +46,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     @Input()
     public createMode = false;
+
+    @Input()
+    public baseProfileMode = false;
 
     @Input()
     public remedyMode: (keyof AppProfile) | boolean = false;
@@ -70,6 +73,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
             this.managedSource()
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
 
+        combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(
+            filter(([, createMode]) => !createMode)
+        ).subscribe(([initialProfile]) => this.baseProfileMode = !AppProfile.isFullProfile(initialProfile));
+
         stateRef.get("form").pipe(
             filterDefined(),
             switchMap(form => form.statusChanges!)
@@ -87,7 +94,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         // Get the default profile paths for the current game
         this.formModel$.pipe(
-            map((profile: Partial<AppProfile>) => profile.gameId),
+            map((profile) => profile.gameId),
             filter((gameId): gameId is string => !!gameId),
             distinctUntilChanged(),
             switchMap(gameId => ElectronUtils.invoke<DefaultProfilePaths>("app:findBestProfileDefaults", { gameId }))
@@ -154,7 +161,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         return ObservableUtils.hotResult$(this.formModel$.pipe(
             take(1),
-            map((formModel): AppProfile => formModel as AppProfile),
+            switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form)),
             switchMap((formModel) => (() => {
                 // Add/update profile data on submit
                 if (this.createMode) {

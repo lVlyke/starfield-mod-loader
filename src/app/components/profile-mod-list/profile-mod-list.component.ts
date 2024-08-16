@@ -86,7 +86,7 @@ export class AppProfileModListComponent extends BaseComponent {
             // Create list entries
             let modIndex = 0;
             const modsList = root ? profile.rootMods : profile.mods;
-            this.modEntries = Array.from(modsList.entries()).map<ModListEntry>(([name, modRef]) => {
+            this.modEntries = modsList.map<ModListEntry>(([name, modRef]) => {
                 if (modRef.enabled) {
                     modIndex++;
                 }

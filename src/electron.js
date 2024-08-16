@@ -2,7 +2,10 @@
 
 /**
  * @typedef {import("./app/models/app-message").AppMessage} AppMessage;
+ * @typedef {import("./app/models/app-profile").AppBaseProfile} AppBaseProfile;
  * @typedef {import("./app/models/app-profile").AppProfile} AppProfile;
+ * @typedef {import("./app/models/app-profile").AppProfileForm} AppProfileForm;
+ * @typedef {import("./app/models/app-profile").AppProfileModList} AppProfileModList;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResult} AppProfileVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResults} AppProfileVerificationResults;
  * @typedef {import("./app/models/app-profile").AppProfileModVerificationResults} AppProfileModVerificationResult;
@@ -319,9 +322,9 @@ class ElectronLoader {
             const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile.name));
             const modVerifyResult = this.verifyProfileModsExist(false, profile);
             const rootModVerifyResult = this.verifyProfileModsExist(true, profile);
-            const modDirVerifyResult = this.verifyProfilePathExists(profile.modBaseDir);
-            const gameDirVerifyResult = this.verifyProfilePathExists(profile.gameBaseDir);
-            const gameBinaryPathVerifyResult = this.verifyProfilePathExists(profile.gameBinaryPath);
+            const modDirVerifyResult = "modBaseDir" in profile ? this.verifyProfilePathExists(profile.modBaseDir) : VERIFY_SUCCESS;
+            const gameDirVerifyResult = "gameBaseDir" in profile ? this.verifyProfilePathExists(profile.gameBaseDir) : VERIFY_SUCCESS;
+            const gameBinaryPathVerifyResult = "gameBinaryPath" in profile ? this.verifyProfilePathExists(profile.gameBinaryPath) : VERIFY_SUCCESS;
             const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
             const configFilePathVerifyResult = profile.configFilePath ? this.verifyProfilePathExists(profile.configFilePath) : VERIFY_SUCCESS;
             const saveFolderPathVerifyResult = profile.saveFolderPath ? this.verifyProfilePathExists(profile.saveFolderPath) : VERIFY_SUCCESS;
@@ -351,7 +354,8 @@ class ElectronLoader {
                 manageConfigFiles: VERIFY_SUCCESS,
                 manageSaveFiles: VERIFY_SUCCESS,
                 linkMode: VERIFY_SUCCESS, // TODO
-                deployed: VERIFY_SUCCESS
+                deployed: VERIFY_SUCCESS,
+                baseProfile: VERIFY_SUCCESS // TODO - Verify base profile exists
             };
 
             return {
@@ -478,6 +482,13 @@ class ElectronLoader {
             return this.findPluginFiles(profile);
         });
 
+        ipcMain.handle("profile:findModFiles", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:findModFiles">} */ { profile }
+        ) => {
+            return this.findModFiles(profile);
+        });
+
         ipcMain.handle("profile:importPluginBackup", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:importPluginBackup">} */ { profile, backupPath }
@@ -553,9 +564,14 @@ class ElectronLoader {
 
         ipcMain.handle("profile:showModInFileExplorer", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName, modRef }
         ) => {
-            const modDirPath = this.getProfileModDir(profile.name, modName);
+            let modDirPath;
+            if (modRef.baseProfile && profile.baseProfile) {
+                modDirPath = this.getProfileModDir(profile.baseProfile.name, modName);
+            } else {
+                modDirPath = this.getProfileModDir(profile.name, modName);
+            }
 
             shell.openPath(path.resolve(modDirPath));
         });
@@ -640,7 +656,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:openProfileConfigFile">} */ { profile, configFileName }
         ) => {
-            const profileConfigFilePath = this.getGameConfigFilePath(profile, configFileName);
+            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName);
 
             if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
                 return shell.openPath(path.resolve(profileConfigFilePath));
@@ -1029,12 +1045,12 @@ class ElectronLoader {
         );
     }
 
-    /** @returns {AppProfile | null} */
+    /** @returns {AppProfile | AppBaseProfile | null} */
     loadProfile(/** @type {string} */ profileNameOrPath) {
         return this.loadProfileFromPath(profileNameOrPath, this.getProfileDir(profileNameOrPath));
     }
 
-    /** @returns {AppProfile | null} */
+    /** @returns {AppProfile | AppBaseProfile | null} */
     loadProfileFromPath(/** @type {string} */ profileName, /** @type {string} */ profilePath) {
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
         const profileSettingsPath = path.join(profilePath, profileSettingsName);
@@ -1047,10 +1063,18 @@ class ElectronLoader {
         const profile = JSON.parse(profileSrc.toString("utf8"));
         profile.name = profileName;
         // Deserialize mods entries to Map
-        profile.mods = new Map(profile.mods);
-        profile.rootMods = new Map(profile.rootMods ?? []);
-        // Update deployment status
-        profile.deployed = this.isProfileDeployed(profile);
+        profile.mods ??= [];
+        profile.rootMods ??= [];
+
+        if (profile.baseProfile) {
+            profile.baseProfile = this.loadProfileFromPath(profile.baseProfile, this.getProfileDir(profile.baseProfile));
+        }
+
+        // TODO
+        if ("modBaseDir" in profile) {
+            // Update deployment status
+            profile.deployed = this.isProfileDeployed(profile);
+        }
 
         return profile;
     }
@@ -1061,17 +1085,14 @@ class ElectronLoader {
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
 
         // Serialize root mods Map as entries
-        const profileToWrite = Object.assign({}, profile, {
-            mods: Array.from(profile.mods.entries()),
-            rootMods: profile.rootMods ? Array.from(profile.rootMods.entries()) : []
-        });
+        const profileToWrite = Object.assign({}, profile, { baseProfile: profile.baseProfile?.name });
 
         // Make sure the profile and mods directory exists
         fs.mkdirpSync(this.getProfileModsDir(profile.name));
 
         return fs.writeFileSync(
             path.join(profileDir, profileSettingsName),
-            JSON.stringify(_.omit(profileToWrite, ["name"])),
+            JSON.stringify(_.omit(profileToWrite, "name")),
             options
         );
     }
@@ -1083,25 +1104,25 @@ class ElectronLoader {
         return fs.rmSync(profileDir, { recursive: true });
     }
 
-    /** @returns {string} */
+    /** @returns {string | undefined} */
     readProfileConfigFile(
-        /** @type {AppProfile} */ profile,
+        /** @type {AppProfile | AppBaseProfile} */ profile,
         /** @type {string} */ fileName,
         /** @type {boolean} */ loadDefaults
     ) {
         const profileConfigDir = this.getProfileConfigDir(profile.name);
-        const profileConfigFilePath = path.join(profileConfigDir, fileName);
+        let profileConfigFilePath = path.join(profileConfigDir, fileName);
         
         if (!fs.existsSync(profileConfigFilePath)) {
             // Attempt to load default config values if profile file doesn't exist yet
-            if (loadDefaults && !!profile.configFilePath) {
-                const defaultConfigFilePath = path.join(profile.configFilePath, fileName);
-                if (fs.existsSync(defaultConfigFilePath)) {
+            if (loadDefaults) {
+                const defaultConfigFilePath = this.resolveGameConfigFilePath(profile, fileName);
+                if (defaultConfigFilePath !== undefined && fs.existsSync(defaultConfigFilePath)) {
                     return fs.readFileSync(defaultConfigFilePath, "utf8");
                 }
             }
 
-            return "";
+            return undefined;
         }
 
         return fs.readFileSync(profileConfigFilePath, "utf8");
@@ -1658,13 +1679,13 @@ class ElectronLoader {
     verifyProfileModsExist(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile.name);
         const modList = root ? profile.rootMods : profile.mods;
-        let hasError = false;
 
-        const results = Array.from(modList.entries()).reduce((result, [modName, _mod]) => {
-            const modExists = fs.existsSync(path.join(modsDir, modName));
+        let hasMissingError = false;
+        const profileCheckResults = modList.reduce((result, [modName, mod]) => {
+            const modExists = fs.existsSync(path.join(mod.baseProfile ? this.getProfileModsDir(mod.baseProfile) : modsDir, modName));
             const modHasError = !modExists;
 
-            hasError ||= modHasError;
+            hasMissingError ||= modHasError;
 
             result = Object.assign(result, {
                 [modName]: {
@@ -1676,10 +1697,31 @@ class ElectronLoader {
             return result;
         }, {});
 
+        let hasFoundError = false;
+        const fsMods = fs.readdirSync(modsDir);
+        const fsCheckResults = fsMods.reduce((result, modName) => {
+            const modExistsInProfile = [
+                profile.rootMods,
+                profile.mods
+            ].some(modList => modList.find(([profileModName]) => modName === profileModName));
+            const modHasError = !modExistsInProfile;
+
+            hasFoundError ||= modHasError;
+
+            result = Object.assign(result, {
+                [modName]: {
+                    error: modHasError,
+                    found: true
+                }
+            });
+
+            return result;
+        }, {});
+
         return {
-            error: hasError,
+            error: hasMissingError || hasFoundError,
             found: true,
-            results
+            results: { ...profileCheckResults, ...fsCheckResults }
         };
     }
 
@@ -1813,8 +1855,8 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    getGameConfigFilePath(/** @type {AppProfile} */ profile, /** @type {string} */ configFileName) {
-        if (profile.manageConfigFiles) {
+    resolveGameConfigFilePath(/** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile, /** @type {string} */ configFileName) {
+        if ("manageConfigFiles" in profile && profile.manageConfigFiles) {
             const profileConfigFilePath = path.join(this.getProfileConfigDir(profile.name), configFileName);
 
             if (fs.existsSync(profileConfigFilePath)) {
@@ -1822,7 +1864,23 @@ class ElectronLoader {
             }
         }
 
-        if (!!profile.configFilePath) {
+        if ("baseProfile" in profile && !!profile.baseProfile) {
+            let baseProfile;
+            if (typeof profile.baseProfile === "string") {
+                baseProfile = this.loadProfile(profile.baseProfile);
+            } else {
+                baseProfile = profile.baseProfile;
+            }
+
+            if (!!baseProfile) {
+                const configFilePath = this.resolveGameConfigFilePath(baseProfile, configFileName);
+                if (configFilePath !== undefined && fs.existsSync(configFilePath)) {
+                    return configFilePath;
+                }
+            }
+        }
+
+        if ("configFilePath" in profile && !!profile.configFilePath) {
             return path.join(profile.configFilePath, configFileName);
         }
 
@@ -1839,7 +1897,7 @@ class ElectronLoader {
     }
 
     /** @returns {Promise<boolean>} */
-    async checkArchiveInvalidationEnabled(/** @type {AppProfile} */ profile) {
+    async checkArchiveInvalidationEnabled(/** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile) {
         const gameDetails = this.#getGameDetails(profile.gameId);
         if (!gameDetails) {
             return false;
@@ -1848,7 +1906,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.getGameConfigFilePath(profile, configFileName);
+            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -1877,7 +1935,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.getGameConfigFilePath(profile, configFileName);
+            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -1939,7 +1997,7 @@ class ElectronLoader {
         const gameDetails = gameDb[profile.gameId];
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
 
-        return Array.from(profile.mods.entries()).reduce((/** @type {GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
+        return profile.mods.reduce((/** @type {GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
             const modDirPath = this.getProfileModDir(profile.name, modId);
             
             if (fs.existsSync(modDirPath)) {
@@ -1960,6 +2018,20 @@ class ElectronLoader {
 
             return plugins;
         }, []);
+    }
+
+    /** @returns {AppProfileModList} */
+    findModFiles(
+        /** @type {AppProfile} */ profile
+    ) {
+        const profileModsDir = this.getProfileModsDir(profile.name);
+
+        if (!fs.existsSync(profileModsDir)) {
+            return [];
+        }
+
+        const profileModDirs = fs.readdirSync(profileModsDir);
+        return profileModDirs.map(modName => [modName, { enabled: true }]);
     }
 
     /** @returns {Promise<string[]>} */
@@ -1984,11 +2056,11 @@ class ElectronLoader {
         // Copy all mods to the modBaseDir for this profile
         // (Copy mods in reverse with `overwrite: false` to follow load order and allow existing manual mods in the folder to be preserved)
         const deployableMods = root ? profile.rootMods : profile.mods;
-        const deployableModFiles = Array.from(deployableMods.entries()).reverse();
+        const deployableModFiles = deployableMods.slice(0).reverse();
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
                 const copyTasks = [];
-                const modDirPath = this.getProfileModDir(profile.name, modName);
+                const modDirPath = this.getProfileModDir(mod.baseProfile ?? profile.name, modName);
                 const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
 
                 // Copy data files to mod base dir
@@ -2304,7 +2376,7 @@ class ElectronLoader {
             let orphanedDeploy = false;
 
             if (deploymentMetadata.profile !== profile.name) {
-                const originalProfile = this.loadProfile(deploymentMetadata.profile);
+                const originalProfile = /** @type { AppProfile } */ (this.loadProfile(deploymentMetadata.profile));
                 if (originalProfile) {
                     profile = originalProfile;
                 } else {

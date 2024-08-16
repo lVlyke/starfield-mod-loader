@@ -12,12 +12,14 @@ import { Store } from "@ngxs/store";
 import { AppState } from "../../state";
 import { ProfileUtils } from "../../util/profile-utils";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
+import { RelativeOrderedMap } from "src/app/util/relative-ordered-map";
 
 type PluginListEntry = {
     pluginRef: GamePluginProfileRef;
     order: number | undefined;
     typeIndex: number;
     required: boolean;
+    baseProfile?: string;
 };
 
 type PluginDataSourceEntry = PluginListEntry;
@@ -92,9 +94,12 @@ export class AppProfilePluginListComponent extends BaseComponent {
                 if (pluginRef.enabled) {
                     pluginIndex++;
                 }
+
+                const modRef = pluginRef.modId !== undefined ? RelativeOrderedMap.get(profile.mods, pluginRef.modId) : undefined;
                 
                 return {
                     pluginRef,
+                    baseProfile: modRef?.baseProfile,
                     order: pluginRef.enabled ? pluginIndex : undefined,
                     typeIndex: ProfileUtils.getPluginTypeIndex(pluginRef, this.activeGameDetails!.pluginFormats) ?? 0,
                     required: !!this.activeGameDetails!.pinnedPlugins?.find((pinnedPlugin) => {

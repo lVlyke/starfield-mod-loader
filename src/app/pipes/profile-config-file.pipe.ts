@@ -13,11 +13,11 @@ export class AppProfileConfigFilePipe implements PipeTransform {
         configFileName: string | undefined,
         _lastUpdate?: Date | null,
         loadDefaults: boolean = false
-    ): Observable<string> {
+    ): Observable<string | undefined> {
         if (!configFileName || !profile) {
             return NEVER;
         }
 
-        return ElectronUtils.invoke<string>("profile:readConfigFile", { profile, fileName: configFileName, loadDefaults });
+        return ElectronUtils.invoke<string | undefined>("profile:readConfigFile", { profile, fileName: configFileName, loadDefaults });
     }
 }

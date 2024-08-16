@@ -26,7 +26,11 @@ const SAVE_FOLDER_PATH_FIELD: DefaultProfilePathField = { formId: "saveFolderPat
 })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
-    public transform(formModel?: Partial<AppProfile> | null): Readonly<DefaultProfilePathField[]> {
+    public transform(formModel: Partial<AppProfile.Form> | null, baseProfileMode: boolean): Readonly<DefaultProfilePathField[]> {
+        if (baseProfileMode) {
+            return [];
+        }
+
         let result = STANDARD_PATH_FIELDS;
 
         if (formModel?.manageConfigFiles) {

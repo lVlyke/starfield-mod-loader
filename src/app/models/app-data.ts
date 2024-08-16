@@ -4,7 +4,7 @@ import type { GameDatabase } from "./game-database";
 
 export interface AppData {
     profiles: AppProfile.Description[];
-    activeProfile?: AppProfile;
+    activeProfile?: AppProfile; // TODO - Change type to `AppProfile | AppBaseProfile`
     theme: AppTheme;
     gameDb: GameDatabase;
     pluginsEnabled: boolean;

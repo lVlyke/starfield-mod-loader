@@ -1,4 +1,14 @@
 <form #profileForm="ngForm" id="profile-form" (ngSubmit)="submitForm(profileForm)">
+    <div>
+        <mat-checkbox name="baseProfileMode"
+                      [disabled]="!createMode"
+                      [ngModelOptions]="{ standalone: true }"
+                      [(ngModel)]="baseProfileMode">
+            Base Profile
+            <mat-icon class="tooltip-icon" matTooltip="Base profile are limited profiles that can be extended by other profiles.">help</mat-icon>
+        </mat-checkbox>
+    </div>
+
     <mat-form-field appearance="fill">
         <mat-label>Game</mat-label>
         <mat-select name="gameId"
@@ -25,7 +35,15 @@
                 [ngModel]="initialProfile.name">
     </mat-form-field>
 
-    @for (fieldInfo of formModel$ | async | appProfileSettingsStandardPathFields; track fieldInfo) {
+    <mat-form-field *ngIf="!baseProfileMode" appearance="fill">
+        <mat-label>Base Profile</mat-label>
+        <input matInput
+                name="baseProfile"
+                type="text"
+                [ngModel]="initialProfile.baseProfile?.name">
+    </mat-form-field>
+
+    @for (fieldInfo of formModel$ | async | appProfileSettingsStandardPathFields:baseProfileMode; track fieldInfo) {
         <mat-form-field appearance="fill">
             <mat-label>{{ fieldInfo.title }}</mat-label>
             <input #fieldModel="ngModel"
@@ -64,14 +82,14 @@
         </mat-checkbox>
     </div>
 
-    <div>
+    <div *ngIf="!baseProfileMode">
         <mat-checkbox name="manageSaveFiles" [ngModel]="initialProfile.manageSaveFiles">
             Manage Save Files
             <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
         </mat-checkbox>
     </div>
 
-    <div>
+    <div *ngIf="!baseProfileMode">
         <mat-checkbox name="linkMode"
                       [disabled]="!('profile:linkModeSupported' | appSendElectronMsg$:{ profile: formModel$ | async } | async)"
                       [ngModel]="initialProfile.linkMode">
@@ -80,17 +98,19 @@
         </mat-checkbox>
     </div>
 
-    <ng-container *ngIf="formModel$ | async as formModel">
-        <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
-            <div *ngIf="gameDetails.archiveInvalidation">
-                <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
-                            [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
-                            (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
-                    Archive Invalidation
-                </mat-checkbox>
+    @if (!baseProfileMode) {
+        <ng-container *ngIf="formModel$ | async as formModel">
+            <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
+                <div *ngIf="gameDetails.archiveInvalidation">
+                    <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
+                                [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
+                                (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
+                        Archive Invalidation
+                    </mat-checkbox>
 
-                <mat-icon *ngIf="createMode" class="tooltip-icon" matTooltip="This setting can only be modified after the profile has been created.">help</mat-icon>
-            </div>
+                    <mat-icon *ngIf="createMode" class="tooltip-icon" matTooltip="This setting can only be modified after the profile has been created.">help</mat-icon>
+                </div>
+            </ng-container>
         </ng-container>
-    </ng-container>
+    }
 </form>

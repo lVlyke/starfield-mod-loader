@@ -1,4 +1,3 @@
-import _ from "lodash";
 import { Injectable } from "@angular/core";
 import { Store } from "@ngxs/store";
 import { EMPTY, Observable, of, throwError } from "rxjs";
@@ -241,7 +240,7 @@ export class AppStateBehaviorManager {
 
     private appDataToUserCfg(appData: AppData): AppSettingsUserCfg {
         return {
-            activeProfile: _.pick(appData.activeProfile ?? {}, "name", "gameId") as AppProfile.Description,
+            activeProfile: appData.activeProfile ? AppProfile.asDescription(appData.activeProfile) : undefined,
             pluginsEnabled: appData.pluginsEnabled,
             normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns,

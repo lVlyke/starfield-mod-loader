@@ -35,7 +35,7 @@ import { filterDefined } from "src/app/core/operators";
 export class AppProfileSettingsModal extends BaseComponent {
 
     public readonly onFormSubmit$!: Observable<AppProfile>;
-    public readonly formModel$!: Observable<Partial<AppProfile>>;
+    public readonly formModel$!: Observable<Partial<AppProfile.Form>>;
 
     @DeclareState()
     public profile!: Partial<AppProfile>;

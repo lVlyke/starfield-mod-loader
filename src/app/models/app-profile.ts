@@ -1,27 +1,34 @@
 import { ModProfileRef } from "./mod-profile-ref";
 import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { GameId } from "./game-id";
+import { RelativeOrderedMap } from "../util/relative-ordered-map";
 
-export interface AppProfile {
+export interface AppBaseProfile {
     name: string;
     gameId: GameId;
+    mods: AppProfile.ModList;
+    rootMods: AppProfile.ModList;
+    plugins: GamePluginProfileRef[];
+    deployed?: boolean;
+}
+
+export interface AppProfile extends AppBaseProfile {
     gameBaseDir: string;
     modBaseDir: string;
     gameBinaryPath: string;
     pluginListPath?: string;
     configFilePath?: string;
     saveFolderPath?: string;
-    mods: AppProfile.ModList;
-    rootMods: AppProfile.ModList;
-    plugins: GamePluginProfileRef[];
     manageExternalPlugins?: boolean;
     manageConfigFiles?: boolean;
     manageSaveFiles?: boolean;
     linkMode?: boolean;
-    deployed: boolean;
     externalFilesCache?: AppProfile.ExternalFiles;
+    baseProfile?: AppBaseProfile;
 }
 
+export type AppProfileModList = AppProfile.ModList;
+export type AppProfileForm = AppProfile.Form;
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfileModVerificationResults = AppProfile.ModVerificationResults;
@@ -31,9 +38,10 @@ export type AppProfileExternalFiles = AppProfile.ExternalFiles;
 
 export namespace AppProfile {
 
-    export type ModList = Map<string, ModProfileRef>;
+    export type ModList = RelativeOrderedMap.List<string, ModProfileRef>;
 
-    export type Description = Pick<AppProfile, "name" | "gameId" | "deployed">;
+    export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed"> & { baseProfile?: string };
+    export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string };
 
     export interface ExternalFiles {
         gameDirFiles: string[];
@@ -68,6 +76,10 @@ export namespace AppProfile {
         backupDate: Date;
     }
 
+    export function isFullProfile(value?: Partial<AppProfile>): value is AppProfile {
+        return !!value && "gameBaseDir" in value && "modBaseDir" in value;
+    }
+
     export function create(name: string, gameId: GameId): AppProfile;
     export function create(name: string): Partial<AppProfile>;
     export function create(name: string, gameId?: GameId): Partial<AppProfile> {
@@ -77,10 +89,19 @@ export namespace AppProfile {
             gameBaseDir: "",
             modBaseDir: "",
             gameBinaryPath: "",
-            mods: new Map(),
-            rootMods: new Map(),
+            mods: [],
+            rootMods: [],
             plugins: [],
             deployed: false
+        };
+    }
+
+    export function asDescription(profile: AppBaseProfile): AppProfile.Description {
+        return {
+            name: profile.name,
+            gameId: profile.gameId,
+            deployed: profile.deployed,
+            baseProfile: isFullProfile(profile) ? profile.baseProfile?.name : undefined
         };
     }
 }

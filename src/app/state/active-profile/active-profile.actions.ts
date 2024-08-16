@@ -20,9 +20,11 @@ export namespace ActiveProfileActions {
     export type DeployedAction = BasicAction<AppProfile, "deployed">;
     export type ManageExternalPluginsAction = BasicAction<AppProfile, "manageExternalPlugins">;
     export type PluginListPathAction = BasicAction<AppProfile, "pluginListPath">;
+    export type BaseProfileAction = BasicAction<AppProfile, "baseProfile">;
 
     export const setDeployed = createUpdateAction("deployed");
     export const setPluginListPath = createUpdateAction("pluginListPath");
+    export const setBaseProfile = createUpdateAction("baseProfile");
     export const manageExternalPlugins = createUpdateAction("manageExternalPlugins");
 
     export class AddMod {
@@ -87,6 +89,14 @@ export namespace ActiveProfileActions {
         constructor(
             public root: boolean,
             public modOrder: string[]
+        ) {}
+    }
+
+    export class ReconcileModList {
+        public static readonly type = `[activeProfile] reconcile mod list`;
+
+        constructor(
+            public mods: AppProfile.ModList
         ) {}
     }
 

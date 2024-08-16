@@ -52,7 +52,7 @@ export namespace AppActions {
         public static readonly type = `[app] add profile`;
 
         constructor(
-            public profile: AppProfile
+            public profile: AppProfile.Description
         ) {}
     }
 
@@ -60,7 +60,7 @@ export namespace AppActions {
         public static readonly type = `[app] delete profile`;
 
         constructor(
-            public profile: AppProfile
+            public profile: AppProfile.Description
         ) {}
     }
 

@@ -5,6 +5,7 @@ import { AppProfile } from "../../models/app-profile";
 import { ActiveProfileActions } from "./active-profile.actions";
 import { ProfileUtils } from "../../util/profile-utils";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
+import { RelativeOrderedMap } from "../../util/relative-ordered-map";
 
 @State<ActiveProfileState.Model>({
     name: "activeProfile",
@@ -39,9 +40,9 @@ export class ActiveProfileState {
         const state = _.cloneDeep(context.getState()!);
 
         if (root) {
-            state.rootMods.set(name, mod);
+            RelativeOrderedMap.insert(state.rootMods, name, mod);
         } else{
-            state.mods.set(name, mod);
+            RelativeOrderedMap.insert(state.mods, name, mod);
         }
         
         context.setState(state);
@@ -52,9 +53,9 @@ export class ActiveProfileState {
         const state = _.cloneDeep(context.getState()!);
 
         if (root) {
-            state.rootMods.delete(name);
+            RelativeOrderedMap.erase(state.rootMods, name);
         } else {
-            state.mods.delete(name);
+            RelativeOrderedMap.erase(state.mods, name);
         }
 
         context.setState(state);
@@ -65,12 +66,12 @@ export class ActiveProfileState {
         const state = _.cloneDeep(context.getState()!);
         const modList = root ? state.rootMods : state.mods;
 
-        Array.from(modList.entries()).forEach(([modName, mod]) => {
-            modList.delete(modName);
+        RelativeOrderedMap.forEach(modList, (mod, modName) => {
+            RelativeOrderedMap.erase(modList, modName);
 
             if (mod) {
                 // Rename the selected mod, preserving the prior load order
-                modList.set(modName === curName ? newName : modName, mod);
+                RelativeOrderedMap.insert(modList, modName === curName ? newName : modName, mod);
             }
         });
 
@@ -107,14 +108,70 @@ export class ActiveProfileState {
         const modList = root ? state.rootMods : state.mods;
 
         modOrder.forEach((modName) => {
-            const mod = modList.get(modName);
+            const mod = RelativeOrderedMap.get(modList, modName);
 
-            modList.delete(modName);
+            RelativeOrderedMap.erase(modList, modName);
 
             if (mod) {
-                modList.set(modName, mod);
+                RelativeOrderedMap.insert(modList, modName, mod);
             }
         });
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.ReconcileModList)
+    public reconcileModList(
+        context: ActiveProfileState.Context,
+        { mods }: ActiveProfileActions.ReconcileModList
+    ): void {
+        const MOD_LIST_KEYS = ["rootMods", "mods"] as const;
+        const state = _.cloneDeep(context.getState()!);
+
+        if (!!state.baseProfile) {
+            MOD_LIST_KEYS.forEach((listKey) => {
+                const profileMods = state[listKey];
+                const baseProfileMods = state.baseProfile![listKey] ?? [];
+                // Start with a copy of the base profile's mod list
+                const mergedProfileMods: AppProfile.ModList = baseProfileMods.map(([modName, modRef]) => [modName, {
+                    ...modRef,
+                    baseProfile: state.baseProfile!.name
+                }]);
+
+                // Merge this profile's mods in relative to their previous order
+                RelativeOrderedMap.forEach(profileMods, (existingMod, existingModName, existingModIndex) => {
+                    if (!existingMod.baseProfile) {
+                        if (existingModIndex === 0) {
+                            RelativeOrderedMap.insertAt(mergedProfileMods, existingModName, existingMod, 0);
+                        } else if (existingModIndex === profileMods.length - 1) {
+                            RelativeOrderedMap.insert(mergedProfileMods, existingModName, existingMod);
+                        } else {
+                            const lastMod = RelativeOrderedMap.previous(profileMods, existingModName);
+                            if (lastMod && RelativeOrderedMap.has(mergedProfileMods, lastMod[0])) {
+                                RelativeOrderedMap.insertAfter(mergedProfileMods, existingModName, existingMod, lastMod[0]);
+                            } else {
+                                const nextMod = RelativeOrderedMap.next(profileMods, existingModName);
+                                if (nextMod && RelativeOrderedMap.has(mergedProfileMods, nextMod[0])) {
+                                    RelativeOrderedMap.insertBefore(mergedProfileMods, existingModName, existingMod, nextMod[0]);
+                                } else {
+                                    RelativeOrderedMap.insert(mergedProfileMods, existingModName, existingMod);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                state[listKey] = mergedProfileMods;
+            });
+
+            // Add missing profile mods (this shouldn't normally be needed unless someone added mods manually)
+            RelativeOrderedMap.forEach(mods, (externalMod, externalModName) => {
+                if (!RelativeOrderedMap.has(state.mods, externalModName)) {
+                    // TODO - Warn user that this may have been a root mod and will be demoted
+                    RelativeOrderedMap.insert(state.mods, externalModName, externalMod);
+                }
+            });
+        }
 
         context.setState(state);
     }
@@ -122,69 +179,88 @@ export class ActiveProfileState {
     @Action(ActiveProfileActions.ReconcilePluginList)
     public reconcilePluginList(
         context: ActiveProfileState.Context,
-        { plugins, pluginTypeOrder }: ActiveProfileActions.ReconcilePluginList): void {
+        { plugins, pluginTypeOrder }: ActiveProfileActions.ReconcilePluginList
+    ): void {
         const state = _.cloneDeep(context.getState()!);
-        const modList = Array.from(state.mods.entries());
+        const modList = RelativeOrderedMap.entries(state.mods);
+
+        // TODO - Scan root mods?
+
+        // NOTE: This function assumes mod list has already been reconciled
 
         // BC:<v0.4.0
         if (!state.plugins) {
             state.plugins = [];
         }
 
-        // Add missing plugins
-        plugins.forEach((activePlugin) => {
-            const modEntry = modList.find(([modId]) => activePlugin.modId === modId);
+        // Calculate available external plugins
+        const externalPlugins = (state.manageExternalPlugins && state.externalFilesCache) ? state.externalFilesCache.pluginFiles.map((externalPluginFile) => ({
+            modId: undefined,
+            plugin: externalPluginFile,
+            enabled: true
+        })) : [];
 
-            if (modEntry?.[1].enabled) {
-                const existingPlugin = _.find(state.plugins, { plugin: activePlugin.plugin });
+        // Remove deleted external plugins and add missing external plugins
+        let orderedPlugins = state.plugins
+            .filter(plugin => plugin.modId !== undefined || externalPlugins.some(externalPlugin => externalPlugin.plugin === plugin.plugin))
+            .concat(externalPlugins.filter(externalPlugin => !state.plugins.some(plugin => plugin.plugin === externalPlugin.plugin)));
 
-                if (!existingPlugin) {
-                    // Add a new plugin entry
-                    state.plugins.push(activePlugin);
-                } else {
-                    // Update the modId of the plugin to the last mod in the load order
-                    existingPlugin.modId = activePlugin.modId;
-                }
-            }
-        });
+        // Preserve previous plugin order while using latest plugin data and add new plugins
+        orderedPlugins = orderedPlugins
+            .map(plugin => plugin.modId === undefined ? plugin : plugins.find(activePlugin => plugin.plugin === activePlugin.plugin))
+            .filter((plugin): plugin is GamePluginProfileRef => !!plugin)
+            .concat(plugins.filter(plugin => !orderedPlugins.some(activePlugin => plugin.plugin === activePlugin.plugin)));
 
-        // Remove deleted plugins
-        state.plugins = state.plugins.filter((existingPlugin) => {
-            if (existingPlugin.modId) {
-                const modEntry = modList.find(([modId]) => existingPlugin.modId === modId);
-                const activePlugin = _.find(plugins, { plugin: existingPlugin.plugin });
+        if (!!state.baseProfile) {
+            const baseProfilePlugins = state.baseProfile.plugins ?? [];
 
-                return modEntry?.[1].enabled && !!activePlugin;
-            } else {
-                // Only allow external mods if `manageExternalPlugins` is true
-                if (!state.manageExternalPlugins) {
-                    return false;
-                }
+            // Start with a copy of the base profile's plugins list
+            let mergedPlugins = baseProfilePlugins.slice(0);
 
-                // Check if external plugin file still exists
-                return state.externalFilesCache?.pluginFiles.includes(existingPlugin.plugin);
-            }
-        });
+            // Add profile plugins
+            orderedPlugins.forEach((activePlugin) => {
+                const modEntry = activePlugin.modId !== undefined ? modList.find(([modId]) => activePlugin.modId === modId) : undefined;
+                if (activePlugin.modId === undefined || (modEntry && !modEntry[1].baseProfile && modEntry[1].enabled)) {
+                    const basePlugin = _.find(mergedPlugins, { plugin: activePlugin.plugin });
 
-        let processedPlugins: GamePluginProfileRef[] = [];
-
-        // Add missing external plugins
-        if (state.manageExternalPlugins) {
-            state.externalFilesCache?.pluginFiles.forEach((externalPluginFile) => {
-                if (!_.find(state.plugins, plugin => plugin.plugin === externalPluginFile)) {
-                    processedPlugins.push({ modId: undefined, plugin: externalPluginFile, enabled: true });
+                    if (!basePlugin) {
+                        // Add the missing plugin relative to its previous order
+                        const oldPluginIndex = state.plugins.findIndex(oldPlugin => oldPlugin.plugin === activePlugin.plugin);
+                        if (oldPluginIndex === 0) {
+                            mergedPlugins = [activePlugin].concat(mergedPlugins);
+                        } else if (oldPluginIndex === -1 || oldPluginIndex === state.plugins.length - 1) {
+                            mergedPlugins.push(activePlugin);
+                        } else {
+                            const lastPlugin = state.plugins[oldPluginIndex - 1];
+                            const lastPluginIndex = lastPlugin ? mergedPlugins.findIndex(plugin => plugin.plugin === lastPlugin.plugin) : -1;
+                            if (lastPluginIndex !== -1) {
+                                mergedPlugins.splice(lastPluginIndex + 1, 0, activePlugin);
+                            } else {
+                                const nextPlugin = state.plugins[oldPluginIndex + 1];
+                                const nextPluginIndex = nextPlugin ? mergedPlugins.findIndex(plugin => plugin.plugin === nextPlugin.plugin) : -1;
+                                if (nextPluginIndex !== -1) {
+                                    mergedPlugins.splice(nextPluginIndex, 0, activePlugin);
+                                } else {
+                                    mergedPlugins.push(activePlugin);
+                                }
+                            }
+                        }
+                    } else if (activePlugin.modId !== undefined) {
+                        // Update the modId of the plugin to the last mod in the load order
+                        basePlugin.modId = activePlugin.modId;
+                    }
                 }
             });
+
+            orderedPlugins = mergedPlugins;
         }
 
-        processedPlugins = processedPlugins.concat(state.plugins);
-
         // Remove duplicate plugins
-        processedPlugins = _.uniqBy(processedPlugins, "plugin");
+        orderedPlugins = _.uniqBy(orderedPlugins, "plugin");
 
         // Sort plugins by type order (if required)
         if (pluginTypeOrder) {
-            processedPlugins = processedPlugins.sort((aRef, bRef) => {
+            orderedPlugins = orderedPlugins.sort((aRef, bRef) => {
                 const aIndex = ProfileUtils.getPluginTypeIndex(aRef, pluginTypeOrder!),
                       bIndex = ProfileUtils.getPluginTypeIndex(bRef, pluginTypeOrder!);
 
@@ -196,7 +272,7 @@ export class ActiveProfileState {
             });
         }
 
-        state.plugins = processedPlugins;
+        state.plugins = orderedPlugins;
         context.setState(state);
     }
 
@@ -229,6 +305,11 @@ export class ActiveProfileState {
         context.patchState(state);
     }
 
+    @Action(ActiveProfileActions.setBaseProfile)
+    public setBaseProfile(context: ActiveProfileState.Context, state: ActiveProfileActions.BaseProfileAction): void {
+        context.patchState(state);
+    }
+
     @Action(ActiveProfileActions.manageExternalPlugins)
     public manageExternalPlugins(context: ActiveProfileState.Context, state: ActiveProfileActions.ManageExternalPluginsAction): void {
         context.patchState(state);
@@ -243,7 +324,7 @@ export class ActiveProfileState {
         const modList = root ? state.rootMods : state.mods;
 
         Object.entries(modVerificationResults).forEach(([modName, verificationResult]) => {
-            const mod = modList.get(modName);
+            const mod = RelativeOrderedMap.get(modList, modName);
 
             if (!!mod) {
                 if (verificationResult?.error) {

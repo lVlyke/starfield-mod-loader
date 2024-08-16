@@ -1,9 +1,10 @@
 import { AppData } from "./app-data";
 import { AppDependenciesInfo } from "./app-dependency-info";
-import { AppProfile } from "./app-profile";
+import { AppBaseProfile, AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 import { GameId } from "./game-id";
 import { ModImportRequest } from "./mod-import-status";
+import { ModProfileRef } from "./mod-profile-ref";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -255,6 +256,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface FindModFiles extends Base {
+        id: `${ProfileMessage.Prefix}:findModFiles`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface ImportProfilePluginBackup extends Base {
         id: `${ProfileMessage.Prefix}:importPluginBackup`;
         data: {
@@ -296,7 +304,7 @@ export namespace AppMessage {
     export interface CheckArchiveInvalidationEnabled extends Base {
         id: `${ProfileMessage.Prefix}:checkArchiveInvalidationEnabled`;
         data: {
-            profile: AppProfile;
+            profile: AppProfile | AppBaseProfile | AppProfile.Form;
         };
     }
 
@@ -343,6 +351,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             modName: string;
+            modRef: ModProfileRef;
         };
     }
 
@@ -450,6 +459,7 @@ export namespace AppMessage {
                                | RenameProfileMod
                                | ReadProfileModFilePaths
                                | FindPluginFiles
+                               | FindModFiles
                                | ImportProfilePluginBackup
                                | CreateProfilePluginBackup
                                | DeleteProfilePluginBackup
@@ -508,6 +518,7 @@ export namespace AppMessage {
         "profile:renameMod",
         "profile:readModFilePaths",
         "profile:findPluginFiles",
+        "profile:findModFiles",
         "profile:importPluginBackup",
         "profile:createPluginBackup",
         "profile:deletePluginBackup",

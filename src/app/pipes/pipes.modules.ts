@@ -14,6 +14,7 @@ import { AppIsDebugPipe } from "./is-debug.pipe";
 import { AppProfileConfigFilePipe } from "./profile-config-file.pipe";
 import { AppHexPipe } from "./hex.pipe";
 import { AppGameConfigFilesFoundPipe } from "./game-config-files-found.pipe";
+import { AppIsFullProfilePipe } from "./is-full-profile.pipe";
 
 const PIPES = [
     AppProfileActiveModCountPipe,
@@ -29,7 +30,8 @@ const PIPES = [
     AppIsDebugPipe,
     AppProfileConfigFilePipe,
     AppHexPipe,
-    AppGameConfigFilesFoundPipe
+    AppGameConfigFilesFoundPipe,
+    AppIsFullProfilePipe
 ];
 
 @NgModule({

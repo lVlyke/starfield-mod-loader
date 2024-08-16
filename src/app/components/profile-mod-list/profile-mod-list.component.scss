@@ -1,3 +1,5 @@
+@use "../../../styles/mixins/" as mixins;
+
 :host {
 
     table {
@@ -29,6 +31,23 @@
 
         > .mod-title {
             font-size: 1rem;
+
+            .mod-title-sections {
+                display: flex;
+                align-items: center;
+            }
+
+            .mod-base-profile-marker {
+                margin-left: 0.25rem;
+                display: inline-flex;
+                align-items: end;
+                align-self: end;
+
+                .mod-base-profile-icon {
+                    font-weight: 600;
+                    @include mixins.mat-icon-size(0.95rem);
+                }
+            }
             
             .manual-mod-text {
                 font-style: italic;
@@ -54,6 +73,7 @@
             }
 
             .manual-mods-tooltip {
+                font-style: normal;
                 margin-left: 1rem;
             } 
 

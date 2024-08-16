@@ -10,14 +10,14 @@ export class AppProfileActiveModCountPipe implements PipeTransform {
         let count = 0;
 
         if (includeRootMods) {
-            profile.rootMods.forEach((mod) => {
+            profile.rootMods.forEach(([, mod]) => {
                 if (mod.enabled) {
                     ++count;
                 }
             });
         }
 
-        profile.mods.forEach((mod) => {
+        profile.mods.forEach(([, mod]) => {
             if (mod.enabled) {
                 ++count;
             }

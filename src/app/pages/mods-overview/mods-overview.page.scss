@@ -120,6 +120,10 @@
             gap: 1.5rem;
             max-width: 34%;
 
+            &:empty {
+                display: none;
+            }
+
             > * {
                 height: 1px;
             }

@@ -38,7 +38,7 @@ export class AppModActionsComponent extends BaseComponent {
     }
 
     protected showModInFileExplorer(): void {
-        this.profileManager.showModInFileExplorer(this.modName);
+        this.profileManager.showModInFileExplorer(this.modName, this.modRef);
 
         this.actionSelect$.emit();
     }
