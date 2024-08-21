@@ -38,6 +38,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @AsyncState()
     public readonly gameDb!: GameDatabase;
 
+    @AsyncState()
+    public readonly formModel!: Readonly<Partial<AppProfile>>;
+
     @ViewChild(NgForm)
     public readonly form!: NgForm;
 
@@ -51,6 +54,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public remedyMode: (keyof AppProfile) | boolean = false;
 
     protected gameIds: GameId[] = [];
+    protected linkModeSupported = false;
 
     @DeclareState("defaultPaths")
     private _defaultPaths?: DefaultProfilePaths;
@@ -69,6 +73,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         this.gameDb$.pipe(
             this.managedSource()
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
+
+        this.formModel$.pipe(
+            switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel }))
+        ).subscribe(linkModeSupported => this.linkModeSupported = linkModeSupported);
 
         stateRef.get("form").pipe(
             filterDefined(),

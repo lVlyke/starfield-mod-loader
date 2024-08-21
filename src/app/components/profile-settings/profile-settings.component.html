@@ -66,24 +66,23 @@
 
     <div>
         <mat-checkbox name="linkMode"
-                      [disabled]="!('profile:linkModeSupported' | appSendElectronMsg$:{ profile: formModel$ | async } | async)"
-                      [ngModel]="initialProfile.linkMode">
+                      [disabled]="!linkModeSupported"
+                      [ngModel]="initialProfile.linkMode ?? linkModeSupported">
             Link Mode
-            <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
         </mat-checkbox>
+
+        <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
     </div>
 
-    <ng-container *ngIf="formModel$ | async as formModel">
-        <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
-            <div *ngIf="gameDetails.archiveInvalidation">
-                <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
-                            [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
-                            (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
-                    Archive Invalidation
-                </mat-checkbox>
+    <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
+        <div *ngIf="gameDetails.archiveInvalidation">
+            <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
+                        [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
+                        (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
+                Archive Invalidation
+            </mat-checkbox>
 
-                <mat-icon *ngIf="createMode" class="tooltip-icon" matTooltip="This setting can only be modified after the profile has been created.">help</mat-icon>
-            </div>
-        </ng-container>
+            <mat-icon *ngIf="createMode" class="tooltip-icon" matTooltip="This setting can only be modified after the profile has been created.">help</mat-icon>
+        </div>
     </ng-container>
 </form>
