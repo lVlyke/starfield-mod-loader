@@ -18,6 +18,6 @@ export class AppProfileConfigFilePipe implements PipeTransform {
             return NEVER;
         }
 
-        return ElectronUtils.invoke<string | undefined>("profile:readConfigFile", { profile, fileName: configFileName, loadDefaults });
+        return ElectronUtils.invoke("profile:readConfigFile", { profile, fileName: configFileName, loadDefaults });
     }
 }

@@ -8,13 +8,13 @@ import { GameDetails } from "../models/game-details";
 })
 export class AppGameConfigFilesFoundPipe implements PipeTransform {
 
-    public transform(gameDetails?: GameDetails): Observable<boolean> {
+    public transform(gameDetails?: GameDetails): Observable<string | undefined> {
         if (!gameDetails) {
             return NEVER;
         }
 
-        return ElectronUtils.invoke<boolean>("app:verifyPathExists", {
+        return ElectronUtils.invoke("app:verifyPathExists", {
             path: Object.values(gameDetails.gameConfigFiles ?? {}).flat()
-        })
+        });
     }
 }

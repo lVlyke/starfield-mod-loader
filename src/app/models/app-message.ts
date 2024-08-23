@@ -2,8 +2,11 @@ import { AppData } from "./app-data";
 import { AppDependenciesInfo } from "./app-dependency-info";
 import { AppBaseProfile, AppProfile } from "./app-profile";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
+import { ExternalFile } from "./external-file";
+import { GameDatabase } from "./game-database";
 import { GameId } from "./game-id";
-import { ModImportRequest } from "./mod-import-status";
+import { GamePluginProfileRef } from "./game-plugin-profile-ref";
+import { ModImportRequest, ModImportResult } from "./mod-import-status";
 import { ModProfileRef } from "./mod-profile-ref";
 
 export type AppMessage
@@ -11,6 +14,7 @@ export type AppMessage
     | AppMessage.ProfileMessage;
 
 export type AppMessageData<I extends AppMessage["id"]> = (AppMessage & { id: I })["data"];
+export type AppMessageResult<I extends AppMessage["id"]> = (AppMessage & { id: I })["result"];
 
 type _AppMessage = AppMessage;
 
@@ -23,6 +27,7 @@ export namespace AppMessage {
     export interface Base {
         id: string;
         data?: unknown;
+        result?: unknown;
     }
 
     // App messages:
@@ -33,14 +38,15 @@ export namespace AppMessage {
             appState: AppData;
             modListCols: string[];
             defaultModListCols: string[];
-        }
+        };
     }
 
     export interface ChooseDirectory extends Base {
         id: `${Prefix}:chooseDirectory`;
         data: {
             baseDir?: string;
-        }
+        };
+        result?: string;
     }
 
     export interface ChooseFilePath extends Base {
@@ -48,7 +54,8 @@ export namespace AppMessage {
         data: {
             baseDir?: string;
             fileTypes?: string[];
-        }
+        };
+        result?: string;
     }
 
     export interface VerifyPathExists extends Base {
@@ -56,22 +63,26 @@ export namespace AppMessage {
         data: {
             path: string | string[];
             dirname?: boolean;
-        }
+        };
+        result?: string;
     }
 
     export interface OpenFile extends Base {
         id: `${Prefix}:openFile`;
         data: {
             path: string;
-        }
+        };
+        result: Pick<ExternalFile, "data" | "path" | "mimeType">;
     }
 
     export interface LoadProfileList extends Base {
         id: `${Prefix}:loadProfileList`;
+        result: AppProfile.Description[];
     }
 
     export interface LoadSettings extends Base {
         id: `${Prefix}:loadSettings`;
+        result: AppSettingsUserCfg | null;
     }
 
     export interface SaveSettings extends Base {
@@ -98,6 +109,7 @@ export namespace AppMessage {
             name: string;
             gameId: string;
         };
+        result?: AppProfile;
     }
 
     export interface LoadExternalProfile extends Base {
@@ -105,12 +117,12 @@ export namespace AppMessage {
         data: {
             profilePath?: string;
         };
+        result?: AppProfile;
     }
 
     export interface SaveProfile extends Base {
         id: `${Prefix}:saveProfile`;
         data: {
-            name: string;
             profile: AppProfile;
         };
     }
@@ -120,6 +132,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: AppProfile.VerificationResults;
     }
 
     export interface CopyProfileData extends Base {
@@ -136,6 +149,7 @@ export namespace AppMessage {
 
     export interface LoadGameDatabase extends Base {
         id: `${Prefix}:loadGameDatabase`;
+        result: GameDatabase;
     }
 
     export interface FindBestProfileDefaults extends Base {
@@ -143,6 +157,7 @@ export namespace AppMessage {
         data: {
             gameId: GameId;
         };
+        result: AppProfile.DefaultablePaths;
     }
 
     export interface ShowAboutInfo extends Base {
@@ -205,6 +220,7 @@ export namespace AppMessage {
             modPath?: string;
             root?: boolean;
         };
+        result?: ModImportRequest;
     }
 
     export interface BeginModExternalImport extends Base {
@@ -214,6 +230,7 @@ export namespace AppMessage {
             modPath?: string;
             root?: boolean;
         };
+        result?: ModImportRequest;
     }
 
     export interface CompleteModImport extends Base {
@@ -221,6 +238,7 @@ export namespace AppMessage {
         data: {
             importRequest: ModImportRequest;
         };
+        result?: ModImportResult;
     }
 
     export interface DeleteProfileMod extends Base {
@@ -247,6 +265,7 @@ export namespace AppMessage {
             modName: string;
             normalizePaths?: boolean;
         };
+        result: string[];
     }
 
     export interface FindPluginFiles extends Base {
@@ -254,6 +273,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: GamePluginProfileRef[];
     }
 
     export interface FindModFiles extends Base {
@@ -261,6 +281,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: AppProfile.ModList;
     }
 
     export interface ImportProfilePluginBackup extends Base {
@@ -269,13 +290,14 @@ export namespace AppMessage {
             profile: AppProfile;
             backupPath: string;
         };
+        result: AppProfile;
     }
 
     export interface CreateProfilePluginBackup extends Base {
         id: `${ProfileMessage.Prefix}:createPluginBackup`;
         data: {
             profile: AppProfile;
-            backupName: string;
+            backupName?: string;
         };
     }
 
@@ -292,6 +314,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: AppProfile.PluginBackupEntry[];
     }
 
     export interface ExportProfilePluginList extends Base {
@@ -306,6 +329,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile | AppBaseProfile | AppProfile.Form;
         };
+        result: boolean;
     }
 
     export interface SetArchiveInvalidationEnabled extends Base {
@@ -337,6 +361,7 @@ export namespace AppMessage {
         data: {
             refProfile: AppProfile;
         };
+        result?: string;
     }
 
     export interface FindProfileExternalFiles extends Base {
@@ -344,6 +369,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: AppProfile.ExternalFiles;
     }
 
     export interface ShowModInFileExplorer extends Base {
@@ -426,6 +452,7 @@ export namespace AppMessage {
             fileName: string;
             loadDefaults: boolean;
         };
+        result: string;
     }
 
     export interface UpdateConfigFile extends Base {
@@ -442,6 +469,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result: boolean;
     }
 
     export interface ResolveGameBinaryVersion extends Base {
@@ -449,6 +477,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
         };
+        result?: string;
     }
 
     export type ProfileMessage = ProfileSettings

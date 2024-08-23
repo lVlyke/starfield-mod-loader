@@ -87,7 +87,7 @@ export class AppStateBehaviorManager {
     }
 
     public openFile(path: string): Observable<ExternalFile> {
-        return ElectronUtils.invoke<Pick<ExternalFile, "data" | "path" | "mimeType">>("app:openFile", { path }).pipe(
+        return ElectronUtils.invoke("app:openFile", { path }).pipe(
             map((fileSource) => {
                 const blob = new Blob([fileSource.data], { type: fileSource.mimeType });
                 return {
@@ -124,7 +124,7 @@ export class AppStateBehaviorManager {
     }
 
     public loadSettings(): Observable<AppSettingsUserCfg | null> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppSettingsUserCfg | null>("app:loadSettings").pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadSettings", {}).pipe(
             switchMap((settings) => {
                 const stateActions = [];
 
@@ -156,14 +156,14 @@ export class AppStateBehaviorManager {
     }
 
     public loadProfileList(): Observable<AppProfile.Description[]> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<AppProfile.Description[]>("app:loadProfileList").pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadProfileList", {}).pipe(
             switchMap((profileList) => this.store.dispatch(new AppActions.SetProfiles(profileList)).pipe(
                 map(() => profileList)
             ))
         ));
     }
 
-    public saveSettings(): Observable<void> {
+    public saveSettings(): Observable<unknown> {
         return ObservableUtils.hotResult$(this.appState$.pipe(
             take(1),
             map(appState => this.appDataToUserCfg(appState)),
@@ -172,14 +172,14 @@ export class AppStateBehaviorManager {
         ));
     }
 
-    public updateSettings(settings: Partial<AppData>): Observable<void> {
+    public updateSettings(settings: Partial<AppData>): Observable<unknown> {
         return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
             switchMap(() => this.saveSettings())
         ));
     }
 
     public updateGameDatabase(): Observable<GameDatabase> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke<GameDatabase>("app:loadGameDatabase").pipe(
+        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadGameDatabase", {}).pipe(
             switchMap((gameDb) => {
                 if (!!gameDb) {
                     return this.store.dispatch(new AppActions.updateGameDb(gameDb)).pipe(
@@ -227,7 +227,7 @@ export class AppStateBehaviorManager {
         }, [[DEPS_INFO_TOKEN, aboutData]]);
     }
 
-    private syncUiState(): Observable<void> {
+    private syncUiState(): Observable<unknown> {
         return ObservableUtils.hotResult$(this.appState$.pipe(
             take(1),
             switchMap((appState) => ElectronUtils.invoke("app:syncUiState", {

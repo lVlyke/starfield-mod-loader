@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from "@angular/core";
 import { Observable } from "rxjs";
-import { AppMessage } from "../models/app-message";
+import { AppMessage, AppMessageData, AppMessageResult } from "../models/app-message";
 import { ElectronUtils } from "../util/electron-utils";
 
 @Pipe({
@@ -8,7 +8,7 @@ import { ElectronUtils } from "../util/electron-utils";
 })
 export class AppSendElectronMsgPipe implements PipeTransform {
 
-    public transform<T = any>(channel: AppMessage["id"], ...args: any[]): Observable<T> {
-        return ElectronUtils.invoke<T>(channel, ...args);
+    public transform<M extends AppMessage["id"] = AppMessage["id"]>(channel: M, data: AppMessageData<M>): Observable<AppMessageResult<M>> {
+        return ElectronUtils.invoke<M>(channel, data);
     }
 }

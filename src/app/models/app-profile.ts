@@ -42,6 +42,14 @@ export namespace AppProfile {
 
     export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed"> & { baseProfile?: string };
     export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string };
+    export type DefaultablePaths = Pick<AppProfile,
+        "modBaseDir"
+        | "gameBaseDir"
+        | "gameBinaryPath"
+        | "pluginListPath"
+        | "configFilePath"
+        | "saveFolderPath"
+    >;
 
     export interface ExternalFiles {
         gameDirFiles: string[];

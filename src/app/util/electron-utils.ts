@@ -1,10 +1,10 @@
-import type { AppMessage } from "../models/app-message";
+import type { AppMessage, AppMessageData, AppMessageResult } from "../models/app-message";
 import { Observable, from } from "rxjs";
 
 export namespace ElectronUtils {
 
-    export function invoke<T = any>(channel: AppMessage["id"], ...args: any[]): Observable<T> {
-        return from(window.appMessenger.invoke<T>(channel, ...args) ?? Promise.resolve());
+    export function invoke<M extends AppMessage["id"]>(channel: M, data: AppMessageData<M>): Observable<AppMessageResult<M>> {
+        return from(window.appMessenger.invoke<AppMessageResult<M>>(channel, data) ?? Promise.resolve());
     }
 
     export function chooseDirectory(baseDir?: string): Observable<string | undefined> {

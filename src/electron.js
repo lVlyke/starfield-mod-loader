@@ -1178,7 +1178,7 @@ class ElectronLoader {
     /** @returns {void} */
     createProfilePluginBackup(
         /** @type {AppProfile} */ profile,
-        /** @type {string} */ backupName
+        /** @type {string | undefined} */ backupName
     ) {
         const backupsDir = this.getProfilePluginBackupsDir(profile.name);
 

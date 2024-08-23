@@ -75,6 +75,16 @@
         </mat-form-field>
     }
 
+    <div *ngIf="!baseProfileMode">
+        <mat-checkbox name="linkMode"
+                      [disabled]="!linkModeSupported"
+                      [ngModel]="initialProfile.linkMode ?? linkModeSupported">
+            Link Mode
+        </mat-checkbox>
+
+        <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
+    </div>
+
     <div>
         <mat-checkbox name="manageConfigFiles" [ngModel]="initialProfile.manageConfigFiles">
             Manage Config/INI Files
@@ -89,21 +99,11 @@
         </mat-checkbox>
     </div>
 
-    <div *ngIf="!baseProfileMode">
-        <mat-checkbox name="linkMode"
-                      [disabled]="!linkModeSupported"
-                      [ngModel]="initialProfile.linkMode ?? linkModeSupported">
-            Link Mode
-        </mat-checkbox>
-
-        <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
-    </div>
-
     @if (!baseProfileMode) {
         <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
             <div *ngIf="gameDetails.archiveInvalidation">
                 <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
-                            [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: formModel } | async"
+                            [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
                             (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
                     Archive Invalidation
                 </mat-checkbox>
