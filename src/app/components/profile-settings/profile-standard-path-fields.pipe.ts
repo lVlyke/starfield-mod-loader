@@ -2,40 +2,57 @@ import { Pipe, PipeTransform } from "@angular/core";
 import { AppProfile } from "../../models/app-profile";
 
 export interface DefaultProfilePathField {
-    formId: keyof AppProfile.DefaultablePaths,
-    title: string,
-    fileTypes?: string[]
+    formId: keyof AppProfile.DefaultablePaths;
+    title: string;
+    required: boolean;
+    fileTypes?: string[];
 }
 
-const STANDARD_PATH_FIELDS: Readonly<DefaultProfilePathField[]> = [
-    { formId: "modBaseDir", title: "Mod Base Directory" },
-    { formId: "gameBaseDir", title: "Game Base Directory" },
-    { formId: "gameBinaryPath", title: "Game Executable", fileTypes: ["exe", "bat", "cmd", "lnk", "sh"] },
-    { formId: "pluginListPath", title: "Plugin List Path", fileTypes: ["txt"] }
-];
-const CONFIG_FILE_PATH_FIELD: DefaultProfilePathField = { formId: "configFilePath", title: "Config Files Directory" };
-const SAVE_FOLDER_PATH_FIELD: DefaultProfilePathField = { formId: "saveFolderPath", title: "Saves Directory" };
+export interface DefaultProfilePathFieldGroup {
+    formId: string;
+    groupTitle: string;
+    fields: DefaultProfilePathField[];
+    hint?: string;
+}
+
+export type DefaultProfilePathFieldEntry = DefaultProfilePathField | DefaultProfilePathFieldGroup;
+
+function PROFILE_OVERRIDE_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<DefaultProfilePathFieldEntry[]> {
+    return [
+        { formId: "profilePathOverrides", groupTitle: "Profile Path Overrides", hint: "Override standard profile paths", fields: [
+            { formId: "rootPathOverride", title: "Profile Root Path", required: false },
+            { formId: "modsPathOverride", title: "Profile Mods Path", required: false },
+            { formId: "savesPathOverride", title: "Profile Saves Path", required: false },
+            { formId: "configPathOverride", title: "Profile Config Path", required: false },
+            { formId: "backupsPathOverride", title: "Profile Backups Path", required: false },
+        ] }
+    ];
+}
+
+function STANDARD_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<DefaultProfilePathFieldEntry[]> {
+    return [
+        { formId: "modBaseDir", title: "Game Data Directory", required: true },
+        { formId: "gameBaseDir", title: "Game Root Directory", required: true },
+        { formId: "gameBinaryPath", title: "Game Executable", fileTypes: ["exe", "bat", "cmd", "lnk", "sh"], required: true },
+        { formId: "pluginListPath", title: "Game Plugin List Path", fileTypes: ["txt"], required: true },
+        { formId: "configFilePath", title: "Game Config Files Directory", required: !!formModel.manageConfigFiles },
+        { formId: "saveFolderPath", title: "Game Saves Directory", required: !!formModel.manageSaveFiles }
+    ];
+}
 
 @Pipe({
     name: "appProfileSettingsStandardPathFields"
 })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
-    public transform(formModel: Partial<AppProfile.Form> | null, baseProfileMode: boolean): Readonly<DefaultProfilePathField[]> {
-        if (baseProfileMode) {
-            return [];
+    public transform(formModel: Partial<AppProfile.Form>, baseProfileMode: boolean): Readonly<DefaultProfilePathFieldEntry[]> {
+        let result: DefaultProfilePathFieldEntry[] = [];
+
+        if (!baseProfileMode) {
+            result = result.concat(STANDARD_FIELDS(formModel));
         }
 
-        let result = STANDARD_PATH_FIELDS;
-
-        if (formModel?.manageConfigFiles) {
-            result = result.concat([CONFIG_FILE_PATH_FIELD]);
-        }
-
-        if (formModel?.manageSaveFiles) {
-            result = result.concat([SAVE_FOLDER_PATH_FIELD]);
-        }
-
+        result = result.concat(PROFILE_OVERRIDE_FIELDS(formModel));
         return result;
     }
 }

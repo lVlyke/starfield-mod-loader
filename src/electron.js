@@ -276,8 +276,8 @@ class ElectronLoader {
         ) => {
             log.info("Copying profile src: ", srcProfile.name, " dest: ", destProfile.name);
 
-            const srcModsDir = this.getProfileModsDir(srcProfile.name);
-            const destModsDir = this.getProfileModsDir(destProfile.name);
+            const srcModsDir = this.getProfileModsDir(srcProfile);
+            const destModsDir = this.getProfileModsDir(destProfile);
 
             // Copy profile mods
             if (fs.existsSync(srcModsDir)) {
@@ -285,8 +285,8 @@ class ElectronLoader {
                 fs.copySync(srcModsDir, destModsDir);
             }
 
-            const srcConfigDir = this.getProfileConfigDir(srcProfile.name);
-            const destConfigDir = this.getProfileConfigDir(destProfile.name);
+            const srcConfigDir = this.getProfileConfigDir(srcProfile);
+            const destConfigDir = this.getProfileConfigDir(destProfile);
 
             // Copy config files
             if (fs.existsSync(srcConfigDir)) {
@@ -294,8 +294,8 @@ class ElectronLoader {
                 fs.copySync(srcConfigDir, destConfigDir);
             }
 
-            const srcSaveDir = this.getProfileSaveDir(srcProfile.name);
-            const destSaveDir = this.getProfileSaveDir(destProfile.name);
+            const srcSaveDir = this.getProfileSaveDir(srcProfile);
+            const destSaveDir = this.getProfileSaveDir(destProfile);
 
             // Copy save files
             if (fs.existsSync(srcSaveDir)) {
@@ -304,9 +304,9 @@ class ElectronLoader {
             }
 
             // Copy plugin order backups
-            const srcBackupsDir = this.getProfileBackupsDir(srcProfile.name);
+            const srcBackupsDir = this.getProfileBackupsDir(srcProfile);
             if (fs.existsSync(srcBackupsDir)) {
-                const destBackupsDir = this.getProfileBackupsDir(destProfile.name);
+                const destBackupsDir = this.getProfileBackupsDir(destProfile);
 
                 fs.mkdirpSync(destBackupsDir);
                 fs.copySync(srcBackupsDir, destBackupsDir);
@@ -319,7 +319,7 @@ class ElectronLoader {
         ) => {
             const VERIFY_SUCCESS = { error: false, found: true };
 
-            const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile.name));
+            const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile));
             const modVerifyResult = this.verifyProfileModsExist(false, profile);
             const rootModVerifyResult = this.verifyProfileModsExist(true, profile);
             const modDirVerifyResult = "modBaseDir" in profile ? this.verifyProfilePathExists(profile.modBaseDir) : VERIFY_SUCCESS;
@@ -346,6 +346,11 @@ class ElectronLoader {
                 pluginListPath: pluginListPathVerifyResult,
                 configFilePath: configFilePathVerifyResult,
                 saveFolderPath: saveFolderPathVerifyResult,
+                rootPathOverride: VERIFY_SUCCESS, // TODO
+                modsPathOverride: VERIFY_SUCCESS, // TODO
+                configPathOverride: VERIFY_SUCCESS, // TODO
+                savesPathOverride: VERIFY_SUCCESS, // TODO
+                backupsPathOverride: VERIFY_SUCCESS, // TODO
                 mods: modVerifyResult,
                 rootMods: rootModVerifyResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
@@ -401,6 +406,47 @@ class ElectronLoader {
             return result;
         });
 
+        ipcMain.handle("app:checkLinkSupported", (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:checkLinkSupported">} */ { targetPath, destPaths, symlink, symlinkType }
+        ) => {
+            return this.#checkLinkSupported(targetPath, destPaths, symlink, symlinkType);
+        });
+
+        ipcMain.handle("profile:moveFolder", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:moveFolder">} */ { pathKey, oldProfile, newProfile }
+        ) => {
+            const oldPath = this.getProfileDirByKey(oldProfile, pathKey);
+            const newPath = this.getProfileDirByKey(newProfile, pathKey);
+
+            if (!oldPath || !newPath) {
+                throw new Error("Unable to move folder, could not resolve one or more paths.");
+            }
+
+            // Move files
+            if (oldPath !== newPath) {
+                if (fs.existsSync(newPath)) {
+                    fs.readdirSync(oldPath).forEach((pathData) => fs.copySync(
+                        path.join(oldPath, pathData),
+                        path.join(newPath, pathData),
+                        { overwrite: false } // TODO - Prompt user about overwriting
+                    ));
+                    fs.removeSync(oldPath); // TODO - Prompt user about overwriting/deleting
+                } else {
+                    fs.moveSync(oldPath, newPath);
+                }
+            }
+
+            if (pathKey === "rootPathOverride") {
+                const defaultPath = this.getDefaultProfileDir(newProfile.name);
+
+                if (newPath !== defaultPath) {
+                    fs.ensureSymlinkSync(newPath, path.resolve(this.getDefaultProfileDir(newProfile.name)), "dir");
+                }
+            }
+        });
+
         ipcMain.handle("profile:findExternalFiles", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:findExternalFiles">} */ { profile }
@@ -452,7 +498,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteMod">} */ { profile, modName }
         ) => {
-            const modDirPath = this.getProfileModDir(profile.name, modName);
+            const modDirPath = this.getProfileModDir(profile, modName);
             log.info("Deleting mod: ", modDirPath);
 
             await fs.remove(modDirPath);
@@ -462,8 +508,8 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:renameMod">} */ { profile, modCurName, modNewName }
         ) => {
-            const modCurDir = this.getProfileModDir(profile.name, modCurName);
-            const modNewDir = this.getProfileModDir(profile.name, modNewName);
+            const modCurDir = this.getProfileModDir(profile, modCurName);
+            const modNewDir = this.getProfileModDir(profile, modNewName);
 
             await fs.move(modCurDir, modNewDir);
         });
@@ -568,9 +614,9 @@ class ElectronLoader {
         ) => {
             let modDirPath;
             if (modRef.baseProfile && profile.baseProfile) {
-                modDirPath = this.getProfileModDir(profile.baseProfile.name, modName);
+                modDirPath = this.getProfileModDir(profile.baseProfile, modName);
             } else {
-                modDirPath = this.getProfileModDir(profile.name, modName);
+                modDirPath = this.getProfileModDir(profile, modName);
             }
 
             shell.openPath(path.resolve(modDirPath));
@@ -594,7 +640,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileBaseDirInFileExplorer">} */ { profile }
         ) => {
-            const profileDir = this.getProfileDir(profile.name);
+            const profileDir = this.getProfileDir(profile);
 
             shell.openPath(path.resolve(profileDir));
         });
@@ -603,7 +649,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
         ) => {
-            const profileModsDir = this.getProfileModsDir(profile.name);
+            const profileModsDir = this.getProfileModsDir(profile);
 
             shell.openPath(path.resolve(profileModsDir));
         });
@@ -612,7 +658,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileConfigDirInFileExplorer">} */ { profile }
         ) => {
-            const profileConfigDir = path.resolve(this.getProfileConfigDir(profile.name));
+            const profileConfigDir = path.resolve(this.getProfileConfigDir(profile));
 
             if (fs.existsSync(profileConfigDir)) {
                 shell.openPath(profileConfigDir);
@@ -623,7 +669,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
         ) => {
-            const profileModsDir = this.getProfilePluginBackupsDir(profile.name);
+            const profileModsDir = this.getProfilePluginBackupsDir(profile);
 
             shell.openPath(path.resolve(profileModsDir));
         });
@@ -663,6 +709,28 @@ class ElectronLoader {
             }
         });
 
+        ipcMain.handle("profile:dirLinkSupported", (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:dirLinkSupported">} */ { profile, srcDir, destDirs, symlink, symlinkType }
+        ) => {
+            if (!profile) {
+                return false;
+            }
+
+            const srcPath = this.getProfileDirByKey(profile, srcDir);
+
+            if (!srcPath) {
+                return false;
+            }
+
+            const destPaths = destDirs.map(destDir => this.getProfileDirByKey(profile, destDir));
+            if (destPaths.some(destPath => destPath === undefined)) {
+                return false;
+            }
+
+            return this.#checkLinkSupported(srcPath, /** @type { string[] } */ (destPaths), symlink, symlinkType);
+        });
+
         ipcMain.handle("profile:readConfigFile", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:readConfigFile">} */ { profile, fileName, loadDefaults }
@@ -675,60 +743,6 @@ class ElectronLoader {
             /** @type {import("./app/models/app-message").AppMessageData<"profile:updateConfigFile">} */ { profile, fileName, data }
         ) => {
             this.updateProfileConfigFile(profile, fileName, data);
-        });
-
-        ipcMain.handle("profile:linkModeSupported", (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:linkModeSupported">} */ { profile }
-        ) => {
-            if (!profile || !profile.modBaseDir || !profile.gameBaseDir) {
-                return false;
-            }
-
-            const testFileSrc = ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE;
-            const modDirTestFileDest = path.join(profile.modBaseDir, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
-            const gameDirTestFileDest = path.join(profile.gameBaseDir, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
-
-            try {
-                if (!fs.existsSync(testFileSrc)) {
-                    fs.writeFileSync(testFileSrc, "");
-                }
-
-                if (!fs.existsSync(profile.modBaseDir)) {
-                    fs.mkdirpSync(profile.modBaseDir);
-                }
-
-                // Create a test link to modBaseDir
-                fs.linkSync(testFileSrc, modDirTestFileDest);
-
-                if (modDirTestFileDest !== gameDirTestFileDest) {
-                    if (!fs.existsSync(profile.gameBaseDir)) {
-                        fs.mkdirpSync(profile.gameBaseDir);
-                    }
-
-                    // Create a test link to gameBaseDir
-                    fs.linkSync(testFileSrc, gameDirTestFileDest);
-                }
-
-                return true;
-            } catch (err) {
-                log.info("Link mode not supported reason: ", err);
-                return false;
-            } finally {
-                try {
-                    fs.rmSync(modDirTestFileDest);
-                } catch (err) {}
-
-                try {
-                    fs.rmSync(gameDirTestFileDest);
-                } catch (err) {}
-
-                try {
-                    fs.rmSync(testFileSrc);
-                } catch (err) {}
-            }
-
-            return false;
         });
 
         ipcMain.handle("profile:resolveGameBinaryVersion", (
@@ -998,56 +1012,83 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
-    getProfileDir(/** @type {string} */ profileNameOrPath) {
+    getDefaultProfileDir(/** @type {string} */ profileNameOrPath) {
         return path.isAbsolute(profileNameOrPath)
             ? profileNameOrPath
             : path.join(ElectronLoader.APP_PROFILES_DIR, profileNameOrPath);
     }
 
     /** @returns {string} */
-    getProfileConfigDir(/** @type {string} */ profileNameOrPath) {
-        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_CONFIG_DIR);
+    getProfileDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return profile.rootPathOverride ?? this.getDefaultProfileDir(profile.name);
     }
 
     /** @returns {string} */
-    getProfileSaveDir(/** @type {string} */ profileNameOrPath) {
-        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_SAVE_DIR);
+    getProfileConfigDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return profile.configPathOverride !== undefined
+            ? this.#resolveFullProfileDir(profile, profile.configPathOverride)
+            : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_CONFIG_DIR);
     }
 
     /** @returns {string} */
-    getProfileModsDir(/** @type {string} */ profileNameOrPath) {
-        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_DIR);
+    getProfileSaveDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return profile.savesPathOverride !== undefined
+            ? this.#resolveFullProfileDir(profile, profile.savesPathOverride)
+            : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_SAVE_DIR);
     }
 
     /** @returns {string} */
-    getProfileTmpDir(/** @type {string} */ profileNameOrPath) {
-        return path.join(this.getProfileDir(profileNameOrPath), ElectronLoader.PROFILE_MODS_STAGING_DIR);
+    getProfileModsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return profile.modsPathOverride !== undefined
+            ? this.#resolveFullProfileDir(profile, profile.modsPathOverride)
+            : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_MODS_DIR);
     }
 
     /** @returns {string} */
-    getProfileModDir(/** @type {string} */ profileNameOrPath, /** @type {string} */ modName) {
-        return path.join(this.getProfileModsDir(profileNameOrPath), modName);
+    getProfileTmpDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_MODS_STAGING_DIR);
     }
 
     /** @returns {string} */
-    getProfileBackupsDir(/** @type {string} */ profileNameOrPath) {
+    getProfileModDir(/** @type {AppProfile | AppBaseProfile} */ profile, /** @type {string} */ modName) {
+        return path.join(this.getProfileModsDir(profile), modName);
+    }
+
+    /** @returns {string} */
+    getProfileBackupsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return profile.backupsPathOverride !== undefined
+            ? this.#resolveFullProfileDir(profile, profile.backupsPathOverride)
+            : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_BACKUPS_DIR);
+    }
+
+    /** @returns {string} */
+    getProfilePluginBackupsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
         return path.join(
-            this.getProfileDir(profileNameOrPath), 
-            ElectronLoader.PROFILE_BACKUPS_DIR
-        );
-    }
-
-    /** @returns {string} */
-    getProfilePluginBackupsDir(/** @type {string} */ profileNameOrPath) {
-        return path.join(
-            this.getProfileBackupsDir(profileNameOrPath),
+            this.getProfileBackupsDir(profile),
             ElectronLoader.PROFILE_BACKUPS_PLUGINS_DIR
         );
     }
 
+    /** @returns {string | undefined} */
+    getProfileDirByKey(/** @type { AppProfile } */ profile, /** @type { keyof AppProfile } */ pathKey) {
+        switch (pathKey) {
+            case "modBaseDir": return profile.modBaseDir;
+            case "gameBaseDir": return profile.gameBaseDir;
+            case "gameBinaryPath": return profile.gameBinaryPath;
+            case "configFilePath": return profile.configFilePath;
+            case "saveFolderPath": return profile.saveFolderPath;
+            case "rootPathOverride": return this.getProfileDir(profile);
+            case "modsPathOverride": return this.getProfileModsDir(profile);
+            case "savesPathOverride": return this.getProfileSaveDir(profile);
+            case "configPathOverride": return this.getProfileConfigDir(profile);
+            case "backupsPathOverride": return this.getProfileBackupsDir(profile);
+            default: throw new Error("Invalid profile path key");
+        }
+    };
+
     /** @returns {AppProfile | AppBaseProfile | null} */
     loadProfile(/** @type {string} */ profileNameOrPath) {
-        return this.loadProfileFromPath(profileNameOrPath, this.getProfileDir(profileNameOrPath));
+        return this.loadProfileFromPath(profileNameOrPath, this.getDefaultProfileDir(profileNameOrPath));
     }
 
     /** @returns {AppProfile | AppBaseProfile | null} */
@@ -1067,7 +1108,8 @@ class ElectronLoader {
         profile.rootMods ??= [];
 
         if (profile.baseProfile) {
-            profile.baseProfile = this.loadProfileFromPath(profile.baseProfile, this.getProfileDir(profile.baseProfile));
+            // TODO - Load base profile from custom path
+            profile.baseProfile = this.loadProfileFromPath(profile.baseProfile, this.getDefaultProfileDir(profile.baseProfile));
         }
 
         // TODO
@@ -1081,14 +1123,19 @@ class ElectronLoader {
 
     /** @returns {void} */
     saveProfile(/** @type {AppProfile} */ profile, options) {
-        const profileDir = this.getProfileDir(profile.name);
+        const profileDir = this.getProfileDir(profile);
+        const defaultProfileDir = this.getDefaultProfileDir(profile.name);
         const profileSettingsName = ElectronLoader.PROFILE_SETTINGS_FILE;
-
-        // Serialize root mods Map as entries
         const profileToWrite = Object.assign({}, profile, { baseProfile: profile.baseProfile?.name });
 
         // Make sure the profile and mods directory exists
-        fs.mkdirpSync(this.getProfileModsDir(profile.name));
+        fs.mkdirpSync(this.getProfileModsDir(profile));
+
+        if (defaultProfileDir !== profileDir) {
+            if (!fs.existsSync(defaultProfileDir)) {
+                fs.symlinkSync(profileDir, defaultProfileDir, "dir");
+            }
+        }
 
         return fs.writeFileSync(
             path.join(profileDir, profileSettingsName),
@@ -1099,7 +1146,14 @@ class ElectronLoader {
 
     /** @returns {void} */
     deleteProfile(/** @type {AppProfile} */ profile) {
-        const profileDir = this.getProfileDir(profile.name);
+        const profileDir = this.getProfileDir(profile);
+        const defaultProfileDir = this.getDefaultProfileDir(profile.name);
+
+        if (defaultProfileDir !== profileDir) {
+            if (fs.existsSync(defaultProfileDir)) {
+                fs.removeSync(defaultProfileDir);
+            }
+        }
 
         return fs.rmSync(profileDir, { recursive: true });
     }
@@ -1110,7 +1164,7 @@ class ElectronLoader {
         /** @type {string} */ fileName,
         /** @type {boolean} */ loadDefaults
     ) {
-        const profileConfigDir = this.getProfileConfigDir(profile.name);
+        const profileConfigDir = this.getProfileConfigDir(profile);
         let profileConfigFilePath = path.join(profileConfigDir, fileName);
         
         if (!fs.existsSync(profileConfigFilePath)) {
@@ -1130,7 +1184,7 @@ class ElectronLoader {
 
     /** @returns {void} */
     updateProfileConfigFile(/** @type {AppProfile} */ profile, /** @type {string} */ fileName, /** @type {string} */ data) {
-        const profileConfigDir = this.getProfileConfigDir(profile.name);
+        const profileConfigDir = this.getProfileConfigDir(profile);
         const profileConfigFilePath = path.join(profileConfigDir, fileName);
         
         fs.mkdirpSync(profileConfigDir);
@@ -1143,7 +1197,7 @@ class ElectronLoader {
         /** @type {string} */ backupPath
     ) {
         if (!path.isAbsolute(backupPath)) {
-            backupPath = path.join(this.getProfilePluginBackupsDir(profile.name), backupPath);
+            backupPath = path.join(this.getProfilePluginBackupsDir(profile), backupPath);
         }
 
         /** @type {AppProfile["plugins"]} */ const pluginsBackup = fs.readJSONSync(backupPath);
@@ -1180,7 +1234,7 @@ class ElectronLoader {
         /** @type {AppProfile} */ profile,
         /** @type {string | undefined} */ backupName
     ) {
-        const backupsDir = this.getProfilePluginBackupsDir(profile.name);
+        const backupsDir = this.getProfilePluginBackupsDir(profile);
 
         fs.mkdirpSync(backupsDir);
 
@@ -1197,7 +1251,7 @@ class ElectronLoader {
         /** @type {string} */ backupPath
     ) {
         if (!path.isAbsolute(backupPath)) {
-            backupPath = path.join(this.getProfilePluginBackupsDir(profile.name), backupPath);
+            backupPath = path.join(this.getProfilePluginBackupsDir(profile), backupPath);
         }
 
         fs.rmSync(backupPath);
@@ -1207,7 +1261,7 @@ class ElectronLoader {
     readProfilePluginBackups(
         /** @type {AppProfile} */ profile
     ) {
-        const backupsDir = this.getProfilePluginBackupsDir(profile.name);
+        const backupsDir = this.getProfilePluginBackupsDir(profile);
 
         if (!fs.existsSync(backupsDir)) {
             return [];
@@ -1260,7 +1314,7 @@ class ElectronLoader {
 
             const fileType = path.extname(filePath);
             const modName = path.basename(filePath, fileType);
-            const modDirStagingPath = path.join(this.getProfileTmpDir(profile.name), modName);
+            const modDirStagingPath = path.join(this.getProfileTmpDir(profile), modName);
             /** @type Promise */ let decompressOperation;
 
             // Clear the staging dir
@@ -1605,7 +1659,7 @@ class ElectronLoader {
                 return enabledModFiles;
             }, new Map());
 
-            const modProfilePath = this.getProfileModDir(profile.name, modName);
+            const modProfilePath = this.getProfileModDir(profile, modName);
 
             if (mergeStrategy === "REPLACE") {
                 // Clear the mod dir for the profile
@@ -1677,12 +1731,15 @@ class ElectronLoader {
 
     /** @returns {AppProfileModVerificationResult} */
     verifyProfileModsExist(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
-        const modsDir = this.getProfileModsDir(profile.name);
+        const modsDir = this.getProfileModsDir(profile);
         const modList = root ? profile.rootMods : profile.mods;
 
         let hasMissingError = false;
         const profileCheckResults = modList.reduce((result, [modName, mod]) => {
-            const modExists = fs.existsSync(path.join(mod.baseProfile ? this.getProfileModsDir(mod.baseProfile) : modsDir, modName));
+            const modExists = fs.existsSync(path.join(mod.baseProfile
+                ? this.getProfileModsDir(/** @type {AppBaseProfile} */ (profile.baseProfile))
+                : modsDir,
+            modName));
             const modHasError = !modExists;
 
             hasMissingError ||= modHasError;
@@ -1844,7 +1901,7 @@ class ElectronLoader {
         /** @type {string} */ modName,
         /** @type {boolean | undefined} */ normalizePaths
     ) {
-        const modDirPath = this.getProfileModDir(profile.name, modName);
+        const modDirPath = this.getProfileModDir(profile, modName);
         let files = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: true });
 
         if (normalizePaths) {
@@ -1857,7 +1914,7 @@ class ElectronLoader {
     /** @returns {string | undefined} */
     resolveGameConfigFilePath(/** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile, /** @type {string} */ configFileName) {
         if ("manageConfigFiles" in profile && profile.manageConfigFiles) {
-            const profileConfigFilePath = path.join(this.getProfileConfigDir(profile.name), configFileName);
+            const profileConfigFilePath = path.join(this.getProfileConfigDir(profile), configFileName);
 
             if (fs.existsSync(profileConfigFilePath)) {
                 return profileConfigFilePath;
@@ -1998,7 +2055,7 @@ class ElectronLoader {
         const gamePluginFormats = gameDetails?.pluginFormats ?? [];
 
         return profile.mods.reduce((/** @type {GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
-            const modDirPath = this.getProfileModDir(profile.name, modId);
+            const modDirPath = this.getProfileModDir(profile, modId);
             
             if (fs.existsSync(modDirPath)) {
                 const modFiles = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: false });
@@ -2024,7 +2081,7 @@ class ElectronLoader {
     findModFiles(
         /** @type {AppProfile} */ profile
     ) {
-        const profileModsDir = this.getProfileModsDir(profile.name);
+        const profileModsDir = this.getProfileModsDir(profile);
 
         if (!fs.existsSync(profileModsDir)) {
             return [];
@@ -2060,7 +2117,10 @@ class ElectronLoader {
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
                 const copyTasks = [];
-                const modDirPath = this.getProfileModDir(mod.baseProfile ?? profile.name, modName);
+                const modDirPath = this.getProfileModDir(mod.baseProfile
+                    ? /** @type {AppBaseProfile} */ (profile.baseProfile)
+                    : profile,
+                modName);
                 const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
 
                 // Copy data files to mod base dir
@@ -2169,7 +2229,7 @@ class ElectronLoader {
 
         const deployConfigDir = profile.configFilePath;
         const backupDir = path.join(deployConfigDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
-        const profileConfigDir = this.getProfileConfigDir(profile.name);
+        const profileConfigDir = this.getProfileConfigDir(profile);
 
         if (!fs.existsSync(profileConfigDir)) {
             return [];
@@ -2200,7 +2260,7 @@ class ElectronLoader {
         const deploySaveDir = profile.saveFolderPath;
         const rootBackupDir = path.join(path.dirname(profile.saveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const savesBackupDir = path.join(rootBackupDir, path.basename(profile.saveFolderPath));
-        const profileSaveDir = this.getProfileSaveDir(profile.name);
+        const profileSaveDir = this.getProfileSaveDir(profile);
 
         // Backup existing saves
         if (fs.existsSync(deploySaveDir)) {
@@ -2210,30 +2270,15 @@ class ElectronLoader {
         // Make sure profile save folder exists
         fs.mkdirpSync(profileSaveDir);
 
-        if (profile.linkMode) {
+        if (this.#checkLinkSupported(profileSaveDir, [deploySaveDir], true, "junction")) {
             await fs.symlink(
                 path.resolve(profileSaveDir),
                 path.resolve(deploySaveDir),
                 "junction"
             );
         } else {
-            // Create dest save folder
-            fs.mkdirpSync(deploySaveDir);
-
-            const profileSaveFiles = fs.readdirSync(profileSaveDir);
-            
-            // Copy profile saves
-            await Promise.all(profileSaveFiles.map(async (saveFileName) => {
-                const saveSrcPath = path.join(profileSaveDir, saveFileName);
-                const saveDestPath = path.join(deploySaveDir, saveFileName);
-
-                // TODO - Check that links are possible to `deploySaveDir`
-                if (profile.linkMode) {
-                    await fs.link(saveSrcPath, saveDestPath);
-                } else {
-                    await fs.copyFile(saveSrcPath, saveDestPath);
-                }
-            }));
+            log.error("Cannot deploy profile save files, symlink not supported for path from", profileSaveDir, "to", deploySaveDir);
+            throw new Error("Cannot deploy profile save files, symlink not supported for path.");
         }
 
         // Create helper symlink for easy access to backed up saves
@@ -2247,31 +2292,6 @@ class ElectronLoader {
         }
 
         return [deploySaveDir, backupDirHelperLink];
-    }
-
-    /** @returns {Promise<unknown>} */
-    async importSaveFilesToProfile(/** @type {AppProfile} */ profile, /** @type {string} */ savesDirPath) {
-        const profileSaveDir = this.getProfileSaveDir(profile.name);
-
-        const importedSaveFiles = await fs.readdir(savesDirPath);
-        
-        return Promise.all(importedSaveFiles.map(async (saveFileName) => {
-            const saveSrcPath = path.join(savesDirPath, saveFileName);
-            const saveDestPath = path.join(profileSaveDir, saveFileName);
-
-            if ((await fs.lstat(saveSrcPath)).isFile()) {
-                if (await fs.exists(saveDestPath)) {
-                    await fs.remove(saveDestPath);
-                }
-
-                // TODO - Check that links are possible
-                if (profile.linkMode) {
-                    await fs.link(saveSrcPath, saveDestPath);
-                } else {
-                    await fs.copyFile(saveSrcPath, saveDestPath);
-                }
-            }
-        }));
     }
 
     /** @returns {Promise<string[]>} */
@@ -2388,11 +2408,6 @@ class ElectronLoader {
 
             if (orphanedDeploy) {
                 log.warn("The profile being undeployed is orphaned. Data loss may occur.");
-            }
-
-            // Copy any new saves back to the profile folder if in link mode
-            if (!orphanedDeploy && !profile.linkMode && profile.manageSaveFiles && profile.saveFolderPath) {
-                await this.importSaveFilesToProfile(profile, profile.saveFolderPath);
             }
 
             // Only remove files managed by this profile
@@ -2615,6 +2630,128 @@ class ElectronLoader {
     /** @returns {string} */
     #currentDateTimeAsFileName() {
         return this.#asFileName(new Date().toISOString());
+    }
+
+    /** @returns {string} */
+    #resolveFullProfileDir(/** @type {AppProfile | AppBaseProfile} */ profile, /** @type {string} */ profileDir) {
+        return path.isAbsolute(profileDir)
+            ? profileDir
+            : path.join(this.getProfileDir(profile), profileDir)
+    }
+
+    #checkLinkSupported(
+        /** @type {string} */ targetPath,
+        /** @type {string[]} */ destPaths,
+        /** @type {boolean} */ symlink,
+        /** @type {fs.SymlinkType | undefined} */ symlinkType
+    ) {
+        if (!targetPath || !destPaths || destPaths.length === 0) {
+            return false;
+        }
+
+        let srcTestFile = "";
+        let srcCreatedDir = "";
+
+        // TODO - Delete any created directories (i.e. new profile)
+
+        try {
+            if (!fs.existsSync(targetPath)) {
+                srcCreatedDir = this.#mkdirpSync(targetPath);
+            }
+
+            if (fs.lstatSync(targetPath).isFile()) {
+                targetPath = path.dirname(targetPath);
+            }
+
+            srcTestFile = path.join(targetPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+        
+            if (!fs.existsSync(srcTestFile)) {
+                fs.writeFileSync(srcTestFile, "");
+            }
+
+            return destPaths.every((destPath) => {
+                let destTestFile = "";
+                let destCreatedDir = "";
+
+                try {
+                    if (!destPath) {
+                        return false;
+                    }
+
+                    if (!fs.existsSync(destPath)) {
+                        destCreatedDir = this.#mkdirpSync(destPath);
+                    }
+
+                    if (fs.lstatSync(destPath).isFile()) {
+                        destPath = path.dirname(destPath);
+                    }
+
+                    destTestFile = path.join(destPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+    
+                    // Create a test link
+                    if (symlink) {
+                        fs.symlinkSync(srcTestFile, destTestFile, symlinkType ?? null);
+                    } else {
+                        fs.linkSync(srcTestFile, destTestFile);
+                    }
+    
+                    return true;
+                } catch (err) {
+                    return false;
+                } finally {
+                    if (destTestFile) {
+                        try {
+                            fs.removeSync(destTestFile);
+                        } catch (err) {}
+                    }
+
+                    if (destCreatedDir) {
+                        try {
+                            fs.removeSync(destCreatedDir);
+                        } catch (err) {}
+                    }
+                }
+
+                return false;
+            });
+        } catch(err) {
+            return false;
+        } finally {
+            if (srcTestFile) {
+                try {
+                    fs.removeSync(srcTestFile);
+                } catch (err) {}
+            }
+
+            if (srcCreatedDir) {
+                try {
+                    fs.removeSync(srcCreatedDir);
+                } catch (err) {}
+            }
+        }
+
+        return false;
+    }
+
+    /** @return {string} The outermost directory that was created. */ 
+    #mkdirpSync(/** @type {string} */ pathToCreate) {
+        const pathParts = pathToCreate.split(path.sep);
+
+        for (let i = 0, curPath = ""; i < pathParts.length; ++i) {
+            let pathPart = pathParts[i];
+            if (pathPart.length === 0) {
+                pathPart = path.sep;
+            }
+
+            curPath = curPath.length === 0 ? pathPart : path.join(curPath, pathPart);
+
+            if (!fs.existsSync(curPath)) {
+                fs.mkdirpSync(pathToCreate);
+                return curPath;
+            }
+        }
+
+        return "";
     }
 }
 

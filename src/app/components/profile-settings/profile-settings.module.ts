@@ -8,8 +8,9 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { AppProfileSettingsComponent } from "./profile-settings.component";
 import { MatSelectModule } from "@angular/material/select";
+import { MatExpansionModule } from "@angular/material/expansion";
+import { AppProfileSettingsComponent } from "./profile-settings.component";
 import { AppPipesModule } from "../../pipes";
 import { AppGameBadgeComponentModule } from "../game-badge/game-badge.module";
 import { AppProfileSettingsStandardPathFieldsPipe } from "./profile-standard-path-fields.pipe";
@@ -32,6 +33,7 @@ import { AppProfileSettingsStandardPathFieldsPipe } from "./profile-standard-pat
         MatSelectModule,
         MatCheckboxModule,
         MatTooltipModule,
+        MatExpansionModule,
 
         AppPipesModule,
         AppGameBadgeComponentModule

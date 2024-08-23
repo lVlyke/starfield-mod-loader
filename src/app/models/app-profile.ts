@@ -9,6 +9,11 @@ export interface AppBaseProfile {
     mods: AppProfile.ModList;
     rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
+    rootPathOverride?: string;
+    modsPathOverride?: string;
+    configPathOverride?: string;
+    savesPathOverride?: string;
+    backupsPathOverride?: string;
     deployed?: boolean;
 }
 
@@ -49,6 +54,11 @@ export namespace AppProfile {
         | "pluginListPath"
         | "configFilePath"
         | "saveFolderPath"
+        | "rootPathOverride"
+        | "modsPathOverride"
+        | "savesPathOverride"
+        | "configPathOverride"
+        | "backupsPathOverride"
     >;
 
     export interface ExternalFiles {

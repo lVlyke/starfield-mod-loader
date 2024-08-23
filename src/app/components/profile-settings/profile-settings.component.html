@@ -37,48 +37,69 @@
 
     <mat-form-field *ngIf="!baseProfileMode" appearance="fill">
         <mat-label>Base Profile</mat-label>
-        <input matInput
-                name="baseProfile"
-                type="text"
-                [ngModel]="initialProfile.baseProfile?.name">
+        <mat-select name="baseProfile"
+                    [ngModel]="initialProfile.baseProfile?.name">
+            @for (profileDesc of appProfileDescs; track profileDesc.name) {
+                <mat-option *ngIf="profileDesc.gameId === formModel.gameId" [value]="profileDesc.name">
+                    {{ profileDesc.name }}
+                </mat-option>
+            }
+        </mat-select>
     </mat-form-field>
 
-    @for (fieldInfo of formModel$ | async | appProfileSettingsStandardPathFields:baseProfileMode; track fieldInfo) {
-        <mat-form-field appearance="fill">
-            <mat-label>{{ fieldInfo.title }}</mat-label>
-            <input #fieldModel="ngModel"
-                matInput
-                type="text"
-                [name]="fieldInfo.formId"
-                [required]="true"
-                [ngModel]="initialProfile[fieldInfo.formId]"
-                cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === fieldModel.name">
-    
-            <button *ngIf="defaultPaths?.[fieldInfo.formId] as defaultPath"
-                    mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    matTooltip="Reset to Default Value"
-                    (click)="fieldModel.control.setValue(defaultPath)">
-                <mat-icon>refresh</mat-icon>
-            </button>
-    
-            <button mat-icon-button 
-                    matSuffix
-                    type="button"
-                    color="accent"
-                    matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
-                    (click)="choosePath(fieldModel, fieldInfo.fileTypes)">
-                <mat-icon>folder</mat-icon>
-            </button>
-        </mat-form-field>
+    @for (fieldEntry of formModel | appProfileSettingsStandardPathFields:baseProfileMode; track fieldEntry.formId) {
+        @if (isFieldGroup(fieldEntry)) {
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    {{ fieldEntry.groupTitle }}
+                    <mat-icon *ngIf="fieldEntry.hint" class="tooltip-icon" [matTooltip]="fieldEntry.hint">help</mat-icon>
+                </mat-expansion-panel-header>
+            
+                @for (fieldInfo of fieldEntry.fields; track fieldInfo.formId) {
+                    <ng-container *ngTemplateOutlet="formFieldTemplate; context: { $implicit: fieldInfo }" />
+                }
+            </mat-expansion-panel>
+        } @else {
+            <ng-container *ngTemplateOutlet="formFieldTemplate; context: { $implicit: fieldEntry }" />
+        }
+
+        <ng-template #formFieldTemplate let-fieldInfo >
+            <mat-form-field appearance="fill">
+                <mat-label>{{ fieldInfo.title }}</mat-label>
+                <input #fieldModel="ngModel"
+                    matInput
+                    type="text"
+                    [name]="fieldInfo.formId"
+                    [required]="fieldInfo.requiredFn ? fieldInfo.requiredFn(formModel) : fieldInfo.required"
+                    [ngModel]="$any(initialProfile)[fieldInfo.formId]"
+                    cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === fieldModel.name">
+        
+                <button *ngIf="$any(defaultPaths)?.[fieldInfo.formId] as defaultPath"
+                        mat-icon-button 
+                        matSuffix
+                        type="button"
+                        color="accent"
+                        matTooltip="Reset to Default Value"
+                        (click)="fieldModel.control.setValue(defaultPath)">
+                    <mat-icon>refresh</mat-icon>
+                </button>
+        
+                <button mat-icon-button 
+                        matSuffix
+                        type="button"
+                        color="accent"
+                        matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
+                        (click)="choosePath(fieldModel, fieldInfo.fileTypes)">
+                    <mat-icon>folder</mat-icon>
+                </button>
+            </mat-form-field>
+        </ng-template>
     }
 
     <div *ngIf="!baseProfileMode">
         <mat-checkbox name="linkMode"
                       [disabled]="!linkModeSupported"
-                      [ngModel]="initialProfile.linkMode ?? linkModeSupported">
+                      [ngModel]="linkModeSupported ? (initialProfile.linkMode ?? true) : false">
             Link Mode
         </mat-checkbox>
 
@@ -93,7 +114,9 @@
     </div>
 
     <div *ngIf="!baseProfileMode">
-        <mat-checkbox name="manageSaveFiles" [ngModel]="initialProfile.manageSaveFiles">
+        <mat-checkbox name="manageSaveFiles"
+                      [disabled]="!manageSavesSupported"
+                      [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
             Manage Save Files
             <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
         </mat-checkbox>

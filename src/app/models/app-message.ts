@@ -176,6 +176,17 @@ export namespace AppMessage {
         };
     }
 
+    export interface CheckLinkSupported extends Base {
+        id: `${Prefix}:checkLinkSupported`;
+        data: {
+            targetPath: string;
+            destPaths: string[];
+            symlink: boolean;
+            symlinkType?: "file" | "dir" | "junction";
+        };
+        result: boolean;
+    }
+
     export type AppMessage = SyncUiState
                            | ChooseDirectory
                            | ChooseFilePath
@@ -195,7 +206,8 @@ export namespace AppMessage {
                            | LoadGameDatabase
                            | FindBestProfileDefaults
                            | ShowAboutInfo
-                           | ToggleModListColumn;
+                           | ToggleModListColumn
+                           | CheckLinkSupported;
 
     // Profile messages:
 
@@ -204,6 +216,15 @@ export namespace AppMessage {
         export type Prefix = typeof PREFIX;
 
         export const PREFIX = "profile";
+    }
+
+    export interface MoveProfileFolder extends Base {
+        id: `${ProfileMessage.Prefix}:moveFolder`;
+        data: {
+            oldProfile: AppProfile;
+            newProfile: AppProfile;
+            pathKey: keyof AppProfile;
+        };
     }
 
     export interface ProfileSettings extends Base {
@@ -464,10 +485,14 @@ export namespace AppMessage {
         };
     }
 
-    export interface LinkModeSupported extends Base {
-        id: `${ProfileMessage.Prefix}:linkModeSupported`;
+    export interface ProfileDirLinkSupported extends Base {
+        id: `${ProfileMessage.Prefix}:dirLinkSupported`;
         data: {
             profile: AppProfile;
+            srcDir: keyof AppProfile;
+            destDirs: Array<keyof AppProfile>;
+            symlink: boolean;
+            symlinkType?: "file" | "dir" | "junction";
         };
         result: boolean;
     }
@@ -480,7 +505,8 @@ export namespace AppMessage {
         result?: string;
     }
 
-    export type ProfileMessage = ProfileSettings
+    export type ProfileMessage = MoveProfileFolder
+                               | ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
                                | CompleteModImport
@@ -512,7 +538,7 @@ export namespace AppMessage {
                                | OpenProfileConfigFile
                                | ReadConfigFile
                                | UpdateConfigFile
-                               | LinkModeSupported
+                               | ProfileDirLinkSupported
                                | ResolveGameBinaryVersion;
 
     // Message record:
@@ -538,7 +564,9 @@ export namespace AppMessage {
         "app:findBestProfileDefaults",
         "app:showAboutInfo",
         "app:toggleModListColumn",
+        "app:checkLinkSupported",
 
+        "profile:moveFolder",
         "profile:settings",
         "profile:beginModAdd",
         "profile:beginModExternalImport",
@@ -571,7 +599,6 @@ export namespace AppMessage {
         "profile:openProfileConfigFile",
         "profile:readConfigFile",
         "profile:updateConfigFile",
-        "profile:linkModeSupported",
         "profile:resolveGameBinaryVersion"
     ];
 }

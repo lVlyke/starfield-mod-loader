@@ -179,7 +179,7 @@ export class ProfileManager {
         // Monitor mod changes for new/removed plugins and update the plugins list
         this.activeProfile$.pipe(
             filterDefined(),
-            map(profile => _.pick(profile, "mods", "manageExternalPlugins", "externalFilesCache")),
+            map(profile => _.pick<AppProfile, keyof AppProfile>(profile, "mods", "manageExternalPlugins", "externalFilesCache")),
             distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
             switchMap(() => this.reconcileActivePluginList())
         ).subscribe();
@@ -210,13 +210,13 @@ export class ProfileManager {
         // Handle automatic mod redeployment when the active profile is deployed
         this.activeProfile$.pipe(
             filterDefined(),
-            map(profile => _.pick(profile, "name", "deployed")),
+            map(profile => _.pick<AppProfile, keyof AppProfile>(profile, "name", "deployed")),
             distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
             switchMap(() => combineLatest([this.activeProfile$, this.appState$]).pipe(
                 filter(([profile]) => !!profile?.deployed),
                 map(([profile, appState]) => ([
                     // Monitor these profile properties:
-                    _.pick(profile,
+                    _.pick<AppProfile, keyof AppProfile>(profile!,
                         "gameId",
                         "name",
                         "modBaseDir",
@@ -226,6 +226,11 @@ export class ProfileManager {
                         "mods",
                         "rootMods",
                         "plugins",
+                        "rootPathOverride",
+                        "modsPathOverride",
+                        "configPathOverride",
+                        "savesPathOverride",
+                        "backupsPathOverride",
                         "manageExternalPlugins",
                         "manageConfigFiles",
                         "manageSaveFiles",
@@ -233,7 +238,7 @@ export class ProfileManager {
                     ),
     
                     // Monitor these app settings:
-                    _.pick(appState,
+                    _.pick<AppData, keyof AppData>(appState,
                         "pluginsEnabled",
                         "normalizePathCasing"
                     )

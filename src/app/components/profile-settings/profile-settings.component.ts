@@ -16,6 +16,7 @@ import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
 import { LangUtils } from "../../util/lang-utils";
+import { DefaultProfilePathFieldEntry, DefaultProfilePathFieldGroup } from "./profile-standard-path-fields.pipe";
 
 @Component({
     selector: "app-profile-settings",
@@ -33,9 +34,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
     public readonly gameDb$: Observable<GameDatabase>;
+    public readonly appProfileDescs$: Observable<AppProfile.Description[]>;
 
     @AsyncState()
     public readonly gameDb!: GameDatabase;
+
+    @AsyncState()
+    public readonly appProfileDescs!: AppProfile.Description[];
 
     @AsyncState()
     public readonly formModel!: Readonly<Partial<AppProfile.Form>>;
@@ -57,6 +62,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     protected gameIds: GameId[] = [];
     protected linkModeSupported = false;
+    protected manageSavesSupported = false;
 
     @DeclareState("defaultPaths")
     private _defaultPaths?: AppProfile.DefaultablePaths;
@@ -71,14 +77,32 @@ export class AppProfileSettingsComponent extends BaseComponent {
         super({ cdRef });
 
         this.gameDb$ = store.select(AppState.getGameDb);
+        this.appProfileDescs$ = store.select(AppState.getProfileDescriptions);
 
         this.gameDb$.pipe(
             this.managedSource()
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
 
         this.formModel$.pipe(
-            switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel as AppProfile }))
+            filter(formModel => !!formModel.name),
+            switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
+                profile: formModel as AppProfile,
+                srcDir: "modsPathOverride",
+                destDirs: ["modBaseDir", "gameBaseDir"],
+                symlink: false
+            }))
         ).subscribe(linkModeSupported => this.linkModeSupported = linkModeSupported);
+
+        this.formModel$.pipe(
+            filter(formModel => !!formModel.name),
+            switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
+                profile: formModel as AppProfile,
+                srcDir: "savesPathOverride",
+                destDirs: ["saveFolderPath"],
+                symlink: true,
+                symlinkType: "junction"
+            }))
+        ).subscribe(managedSavesSupported => this.manageSavesSupported = managedSavesSupported);
 
         combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(
             filter(([, createMode]) => !createMode)
@@ -133,6 +157,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return this._defaultPaths;
     }
 
+    protected isFieldGroup(fieldEntry: DefaultProfilePathFieldEntry): fieldEntry is DefaultProfilePathFieldGroup {
+        return "groupTitle" in fieldEntry;
+    }
+
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
         return ObservableUtils.hotResult$(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
             filterDefined(),
@@ -182,19 +210,24 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 }
             })().pipe(
                 finalize(() => this.onFormSubmit$.next(formModel)),
-                switchMap(() => {
-                    const gameDetails = this.gameDb[formModel.gameId];
+                switchMap(() => forkJoin([
+                    this.checkCreateDefaultConfigFiles(formModel),
+                    this.checkUpdatedProfilePathOverrides(formModel),
+                ]))
+            )
+        )));
+    }
+
+    private checkCreateDefaultConfigFiles(profile: AppProfile): Observable<unknown> {
+        const gameDetails = this.gameDb[profile.gameId];
     
-                    // Check if profile-specific config files need to be created
-                    if (formModel.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
-                        // Check if any profile-specific config files exist
-                        return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
-                            return this.profileManager.readConfigFile(formModel, configFile, false);
-                        })).pipe(map(configData => !configData.some(Boolean)));
-                    } else {
-                        return of(false);
-                    }
-                }),
+        // Check if profile-specific config files need to be created
+        if (profile.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
+            // Check if any profile-specific config files exist
+            return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
+                return this.profileManager.readConfigFile(profile, configFile, false);
+            })).pipe(
+                map(configData => !configData.some(Boolean)),
                 filterTrue(),
                 switchMap(() => this.dialogManager.createDefault(
                     "No config files exist for this profile. Do you want to create them now?",
@@ -205,14 +238,45 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 filter(result => result === DialogManager.YES_ACTION_PRIMARY),
                 switchMap(() => {
                     // Write default config files
-                    const gameDetails = this.gameDb[formModel.gameId];
+                    const gameDetails = this.gameDb[profile.gameId];
                     return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
-                        return this.profileManager.readConfigFile(formModel, configFile, true).pipe(
+                        return this.profileManager.readConfigFile(profile, configFile, true).pipe(
                             mergeMap(fileData => this.profileManager.updateConfigFile(configFile, fileData))
                         );
                     }));
                 })
-            ))
-        ));
+            );
+        } else {
+            return of(false);
+        }
+    }
+
+    private checkUpdatedProfilePathOverrides(profile: AppProfile): Observable<unknown> {
+        if (this.createMode) {
+            return of(false);
+        }
+
+        const profilePathOverrideKeys: Array<keyof AppProfile> = [
+            "rootPathOverride",
+            "modsPathOverride",
+            "savesPathOverride",
+            "configPathOverride",
+            "backupsPathOverride"
+        ];
+
+        return forkJoin(profilePathOverrideKeys.map((pathKey) => {
+            const newPath = profile[pathKey];
+            const oldPath = this.initialProfile[pathKey];
+            if (oldPath !== newPath) {
+                // TODO - Verify user wants to move folder
+                return ElectronUtils.invoke("profile:moveFolder", {
+                    pathKey,
+                    oldProfile: this.initialProfile as AppProfile,
+                    newProfile: profile
+                });
+            } else {
+                return of(false);
+            }
+        }));
     }
 }
