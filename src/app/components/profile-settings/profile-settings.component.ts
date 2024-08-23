@@ -16,7 +16,6 @@ import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
 import { LangUtils } from "../../util/lang-utils";
-import { DefaultProfilePaths } from "./profile-standard-path-fields.pipe";
 
 @Component({
     selector: "app-profile-settings",
@@ -57,7 +56,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     protected linkModeSupported = false;
 
     @DeclareState("defaultPaths")
-    private _defaultPaths?: DefaultProfilePaths;
+    private _defaultPaths?: AppProfile.DefaultablePaths;
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -75,7 +74,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
 
         this.formModel$.pipe(
-            switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel }))
+            switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel as AppProfile }))
         ).subscribe(linkModeSupported => this.linkModeSupported = linkModeSupported);
 
         stateRef.get("form").pipe(
@@ -98,7 +97,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             map((profile: Partial<AppProfile>) => profile.gameId),
             filter((gameId): gameId is string => !!gameId),
             distinctUntilChanged(),
-            switchMap(gameId => ElectronUtils.invoke<DefaultProfilePaths>("app:findBestProfileDefaults", { gameId }))
+            switchMap(gameId => ElectronUtils.invoke("app:findBestProfileDefaults", { gameId }))
         ).subscribe(profileDefaults => this._defaultPaths = profileDefaults);
 
         // Attempt to apply default profile path values for any empty and clean path controls
@@ -107,7 +106,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             this.formModel$
         ]).pipe(
             distinctUntilChanged((x, y) => LangUtils.isEqual(x, y)),
-            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof DefaultProfilePaths>),
+            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof AppProfile.DefaultablePaths>),
             delay(0)
         ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
             const control = this.form.controls[pathId];
@@ -123,7 +122,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         }));
     }
 
-    public get defaultPaths(): DefaultProfilePaths | undefined {
+    public get defaultPaths(): AppProfile.DefaultablePaths | undefined {
         return this._defaultPaths;
     }
 

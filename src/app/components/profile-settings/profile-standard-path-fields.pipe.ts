@@ -1,10 +1,8 @@
 import { Pipe, PipeTransform } from "@angular/core";
 import { AppProfile } from "../../models/app-profile";
 
-export type DefaultProfilePaths = Pick<AppProfile, "modBaseDir" | "gameBaseDir" | "gameBinaryPath" | "pluginListPath" | "configFilePath">;
-
 export interface DefaultProfilePathField {
-    formId: keyof DefaultProfilePaths,
+    formId: keyof AppProfile.DefaultablePaths,
     title: string,
     fileTypes?: string[]
 }

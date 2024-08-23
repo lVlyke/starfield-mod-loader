@@ -189,7 +189,7 @@ export class AppModsOverviewPage extends BasePage {
         return this.profileManager.reorderMods(root, modOrder);
     }
 
-    protected updateConfigFile(fileName: string, data: string): Observable<void> {
+    protected updateConfigFile(fileName: string, data: string): Observable<unknown> {
         return ObservableUtils.hotResult$(this.profileManager.updateConfigFile(fileName, data).pipe(
             tap(() => this.configFileUpdate$.next(new Date()))
         ));
@@ -276,7 +276,7 @@ export class AppModsOverviewPage extends BasePage {
         ));
     }
 
-    protected deleteProfilePluginBackup(backupFile: string): Observable<void> {
+    protected deleteProfilePluginBackup(backupFile: string): Observable<unknown> {
         return ObservableUtils.hotResult$(
             this.profileManager.deleteProfilePluginBackup(this.activeProfile!, backupFile)
         );

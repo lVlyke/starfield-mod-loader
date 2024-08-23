@@ -32,6 +32,13 @@ export namespace AppProfile {
     export type ModList = Map<string, ModProfileRef>;
 
     export type Description = Pick<AppProfile, "name" | "gameId" | "deployed">;
+    export type DefaultablePaths = Pick<AppProfile,
+        "modBaseDir"
+        | "gameBaseDir"
+        | "gameBinaryPath"
+        | "pluginListPath"
+        | "configFilePath"
+    >;
 
     export interface ExternalFiles {
         gameDirFiles: string[];

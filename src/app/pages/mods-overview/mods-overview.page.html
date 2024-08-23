@@ -457,7 +457,7 @@
 <ng-template #importPluginBackupMenu cdkPortal>
     <mat-card class="import-plugin-backup-menu mat-elevation-z3">
         <mat-card-content>
-            <ng-container *ngIf="'profile:readPluginBackups' | appSendElectronMsg$:{ profile: activeProfile } | async as backupFileEntries">
+            <ng-container *ngIf="'profile:readPluginBackups' | appSendElectronMsg$:{ profile: activeProfile! } | async as backupFileEntries">
                 <mat-action-list *ngIf="backupFileEntries.length > 0; else noBackups">
                     <button *ngFor="let backupFileEntry of backupFileEntries"
                             mat-list-item
@@ -496,7 +496,7 @@
 <!-- Profile deployment status text -->
 <ng-template #profileDeploymentStatusText let-asTooltip>
     <ng-container *ngIf="'Mods for another profile are active' as anotherActiveProfileWarnText">
-        <ng-container *ngIf="('profile:findDeployedProfile' | appSendElectronMsg$:{ refProfile: activeProfile } | async) as deployedProfileName; else showDeployStatus">
+        <ng-container *ngIf="('profile:findDeployedProfile' | appSendElectronMsg$:{ refProfile: activeProfile! } | async) as deployedProfileName; else showDeployStatus">
             <ng-container *ngIf="deployedProfileName !== activeProfile?.name; else showDeployStatus">
                 <mat-icon class="warning"
                         [matTooltip]="anotherActiveProfileWarnText"
