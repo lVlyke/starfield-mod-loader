@@ -212,7 +212,7 @@ export class AppModsOverviewPage extends BasePage {
 
     protected showProfileModsDirInFileExplorer(): Observable<unknown> {
         let check$: Observable<DialogAction>;
-        if (this.showedModExternalEditWarning || this.activeProfile?.linkMode) {
+        if (this.showedModExternalEditWarning || this.activeProfile?.modLinkMode) {
             check$ = of(DialogManager.OK_ACTION_PRIMARY);
         } else {
             check$ = this.dialogManager.createDefault(

@@ -234,7 +234,8 @@ export class ProfileManager {
                         "manageExternalPlugins",
                         "manageConfigFiles",
                         "manageSaveFiles",
-                        "linkMode"
+                        "modLinkMode",
+                        "configLinkMode",
                     ),
     
                     // Monitor these app settings:

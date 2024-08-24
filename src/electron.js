@@ -358,7 +358,8 @@ class ElectronLoader {
                 manageExternalPlugins: VERIFY_SUCCESS,
                 manageConfigFiles: VERIFY_SUCCESS,
                 manageSaveFiles: VERIFY_SUCCESS,
-                linkMode: VERIFY_SUCCESS, // TODO
+                modLinkMode: VERIFY_SUCCESS, // TODO
+                configLinkMode: VERIFY_SUCCESS, // TODO
                 deployed: VERIFY_SUCCESS,
                 baseProfile: VERIFY_SUCCESS // TODO - Verify base profile exists
             };
@@ -2032,7 +2033,7 @@ class ElectronLoader {
                     return;
                 }
 
-                if (profile.linkMode) {
+                if (profile.modLinkMode) {
                     fs.mkdirpSync(path.dirname(destFilePath));
                     fs.linkSync(srcFilePath, destFilePath);
                 } else {
@@ -2175,7 +2176,7 @@ class ElectronLoader {
                     }
 
                     if (shouldCopy) {
-                        if (profile.linkMode) {
+                        if (profile.modLinkMode) {
                             copyTasks.push(fs.mkdirp(path.dirname(destFilePath))
                                 .then(() => fs.link(srcFilePath, destFilePath)));
                         } else {
@@ -2246,7 +2247,12 @@ class ElectronLoader {
                 fs.moveSync(configDestPath, path.join(backupDir, configFileName));
             }
 
-            await fs.copyFile(configSrcPath, configDestPath);
+            if (profile.configLinkMode) {
+                await fs.symlinkSync(configSrcPath, configDestPath, "file");
+            } else {
+                await fs.copyFile(configSrcPath, configDestPath);
+            }
+            
             return configDestPath;
         }));
     }
@@ -2446,7 +2452,7 @@ class ElectronLoader {
                         const backupDest = path.join(path.dirname(extFilesBackupDir), backupFile);
 
                         // Use hardlinks for faster file restoration in link mode
-                        if (profile.linkMode && !fs.lstatSync(backupSrc).isDirectory()) {
+                        if (profile.modLinkMode && !fs.lstatSync(backupSrc).isDirectory()) {
                             // TODO - Recursively do this when encountering directories
                             return fs.link(backupSrc, backupDest);
                         } else {

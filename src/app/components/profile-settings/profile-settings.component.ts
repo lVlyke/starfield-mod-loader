@@ -61,7 +61,8 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public remedyMode: (keyof AppProfile) | boolean = false;
 
     protected gameIds: GameId[] = [];
-    protected linkModeSupported = false;
+    protected modLinkModeSupported = false;
+    protected configLinkModeSupported = false;
     protected manageSavesSupported = false;
 
     @DeclareState("defaultPaths")
@@ -91,7 +92,18 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 destDirs: ["modBaseDir", "gameBaseDir"],
                 symlink: false
             }))
-        ).subscribe(linkModeSupported => this.linkModeSupported = linkModeSupported);
+        ).subscribe(linkSupported => this.modLinkModeSupported = linkSupported);
+
+        this.formModel$.pipe(
+            filter(formModel => !!formModel.name),
+            switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
+                profile: formModel as AppProfile,
+                srcDir: "configPathOverride",
+                destDirs: ["configFilePath"],
+                symlink: true,
+                symlinkType: "file"
+            }))
+        ).subscribe(linkSupported => this.configLinkModeSupported = linkSupported);
 
         this.formModel$.pipe(
             filter(formModel => !!formModel.name),

@@ -27,7 +27,8 @@ export interface AppProfile extends AppBaseProfile {
     manageExternalPlugins?: boolean;
     manageConfigFiles?: boolean;
     manageSaveFiles?: boolean;
-    linkMode?: boolean;
+    modLinkMode?: boolean;
+    configLinkMode?: boolean;
     externalFilesCache?: AppProfile.ExternalFiles;
     baseProfile?: AppBaseProfile;
 }

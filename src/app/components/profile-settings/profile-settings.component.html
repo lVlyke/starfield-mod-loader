@@ -47,7 +47,8 @@
         </mat-select>
     </mat-form-field>
 
-    @for (fieldEntry of formModel | appProfileSettingsStandardPathFields:baseProfileMode; track fieldEntry.formId) {
+    @let stdFieldInput = { formModel, form, baseProfileMode, modLinkModeSupported, configLinkModeSupported };
+    @for (fieldEntry of stdFieldInput | appProfileSettingsStandardPathFields; track fieldEntry.formId) {
         @if (isFieldGroup(fieldEntry)) {
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
@@ -66,6 +67,18 @@
         <ng-template #formFieldTemplate let-fieldInfo >
             <mat-form-field appearance="fill">
                 <mat-label>{{ fieldInfo.title }}</mat-label>
+
+                <button *ngIf="fieldInfo.linkable"
+                        mat-icon-button 
+                        matPrefix
+                        type="button"
+                        [attr.editable]="fieldInfo.linkFn"
+                        [disabledInteractive]="!fieldInfo.linkFn"
+                        [color]="fieldInfo.linked ? 'accent' : null"
+                        (click)="fieldInfo.linkFn ? fieldInfo.linkFn(fieldInfo) : null; $event.stopPropagation()">
+                    <mat-icon>{{ fieldInfo.linked ? "link" : "link_off" }}</mat-icon>
+                </button>
+
                 <input #fieldModel="ngModel"
                     matInput
                     type="text"
@@ -80,7 +93,7 @@
                         type="button"
                         color="accent"
                         matTooltip="Reset to Default Value"
-                        (click)="fieldModel.control.setValue(defaultPath)">
+                        (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
                     <mat-icon>refresh</mat-icon>
                 </button>
         
@@ -89,7 +102,7 @@
                         type="button"
                         color="accent"
                         matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
-                        (click)="choosePath(fieldModel, fieldInfo.fileTypes)">
+                        (click)="choosePath(fieldModel, fieldInfo.fileTypes); $event.stopPropagation()">
                     <mat-icon>folder</mat-icon>
                 </button>
             </mat-form-field>
@@ -97,13 +110,22 @@
     }
 
     <div *ngIf="!baseProfileMode">
-        <mat-checkbox name="linkMode"
-                      [disabled]="!linkModeSupported"
-                      [ngModel]="linkModeSupported ? (initialProfile.linkMode ?? true) : false">
+        <mat-checkbox name="modLinkMode"
+                      [disabled]="!modLinkModeSupported"
+                      [ngModel]="modLinkModeSupported ? (initialProfile.modLinkMode ?? true) : false">
             Link Mode
         </mat-checkbox>
 
         <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
+    </div>
+
+    <div *ngIf="!baseProfileMode && formModel.manageConfigFiles">
+        <mat-checkbox name="configLinkMode"
+                      [attr.app-hidden]="true"
+                      [disabled]="!configLinkModeSupported"
+                      [ngModel]="configLinkModeSupported ? (initialProfile.configLinkMode ?? true) : false">
+            Config Link Mode
+        </mat-checkbox>
     </div>
 
     <div>

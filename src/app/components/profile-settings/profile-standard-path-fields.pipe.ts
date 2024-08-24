@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from "@angular/core";
+import { NgForm } from "@angular/forms";
 import { AppProfile } from "../../models/app-profile";
 
 export interface DefaultProfilePathField {
@@ -6,6 +7,9 @@ export interface DefaultProfilePathField {
     title: string;
     required: boolean;
     fileTypes?: string[];
+    linkable?: boolean;
+    linked?: boolean;
+    linkFn?: (field: DefaultProfilePathField) => void;
 }
 
 export interface DefaultProfilePathFieldGroup {
@@ -17,7 +21,7 @@ export interface DefaultProfilePathFieldGroup {
 
 export type DefaultProfilePathFieldEntry = DefaultProfilePathField | DefaultProfilePathFieldGroup;
 
-function PROFILE_OVERRIDE_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<DefaultProfilePathFieldEntry[]> {
+function PROFILE_OVERRIDE_FIELDS({}: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
     return [
         { formId: "profilePathOverrides", groupTitle: "Profile Path Overrides", hint: "Override standard profile paths", fields: [
             { formId: "rootPathOverride", title: "Profile Root Path", required: false },
@@ -29,14 +33,62 @@ function PROFILE_OVERRIDE_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<
     ];
 }
 
-function STANDARD_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<DefaultProfilePathFieldEntry[]> {
+function STANDARD_FIELDS({
+    formModel,
+    form,
+    modLinkModeSupported,
+    configLinkModeSupported
+}: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
     return [
-        { formId: "modBaseDir", title: "Game Data Directory", required: true },
-        { formId: "gameBaseDir", title: "Game Root Directory", required: true },
-        { formId: "gameBinaryPath", title: "Game Executable", fileTypes: ["exe", "bat", "cmd", "lnk", "sh"], required: true },
-        { formId: "pluginListPath", title: "Game Plugin List Path", fileTypes: ["txt"], required: true },
-        { formId: "configFilePath", title: "Game Config Files Directory", required: !!formModel.manageConfigFiles },
-        { formId: "saveFolderPath", title: "Game Saves Directory", required: !!formModel.manageSaveFiles }
+        {
+            formId: "modBaseDir",
+            title: "Game Data Directory",
+            required: true,
+            linkable: true,
+            linked: formModel.modLinkMode,
+            linkFn: modLinkModeSupported ? () => {
+                form.controls["modLinkMode"].setValue(!formModel.modLinkMode);
+            } : undefined
+        },
+        {
+            formId: "gameBaseDir",
+            title: "Game Root Directory",
+            required: true,
+            linkable: true,
+            linked: formModel.modLinkMode,
+            linkFn: modLinkModeSupported ? () => {
+                form.controls["modLinkMode"].setValue(!formModel.modLinkMode);
+            } : undefined
+        },
+        {
+            formId: "gameBinaryPath",
+            title: "Game Executable",
+            fileTypes: ["exe", "bat", "cmd", "lnk", "sh"],
+            required: true
+        },
+        { 
+            formId: "pluginListPath",
+            title: "Game Plugin List Path",
+            fileTypes: ["txt"],
+            required: true
+        },
+        {
+            formId: "configFilePath",
+            title: "Game Config Files Directory",
+            required: !!formModel.manageConfigFiles,
+            linkable: formModel.manageConfigFiles,
+            linked: formModel.configLinkMode,
+            linkFn: configLinkModeSupported ? () => {
+                form.controls["configLinkMode"].setValue(!formModel.configLinkMode);
+            } : undefined
+        },
+        {
+            formId: "saveFolderPath",
+            title: "Game Saves Directory",
+            required: !!formModel.manageSaveFiles,
+            linkable: formModel.manageSaveFiles,
+            linked: true
+        }
     ];
 }
 
@@ -45,14 +97,25 @@ function STANDARD_FIELDS(formModel: Partial<AppProfile.Form>): Readonly<DefaultP
 })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
-    public transform(formModel: Partial<AppProfile.Form>, baseProfileMode: boolean): Readonly<DefaultProfilePathFieldEntry[]> {
+    public transform(options: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
         let result: DefaultProfilePathFieldEntry[] = [];
 
-        if (!baseProfileMode) {
-            result = result.concat(STANDARD_FIELDS(formModel));
+        if (!options.baseProfileMode) {
+            result = result.concat(STANDARD_FIELDS(options));
         }
 
-        result = result.concat(PROFILE_OVERRIDE_FIELDS(formModel));
+        result = result.concat(PROFILE_OVERRIDE_FIELDS(options));
         return result;
+    }
+}
+
+export namespace AppProfileSettingsStandardPathFieldsPipe {
+
+    export interface Options {
+        baseProfileMode: boolean;
+        formModel: Partial<AppProfile.Form>;
+        form: NgForm;
+        modLinkModeSupported: boolean;
+        configLinkModeSupported: boolean;
     }
 }
