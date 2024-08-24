@@ -3,12 +3,12 @@
         "title": "Fallout 4",
         "bkgColor": "#007300",
         "fgColor": "#ffffff",
-        "modBaseDirs": [
+        "modDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Data",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Data",
             "~/.local/share/Steam/steamapps/common/Fallout 4/Data"
         ],
-        "gameBaseDirs": [
+        "rootDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
             "C:\\XboxGames\\Fallout 4\\Content",
@@ -62,12 +62,12 @@
         "title": "Fallout: New Vegas",
         "bkgColor": "#ae260e",
         "fgColor": "#ffffff",
-        "modBaseDirs": [
+        "modDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
             "~/.local/share/Steam/steamapps/common/Fallout New Vegas/Data"
         ],
-        "gameBaseDirs": [
+        "rootDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas",
             "C:\\XboxGames\\Fallout New Vegas\\Content",
@@ -129,14 +129,14 @@
         "title": "Starfield",
         "bkgColor": "#be6326",
         "fgColor": "#ffffff",
-        "modBaseDirs": [
+        "modDirs": [
             "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Data",
             "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data",
             "~/.local/share/Steam/steamapps/common/Starfield/Data"
         ],
-        "gameBaseDirs": [
+        "rootDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
             "C:\\XboxGames\\Starfield\\Content",

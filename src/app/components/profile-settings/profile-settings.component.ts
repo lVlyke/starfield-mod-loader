@@ -89,7 +89,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "modsPathOverride",
-                destDirs: ["modBaseDir", "gameBaseDir"],
+                destDirs: ["gameModDir", "gameRootDir"],
                 symlink: false
             }))
         ).subscribe(linkSupported => this.modLinkModeSupported = linkSupported);
@@ -99,7 +99,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "configPathOverride",
-                destDirs: ["configFilePath"],
+                destDirs: ["gameConfigFilePath"],
                 symlink: true,
                 symlinkType: "file"
             }))
@@ -110,7 +110,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "savesPathOverride",
-                destDirs: ["saveFolderPath"],
+                destDirs: ["gameSaveFolderPath"],
                 symlink: true,
                 symlinkType: "junction"
             }))

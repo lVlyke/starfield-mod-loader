@@ -189,7 +189,7 @@ export class ProfileManager {
             this.isPluginsEnabled$,
             this.activeProfile$
         ]).pipe(
-            map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.pluginListPath),
+            map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.gamePluginListPath),
             distinctUntilChanged(),
             filterTrue(),
             withLatestFrom(this.activeGameDetails$),
@@ -200,9 +200,9 @@ export class ProfileManager {
             withLatestFrom(this.activeProfile$),
             switchMap(([pluginListPath, activeProfile]) => {
                 if (!!pluginListPath) {
-                    return store.dispatch(new ActiveProfileActions.setPluginListPath(pluginListPath));
+                    return store.dispatch(new ActiveProfileActions.setGamePluginListPath(pluginListPath));
                 } else {
-                    return this.showProfileWizard(activeProfile, { remedy: "pluginListPath" });
+                    return this.showProfileWizard(activeProfile, { remedy: "gamePluginListPath" });
                 }
             })
         ).subscribe();
@@ -219,10 +219,11 @@ export class ProfileManager {
                     _.pick<AppProfile, keyof AppProfile>(profile!,
                         "gameId",
                         "name",
-                        "modBaseDir",
-                        "pluginListPath",
-                        "configFilePath",
-                        "saveFolderPath",
+                        "gameRootDir",
+                        "gameModDir",
+                        "gamePluginListPath",
+                        "gameConfigFilePath",
+                        "gameSaveFolderPath",
                         "mods",
                         "rootMods",
                         "plugins",
@@ -985,17 +986,17 @@ export class ProfileManager {
         )));
     }
 
-    public showModBaseDirInFileExplorer(): Observable<unknown> {
+    public showGameModDirInFileExplorer(): Observable<unknown> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showModBaseDirInFileExplorer", { profile: profile! })
+            switchMap(profile => ElectronUtils.invoke("profile:showGameModDirInFileExplorer", { profile: profile! })
         )));
     }
 
-    public showGameBaseDirInFileExplorer(): Observable<unknown> {
+    public showGameRootDirInFileExplorer(): Observable<unknown> {
         return ObservableUtils.hotResult$(this.activeProfile$.pipe(
             take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showGameBaseDirInFileExplorer", { profile: profile! })
+            switchMap(profile => ElectronUtils.invoke("profile:showGameRootDirInFileExplorer", { profile: profile! })
         )));
     }
 

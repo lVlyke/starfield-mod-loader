@@ -207,9 +207,16 @@ export class ActiveProfileState {
 
         // Preserve previous plugin order while using latest plugin data and add new plugins
         orderedPlugins = orderedPlugins
-            .map(plugin => plugin.modId === undefined ? plugin : plugins.find(activePlugin => plugin.plugin === activePlugin.plugin))
+            .map((plugin) => {
+                const activePlugin = plugins.find(activePlugin => plugin.plugin === activePlugin.plugin);
+                // Preserve plugin enabled and promotion state of existing plugins
+                return activePlugin ? Object.assign(activePlugin,
+                    _.pick<GamePluginProfileRef, keyof GamePluginProfileRef>(plugin, "enabled", "promotedType")
+                ) : undefined;
+            })
             .filter((plugin): plugin is GamePluginProfileRef => !!plugin)
-            .concat(plugins.filter(plugin => !orderedPlugins.some(activePlugin => plugin.plugin === activePlugin.plugin)));
+            .concat(plugins.filter(plugin => !orderedPlugins.some(activePlugin => plugin.plugin === activePlugin.plugin)))
+            .filter(plugin => plugin.modId === undefined || modList.find(([modId]) => plugin.modId === modId)?.[1].enabled);
 
         if (!!state.baseProfile) {
             const baseProfilePlugins = state.baseProfile.plugins ?? [];
@@ -300,8 +307,8 @@ export class ActiveProfileState {
         context.patchState(state);
     }
 
-    @Action(ActiveProfileActions.setPluginListPath)
-    public setPluginListPath(context: ActiveProfileState.Context, state: ActiveProfileActions.PluginListPathAction): void {
+    @Action(ActiveProfileActions.setGamePluginListPath)
+    public setGamePluginListPath(context: ActiveProfileState.Context, state: ActiveProfileActions.GamePluginListPathAction): void {
         context.patchState(state);
     }
 

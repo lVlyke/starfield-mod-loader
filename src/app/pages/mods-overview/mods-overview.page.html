@@ -324,21 +324,21 @@
                             
                             Profile Folder
                         </button>
-        
-                        <button id="mod-dir-view-button"
-                                mat-stroked-button
-                                (click)="profileManager.showModBaseDirInFileExplorer()">
-                            <mat-icon>drive_file_move</mat-icon>
-                            
-                            Mod Folder
-                        </button>
-        
+
                         <button id="game-dir-view-button"
                                 mat-stroked-button
-                                (click)="profileManager.showGameBaseDirInFileExplorer()">
+                                (click)="profileManager.showGameRootDirInFileExplorer()">
                             <mat-icon>source</mat-icon>
                             
                             Game Folder
+                        </button>
+        
+                        <button id="mod-dir-view-button"
+                                mat-stroked-button
+                                (click)="profileManager.showGameModDirInFileExplorer()">
+                            <mat-icon>drive_file_move</mat-icon>
+                            
+                            Data Folder
                         </button>
         
                         @if (!activeProfile.manageConfigFiles) {

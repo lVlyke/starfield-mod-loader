@@ -402,8 +402,8 @@ export namespace AppMessage {
         };
     }
 
-    export interface ShowModBaseDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showModBaseDirInFileExplorer`;
+    export interface ShowGameModDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showGameModDirInFileExplorer`;
         data: {
             profile: AppProfile;
         };
@@ -430,8 +430,8 @@ export namespace AppMessage {
         };
     }
 
-    export interface ShowGameBaseDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showGameBaseDirInFileExplorer`;
+    export interface ShowGameRootDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showGameRootDirInFileExplorer`;
         data: {
             profile: AppProfile;
         };
@@ -527,9 +527,9 @@ export namespace AppMessage {
                                | FindDeployedProfile
                                | FindProfileExternalFiles
                                | ShowModInFileExplorer
-                               | ShowModBaseDirInFileExplorer
+                               | ShowGameModDirInFileExplorer
                                | ShowProfileBaseDirInFileExplorer
-                               | ShowGameBaseDirInFileExplorer
+                               | ShowGameRootDirInFileExplorer
                                | ShowProfileModsDirInFileExplorer
                                | ShowProfileConfigDirInFileExplorer
                                | ShowProfilePluginBackupsInFileExplorer
@@ -588,11 +588,11 @@ export namespace AppMessage {
         "profile:findDeployedProfile",
         "profile:findExternalFiles",
         "profile:showModInFileExplorer",
-        "profile:showModBaseDirInFileExplorer",
+        "profile:showGameModDirInFileExplorer",
         "profile:showProfileBaseDirInFileExplorer",
         "profile:showProfileModsDirInFileExplorer",
         "profile:showProfileConfigDirInFileExplorer",
-        "profile:showGameBaseDirInFileExplorer",
+        "profile:showGameRootDirInFileExplorer",
         "profile:showProfilePluginBackupsInFileExplorer",
         "profile:launchGame",
         "profile:openGameConfigFile",

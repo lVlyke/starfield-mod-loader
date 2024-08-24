@@ -18,12 +18,12 @@ export interface AppBaseProfile {
 }
 
 export interface AppProfile extends AppBaseProfile {
-    gameBaseDir: string;
-    modBaseDir: string;
+    gameRootDir: string;
+    gameModDir: string;
     gameBinaryPath: string;
-    pluginListPath?: string;
-    configFilePath?: string;
-    saveFolderPath?: string;
+    gamePluginListPath?: string;
+    gameConfigFilePath?: string;
+    gameSaveFolderPath?: string;
     manageExternalPlugins?: boolean;
     manageConfigFiles?: boolean;
     manageSaveFiles?: boolean;
@@ -35,6 +35,7 @@ export interface AppProfile extends AppBaseProfile {
 
 export type AppProfileModList = AppProfile.ModList;
 export type AppProfileForm = AppProfile.Form;
+export type AppProfileDefaultablePaths = AppProfile.DefaultablePaths;
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfileModVerificationResults = AppProfile.ModVerificationResults;
@@ -49,12 +50,12 @@ export namespace AppProfile {
     export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed"> & { baseProfile?: string };
     export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string };
     export type DefaultablePaths = Pick<AppProfile,
-        "modBaseDir"
-        | "gameBaseDir"
+          "gameRootDir"
+        | "gameModDir"
         | "gameBinaryPath"
-        | "pluginListPath"
-        | "configFilePath"
-        | "saveFolderPath"
+        | "gamePluginListPath"
+        | "gameConfigFilePath"
+        | "gameSaveFolderPath"
         | "rootPathOverride"
         | "modsPathOverride"
         | "savesPathOverride"
@@ -96,7 +97,7 @@ export namespace AppProfile {
     }
 
     export function isFullProfile(value?: Partial<AppProfile>): value is AppProfile {
-        return !!value && "gameBaseDir" in value && "modBaseDir" in value;
+        return !!value && "gameRootDir" in value && "gameModDir" in value;
     }
 
     export function create(name: string, gameId: GameId): AppProfile;
@@ -105,8 +106,8 @@ export namespace AppProfile {
         return {
             name,
             gameId,
-            gameBaseDir: "",
-            modBaseDir: "",
+            gameRootDir: "",
+            gameModDir: "",
             gameBinaryPath: "",
             mods: [],
             rootMods: [],

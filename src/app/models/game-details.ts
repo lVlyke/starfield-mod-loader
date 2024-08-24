@@ -6,8 +6,8 @@ export interface GameDetails {
     requireExternalPlugins: boolean;
     bkgColor?: string;
     fgColor?: string;
-    modBaseDirs?: string[];
-    gameBaseDirs?: string[];
+    modDirs?: string[];
+    rootDirs?: string[];
     pluginListPaths?: string[];
     configFilePaths?: string[];
     saveFolderPaths?: string[];

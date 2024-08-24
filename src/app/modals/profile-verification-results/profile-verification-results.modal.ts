@@ -33,12 +33,12 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         savesPathOverride: "Invalid Profile Saves directory",
         backupsPathOverride: "Invalid Profile Backups directory",
         deployed: "Invalid deployment state",
-        gameBaseDir: "Invalid Game Root directory",
-        modBaseDir: "Invalid Game Data directory",
+        gameRootDir: "Invalid Game Root directory",
+        gameModDir: "Invalid Game Data directory",
         gameBinaryPath: "Invalid Game Executable path",
-        pluginListPath: "Invalid Plugin List path",
-        configFilePath: "Invalid Config File path",
-        saveFolderPath: "Invalid Save Folder path",
+        gamePluginListPath: "Invalid Plugin List path",
+        gameConfigFilePath: "Invalid Config File path",
+        gameSaveFolderPath: "Invalid Save Folder path",
         manageExternalPlugins: "Invalid external plugin management state",
         manageConfigFiles: "Invalid Config File Management state",
         manageSaveFiles: "Invalid Save File Management state",
@@ -68,7 +68,7 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
 
             if (hasError) {
                 const errorText = AppProfileVerificationResultsModal.VERIFICATION_ERROR_DESCS[propertyKey];
-                log.error(`Profile verification error:`, errorText);
+                log.error(`Profile verification error:`, errorText, verificationResult);
                 errors.push(errorText);
             }
             

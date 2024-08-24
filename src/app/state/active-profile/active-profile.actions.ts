@@ -19,11 +19,11 @@ export namespace ActiveProfileActions {
 
     export type DeployedAction = BasicAction<AppProfile, "deployed">;
     export type ManageExternalPluginsAction = BasicAction<AppProfile, "manageExternalPlugins">;
-    export type PluginListPathAction = BasicAction<AppProfile, "pluginListPath">;
+    export type GamePluginListPathAction = BasicAction<AppProfile, "gamePluginListPath">;
     export type BaseProfileAction = BasicAction<AppProfile, "baseProfile">;
 
     export const setDeployed = createUpdateAction("deployed");
-    export const setPluginListPath = createUpdateAction("pluginListPath");
+    export const setGamePluginListPath = createUpdateAction("gamePluginListPath");
     export const setBaseProfile = createUpdateAction("baseProfile");
     export const manageExternalPlugins = createUpdateAction("manageExternalPlugins");
 

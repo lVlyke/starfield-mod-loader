@@ -41,7 +41,7 @@ function STANDARD_FIELDS({
 }: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
     return [
         {
-            formId: "modBaseDir",
+            formId: "gameModDir",
             title: "Game Data Directory",
             required: true,
             linkable: true,
@@ -51,7 +51,7 @@ function STANDARD_FIELDS({
             } : undefined
         },
         {
-            formId: "gameBaseDir",
+            formId: "gameRootDir",
             title: "Game Root Directory",
             required: true,
             linkable: true,
@@ -67,13 +67,13 @@ function STANDARD_FIELDS({
             required: true
         },
         { 
-            formId: "pluginListPath",
+            formId: "gamePluginListPath",
             title: "Game Plugin List Path",
             fileTypes: ["txt"],
             required: true
         },
         {
-            formId: "configFilePath",
+            formId: "gameConfigFilePath",
             title: "Game Config Files Directory",
             required: !!formModel.manageConfigFiles,
             linkable: formModel.manageConfigFiles,
@@ -83,7 +83,7 @@ function STANDARD_FIELDS({
             } : undefined
         },
         {
-            formId: "saveFolderPath",
+            formId: "gameSaveFolderPath",
             title: "Game Saves Directory",
             required: !!formModel.manageSaveFiles,
             linkable: formModel.manageSaveFiles,
