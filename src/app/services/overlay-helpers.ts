@@ -9,10 +9,10 @@ import {
     GlobalPositionStrategy
 } from "@angular/cdk/overlay";
 import { ComponentPortal, ComponentType, Portal, TemplatePortal, PortalInjector } from "@angular/cdk/portal";
+import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
 import { Observable, of } from "rxjs";
 import { delay, tap, skip } from "rxjs/operators";
-import { BreakpointObserver, Breakpoints } from "@angular/cdk/layout";
-import { ObservableUtils } from "../util/observable-utils";
+import { runOnce } from "../core/operators";
 import { vec2 } from "../util/vec";
 
 export const OverlayRefSymbol = new InjectionToken<OverlayHelpersRef>("OverlayRefSymbol");
@@ -285,7 +285,7 @@ export class OverlayHelpers {
     ): OverlayHelpersComponentRef<T> | OverlayHelpersViewRef {
         function close(): Observable<void> {
             // Detach the overlay component and wait 500ms to allow animations to play
-            return ObservableUtils.hotResult$(of(overlayRef.detach()).pipe(
+            return runOnce(of(overlayRef.detach()).pipe(
                 delay(500),
                 tap(() => overlayRef.dispose()), // Remove the overlay component
             ));

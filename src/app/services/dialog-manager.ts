@@ -3,9 +3,9 @@ import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { finalize, map, tap } from "rxjs/operators";
 import { AppDefaultDialogComponent } from "../modals/default-dialog-modal/default-dialog-modal.component";
-import { ObservableUtils } from "../util/observable-utils";
 import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "./dialog-manager.types";
 import { OverlayHelpers, OverlayHelpersConfig } from "./overlay-helpers";
+import { runOnce } from "../core/operators";
 
 export interface DialogConfig extends OverlayHelpersConfig {
     withModalInstance?: boolean;
@@ -48,7 +48,7 @@ export class DialogManager {
             ...injectionTokens ?? []
         ]);
         
-        return ObservableUtils.hotResult$(overlayRef.component.instance.actionSelected$.pipe(
+        return runOnce(overlayRef.component.instance.actionSelected$.pipe(
             map(action => config?.withModalInstance
                 ? {
                     action,
