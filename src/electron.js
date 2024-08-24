@@ -318,50 +318,74 @@ class ElectronLoader {
             /** @type {import("./app/models/app-message").AppMessageData<"app:verifyProfile">} */ { profile }
         ) => {
             const VERIFY_SUCCESS = { error: false, found: true };
+            const VERIFY_FAIL = { error: true, found: false };
 
             const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile));
-            const modVerifyResult = this.verifyProfileModsExist(false, profile);
-            const rootModVerifyResult = this.verifyProfileModsExist(true, profile);
-            const modDirVerifyResult = "modBaseDir" in profile ? this.verifyProfilePathExists(profile.modBaseDir) : VERIFY_SUCCESS;
-            const gameDirVerifyResult = "gameBaseDir" in profile ? this.verifyProfilePathExists(profile.gameBaseDir) : VERIFY_SUCCESS;
-            const gameBinaryPathVerifyResult = "gameBinaryPath" in profile ? this.verifyProfilePathExists(profile.gameBinaryPath) : VERIFY_SUCCESS;
-            const pluginListPathVerifyResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
-            const configFilePathVerifyResult = profile.configFilePath ? this.verifyProfilePathExists(profile.configFilePath) : VERIFY_SUCCESS;
-            const saveFolderPathVerifyResult = profile.saveFolderPath ? this.verifyProfilePathExists(profile.saveFolderPath) : VERIFY_SUCCESS;
+            const baseProfileResult = profile.baseProfile ? this.verifyProfilePathExists(this.getProfileDir(profile.baseProfile)) : VERIFY_SUCCESS;
+            const modResult = this.verifyProfileModsExist(false, profile);
+            const rootModResult = this.verifyProfileModsExist(true, profile);
+            const modDirResult = "modBaseDir" in profile ? this.verifyProfilePathExists(profile.modBaseDir) : VERIFY_SUCCESS;
+            const gameDirResult = "gameBaseDir" in profile ? this.verifyProfilePathExists(profile.gameBaseDir) : VERIFY_SUCCESS;
+            const gameBinaryPathResult = "gameBinaryPath" in profile ? this.verifyProfilePathExists(profile.gameBinaryPath) : VERIFY_SUCCESS;
+            const pluginListPathResult = profile.pluginListPath ? this.verifyProfilePathExists(profile.pluginListPath) : VERIFY_SUCCESS;
+            const configFilePathResult = profile.configFilePath ? this.verifyProfilePathExists(profile.configFilePath) : VERIFY_SUCCESS;
+            const saveFolderPathResult = profile.saveFolderPath ? this.verifyProfilePathExists(profile.saveFolderPath) : VERIFY_SUCCESS;
+            const rootPathOverrideResult = profile.rootPathOverride ? this.verifyProfilePathExists(profile.rootPathOverride) : VERIFY_SUCCESS;
+            const modsPathOverrideResult = profile.modsPathOverride ? this.verifyProfilePathExists(profile.modsPathOverride) : VERIFY_SUCCESS;
+            const configPathOverrideResult = profile.configPathOverride ? this.verifyProfilePathExists(profile.configPathOverride) : VERIFY_SUCCESS;
+            const savesPathOverrideResult = profile.savesPathOverride ? this.verifyProfilePathExists(profile.savesPathOverride) : VERIFY_SUCCESS;
+            const backupsPathOverrideResult = profile.backupsPathOverride ? this.verifyProfilePathExists(profile.backupsPathOverride) : VERIFY_SUCCESS;
+            const modLinkModeResult = profile.modLinkMode ? (this.#checkLinkSupported(
+                this.getProfileDirByKey(profile, "modsPathOverride") ?? "",
+                [this.getProfileDirByKey(profile, "modBaseDir") ?? "", this.getProfileDirByKey(profile, "gameBaseDir") ?? ""],
+                false
+            ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
+            const configLinkModeResult = profile.configLinkMode ? (this.#checkLinkSupported(
+                this.getProfileDirByKey(profile, "configPathOverride") ?? "",
+                [this.getProfileDirByKey(profile, "configFilePath") ?? ""],
+                true,
+                "file"
+            ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
+            const manageSaveFilesResult = profile.manageSaveFiles ? (this.#checkLinkSupported(
+                this.getProfileDirByKey(profile, "savesPathOverride") ?? "",
+                [this.getProfileDirByKey(profile, "saveFolderPath") ?? ""],
+                true,
+                "junction"
+            ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
 
             if (!profile.deployed) {
-                gameBinaryPathVerifyResult.error = false;
+                gameBinaryPathResult.error = false;
             }
             
             if (!profile.deployed || !profile.plugins?.length) {
-                pluginListPathVerifyResult.error = false;
+                pluginListPathResult.error = false;
             }
 
             const preparedResult = {
                 name: VERIFY_SUCCESS,
                 gameId: VERIFY_SUCCESS, // TODO
-                gameBaseDir: gameDirVerifyResult,
-                modBaseDir: modDirVerifyResult,
-                gameBinaryPath: gameBinaryPathVerifyResult,
-                pluginListPath: pluginListPathVerifyResult,
-                configFilePath: configFilePathVerifyResult,
-                saveFolderPath: saveFolderPathVerifyResult,
-                rootPathOverride: VERIFY_SUCCESS, // TODO
-                modsPathOverride: VERIFY_SUCCESS, // TODO
-                configPathOverride: VERIFY_SUCCESS, // TODO
-                savesPathOverride: VERIFY_SUCCESS, // TODO
-                backupsPathOverride: VERIFY_SUCCESS, // TODO
-                mods: modVerifyResult,
-                rootMods: rootModVerifyResult,
+                gameBaseDir: gameDirResult,
+                modBaseDir: modDirResult,
+                gameBinaryPath: gameBinaryPathResult,
+                pluginListPath: pluginListPathResult,
+                configFilePath: configFilePathResult,
+                saveFolderPath: saveFolderPathResult,
+                rootPathOverride: rootPathOverrideResult,
+                modsPathOverride: modsPathOverrideResult,
+                configPathOverride: configPathOverrideResult,
+                savesPathOverride: savesPathOverrideResult,
+                backupsPathOverride: backupsPathOverrideResult,
+                mods: modResult,
+                rootMods: rootModResult,
                 plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
                 externalFilesCache: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
                 manageConfigFiles: VERIFY_SUCCESS,
-                manageSaveFiles: VERIFY_SUCCESS,
-                modLinkMode: VERIFY_SUCCESS, // TODO
-                configLinkMode: VERIFY_SUCCESS, // TODO
+                manageSaveFiles: manageSaveFilesResult,
+                modLinkMode: modLinkModeResult,
+                configLinkMode: configLinkModeResult,
                 deployed: VERIFY_SUCCESS,
-                baseProfile: VERIFY_SUCCESS // TODO - Verify base profile exists
+                baseProfile: baseProfileResult
             };
 
             return {

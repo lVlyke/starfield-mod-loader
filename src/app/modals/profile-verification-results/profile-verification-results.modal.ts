@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from "@
 import { MatButtonModule } from "@angular/material/button";
 import { MAT_SNACK_BAR_DATA, MatSnackBarModule, MatSnackBarRef } from "@angular/material/snack-bar";
 import { CommonModule } from "@angular/common";
+import { log } from "../../util/logger";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
+import { LangUtils } from "../../util/lang-utils";
 
 @Component({
     templateUrl: "./profile-verification-results.modal.html",
@@ -19,7 +21,36 @@ import { AppProfile } from "../../models/app-profile";
 })
 export class AppProfileVerificationResultsModal extends BaseComponent {
 
-    protected readonly errors: string[] = [];
+    private static readonly VERIFICATION_ERROR_DESCS: Record<keyof AppProfile.VerificationResults, string> = {
+        name: "Invalid profile name",
+        gameId: "Invalid Game ID",
+        mods: "Invalid or missing mod files",
+        rootMods: "Invalid or missing root mod files",
+        plugins: "Invalid plugins",
+        rootPathOverride: "Invalid Profile Root directory",
+        modsPathOverride: "Invalid Profile Mods directory",
+        configPathOverride: "Invalid Profile Config directory",
+        savesPathOverride: "Invalid Profile Saves directory",
+        backupsPathOverride: "Invalid Profile Backups directory",
+        deployed: "Invalid deployment state",
+        gameBaseDir: "Invalid Game Root directory",
+        modBaseDir: "Invalid Game Data directory",
+        gameBinaryPath: "Invalid Game Executable path",
+        pluginListPath: "Invalid Plugin List path",
+        configFilePath: "Invalid Config File path",
+        saveFolderPath: "Invalid Save Folder path",
+        manageExternalPlugins: "Invalid external plugin management state",
+        manageConfigFiles: "Invalid Config File Management state",
+        manageSaveFiles: "Invalid Save File Management state",
+        modLinkMode: "Invalid Mod Link Mode state",
+        configLinkMode: "Invalid Config Link Mode state",
+        externalFilesCache: "Invalid external files",
+        baseProfile: "Invalid Base Profile",
+        error: "Invalid Profile",
+        found: "Invalid Profile"
+    }
+
+    protected readonly errors: string[];
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -28,44 +59,20 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
     ) {
         super({ cdRef });
 
-        if (verificationResults.name.error) {
-            this.errors.push("Invalid profile name");
-        }
+        this.errors = LangUtils.entries(verificationResults).reduce<string[]>((errors, [propertyKey, verificationResult]) => {
+            const hasError = [
+                propertyKey === "error" && verificationResult,
+                propertyKey === "found" && !verificationResult,
+                typeof verificationResult !== "boolean" && verificationResult.error,
+            ].some(Boolean);
 
-        if (verificationResults.gameId.error) {
-            this.errors.push("Invalid Game ID");
-        }
-
-        if (verificationResults.modBaseDir.error) {
-            this.errors.push("Invalid Mod Base Directory");
-        }
-
-        if (verificationResults.gameBaseDir.error) {
-            this.errors.push("Invalid Game Base Directory");
-        }
-
-        if (verificationResults.gameBinaryPath.error) {
-            this.errors.push("Invalid Game Executable Path");
-        }
-
-        if (verificationResults.pluginListPath.error) {
-            this.errors.push("Invalid Plugin List Path");
-        }
-
-        if (verificationResults.configFilePath.error) {
-            this.errors.push("Invalid Config File Path");
-        }
-
-        if (verificationResults.saveFolderPath.error) {
-            this.errors.push("Invalid Save Folder Path");
-        }
-
-        if (verificationResults.mods.error || verificationResults.rootMods.error) {
-            this.errors.push("Invalid or missing mod files");
-        }
-
-        if (verificationResults.plugins.error) {
-            this.errors.push("Invalid plugins");
-        }
+            if (hasError) {
+                const errorText = AppProfileVerificationResultsModal.VERIFICATION_ERROR_DESCS[propertyKey];
+                log.error(`Profile verification error:`, errorText);
+                errors.push(errorText);
+            }
+            
+            return errors;
+        }, []);
     }
 }

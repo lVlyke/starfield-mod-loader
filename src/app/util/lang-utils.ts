@@ -2,6 +2,10 @@ import _ from "lodash";
 
 export namespace LangUtils {
 
+    export function entries<T extends object>(value: T): Array<[keyof T, T[keyof T]]> {
+        return Object.entries(value) as Array<[keyof T, T[keyof T]]>;
+    }
+
     /** @description Determines if two objects are value-equal by a deep comparison of the objects. */
     export function isEqual(a: unknown, b: unknown): boolean {
         return _.isEqualWith(a, b, function (value: any, other: any): boolean | undefined {
