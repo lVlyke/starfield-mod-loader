@@ -7,9 +7,8 @@ import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
 import { delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
-import { ObservableUtils } from "../../util/observable-utils";
 import { ElectronUtils } from "../../util/electron-utils";
-import { filterDefined, filterTrue } from "../../core/operators";
+import { filterDefined, filterTrue, runOnce } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
 import { AppState } from "../../state";
 import { GameDatabase } from "../../models/game-database";
@@ -174,7 +173,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     }
 
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
-        return ObservableUtils.hotResult$(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
+        return runOnce(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
             filterDefined(),
             tap((directory) => ngModel.control.setValue(directory as AppProfile[K]))
         ));
@@ -184,7 +183,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         ngModel: NgModel,
         fileTypes: string[]
     ): Observable<any> {
-        return ObservableUtils.hotResult$(ElectronUtils.chooseFilePath(ngModel.value || undefined, fileTypes).pipe(
+        return runOnce(ElectronUtils.chooseFilePath(ngModel.value || undefined, fileTypes).pipe(
             filterDefined(),
             tap((filePath) => ngModel.control.setValue(filePath as AppProfile[K]))
         ));
@@ -206,7 +205,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             return EMPTY;
         }
 
-        return ObservableUtils.hotResult$(this.formModel$.pipe(
+        return runOnce(this.formModel$.pipe(
             take(1),
             switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form)),
             switchMap((formModel) => (() => {

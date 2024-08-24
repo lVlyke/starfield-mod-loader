@@ -19,9 +19,8 @@ import {
     withLatestFrom
 } from "rxjs/operators";
 import { EMPTY, Observable, asyncScheduler, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
-import { filterDefined } from "../core/operators/filter-defined";
+import { filterDefined, filterTrue, runOnce } from "../core/operators";
 import { ElectronUtils } from "../util/electron-utils";
-import { ObservableUtils } from "../util/observable-utils";
 import { AppProfile } from "../models/app-profile";
 import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
@@ -34,13 +33,12 @@ import { LangUtils } from "../util/lang-utils";
 import { AppModImportOptionsModal } from "../modals/mod-import-options";
 import { AppModInstallerModal } from "../modals/mod-installer";
 import { GameId } from "../models/game-id";
-import { ModImportResult, ModImportRequest } from "../models/mod-import-status";
+import { ModImportRequest } from "../models/mod-import-status";
 import { DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
 import { AppStateBehaviorManager } from "./app-state-behavior-manager";
 import { moveItemInArray } from "@angular/cdk/drag-drop";
 import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
-import { filterTrue } from "../core/operators";
 import { GameDetails } from "../models/game-details";
 import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
@@ -289,13 +287,13 @@ export class ProfileManager {
     }
 
     public refreshDeployedMods(): Observable<any> {
-        return ObservableUtils.hotResult$(this.undeployActiveMods().pipe(
+        return runOnce(this.undeployActiveMods().pipe(
             switchMap(() => this.deployActiveMods())
         ));
     }
 
     public loadProfile(profile: AppProfile.Description, setActive: boolean = true, verify: boolean = true): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadProfile", {
+        return runOnce(ElectronUtils.invoke("app:loadProfile", {
             name: profile.name,
             gameId: profile.gameId
         }).pipe(
@@ -310,13 +308,13 @@ export class ProfileManager {
     }
 
     public saveProfile(profile: AppProfile): Observable<any> {
-        return ObservableUtils.hotResult$(
+        return runOnce(
             ElectronUtils.invoke("app:saveProfile", { profile })
         );
     }
 
     public reloadBaseProfile(): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile?.baseProfile) {
@@ -356,7 +354,7 @@ export class ProfileManager {
     }
 
     public importProfilePluginBackup(profile: AppProfile, backupPath: string): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("profile:importPluginBackup", {
+        return runOnce(ElectronUtils.invoke("profile:importPluginBackup", {
             profile, backupPath
         }).pipe(
             // Reload the profile after restoring the backup
@@ -370,13 +368,13 @@ export class ProfileManager {
     }
 
     public createProfilePluginBackup(profile: AppProfile, backupName?: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(
+        return runOnce(
             ElectronUtils.invoke("profile:createPluginBackup", { profile, backupName })
         );
     }
 
     public deleteProfilePluginBackup(profile: AppProfile, backupFile: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(
+        return runOnce(
             ElectronUtils.invoke("profile:deletePluginBackup", { profile, backupFile })
         );
     }
@@ -386,7 +384,7 @@ export class ProfileManager {
     }
 
     public exportPluginList(profile: AppProfile): Observable<unknown> {
-        return ObservableUtils.hotResult$(
+        return runOnce(
             ElectronUtils.invoke("profile:exportPluginList", { profile })
         );
     }
@@ -423,7 +421,7 @@ export class ProfileManager {
             result$ = result$.pipe(switchMap(() => this.reconcileDataLists()));
         }
 
-        return ObservableUtils.hotResult$(result$.pipe(
+        return runOnce(result$.pipe(
             switchMap(() => this.activeProfile$),
             take(1),
             switchMap((profile) => {
@@ -476,7 +474,7 @@ export class ProfileManager {
     }
 
     public updateActiveProfileExternalFiles(): Observable<any> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((profile) => {
                 if (profile) {
@@ -505,7 +503,7 @@ export class ProfileManager {
     public deleteProfile(profile: AppProfile): Observable<any> {
         const loadingIndicator = this.appManager.showLoadingIndicator("Deleting Profile...");
 
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:deleteProfile", { profile }).pipe(
+        return runOnce(ElectronUtils.invoke("app:deleteProfile", { profile }).pipe(
             switchMap(() => this.store.dispatch(new AppActions.DeleteProfile(AppProfile.asDescription(profile)))),
             tap(() => loadingIndicator.close()),
             switchMap(() => this.activeProfile$),
@@ -532,7 +530,7 @@ export class ProfileManager {
     }
 
     public importProfileFromUser(): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadExternalProfile", {}).pipe(
+        return runOnce(ElectronUtils.invoke("app:loadExternalProfile", {}).pipe(
             switchMap((profile) => {
                 if (profile) {
                     return this.copyProfileFromUser(profile, "Imported Profile");
@@ -547,7 +545,7 @@ export class ProfileManager {
         profileToCopy: AppProfile,
         profileName: string = `${profileToCopy.name} - Copy`
     ): Observable<AppProfile | undefined> {
-        return ObservableUtils.hotResult$(of(false).pipe(
+        return runOnce(of(false).pipe(
             switchMap(() => this.showProfileWizard({
                 ...profileToCopy,
                 name: profileName,
@@ -576,7 +574,7 @@ export class ProfileManager {
     public setActiveProfile(profile: AppProfile, verify: boolean = true): Observable<AppProfile> {
         log.info(`Switching to profile ${profile.name}`);
 
-        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
+        return runOnce(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
             switchMap(() => verify ? this.verifyActiveProfile({ showSuccessMessage: false }) : of(true)),
             map(() => profile)
         ));
@@ -614,7 +612,7 @@ export class ProfileManager {
         modContextMenuRef.component.instance.profile = profile;
         modContextMenuRef.component.changeDetectorRef.detectChanges();
 
-        return ObservableUtils.hotResult$(modContextMenuRef.component.instance.onFormSubmit$.pipe(
+        return runOnce(modContextMenuRef.component.instance.onFormSubmit$.pipe(
             switchMap((newProfile) => {
                 if (options.createMode) {
                     return this.setActiveProfile(newProfile, options.verifyProfile !== false);
@@ -634,7 +632,7 @@ export class ProfileManager {
     }): Observable<ModProfileRef | undefined> {
         const loadingIndicatorRef = this.appManager.showLoadingIndicator("Reading mod data...");
 
-        return ObservableUtils.hotResult$(ElectronUtils.invoke(
+        return runOnce(ElectronUtils.invoke(
             options?.externalImport ? "profile:beginModExternalImport": "profile:beginModAdd",
             { profile, modPath: options?.modPath, root: options?.root }
         ).pipe(
@@ -767,7 +765,7 @@ export class ProfileManager {
     }
 
     public deleteMod(root: boolean, modName: string): Observable<any> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => forkJoin([
                 this.store.dispatch(new ActiveProfileActions.DeleteMod(root, modName)),
@@ -777,7 +775,7 @@ export class ProfileManager {
     }
 
     public renameMod(root: boolean, modCurName: string, modNewName: string): Observable<any> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => concat([
                 ElectronUtils.invoke("profile:renameMod", { profile: activeProfile!, modCurName, modNewName }),
@@ -787,7 +785,7 @@ export class ProfileManager {
     }
 
     public renameModFromUser(root: boolean, modCurName: string): Observable<any> {
-        return ObservableUtils.hotResult$(this.dialogs.showModRenameDialog(modCurName).pipe(
+        return runOnce(this.dialogs.showModRenameDialog(modCurName).pipe(
             switchMap(modNewName => {
                 if (modNewName) {
                     return this.renameMod(root, modCurName, modNewName);
@@ -803,7 +801,7 @@ export class ProfileManager {
     }
 
     public reorderMod(root: boolean, modName: string, newIndex: number): Observable<void> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
@@ -827,7 +825,7 @@ export class ProfileManager {
     }
 
     public moveModToBottomOfOrder(root: boolean, modName: string): Observable<void> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
@@ -868,7 +866,7 @@ export class ProfileManager {
             ? { ...pluginRef, promotedType: undefined }
             : { ...pluginRef, promotedType };
 
-        return ObservableUtils.hotResult$(this.updatePlugin(updatedProfile).pipe(
+        return runOnce(this.updatePlugin(updatedProfile).pipe(
             switchMap(() => this.reconcileActivePluginList())
         ));
     }
@@ -878,7 +876,7 @@ export class ProfileManager {
     }
 
     public reorderPlugin(plugin: GamePluginProfileRef, newIndex: number): Observable<void> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
@@ -901,7 +899,7 @@ export class ProfileManager {
     }
 
     public movePluginToBottomOfOrder(plugin: GamePluginProfileRef): Observable<void> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 if (activeProfile) {
@@ -931,7 +929,7 @@ export class ProfileManager {
     }
 
     public updateConfigFile(fileName: string, data: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:updateConfigFile", { profile: profile!, fileName, data }))
         ));
@@ -945,7 +943,7 @@ export class ProfileManager {
     }
 
     public setArchiveInvalidationEnabled(enabled: boolean): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:setArchiveInvalidationEnabled", { profile: profile!, enabled }))
         ));
@@ -959,67 +957,67 @@ export class ProfileManager {
     }
 
     public showModInFileExplorer(modName: string, modRef: ModProfileRef): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showModInFileExplorer", { profile: profile!, modName, modRef })
         )));
     }
 
     public showProfileBaseDirInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfileBaseDirInFileExplorer", { profile: profile! })
         )));
     }
 
     public showProfileModsDirInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfileModsDirInFileExplorer", { profile: profile! })
         )));
     }
 
     public showProfileConfigDirInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigDirInFileExplorer", { profile: profile! })
         )));
     }
 
     public showGameModDirInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showGameModDirInFileExplorer", { profile: profile! })
         )));
     }
 
     public showGameRootDirInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showGameRootDirInFileExplorer", { profile: profile! })
         )));
     }
 
     public showProfilePluginBackupsInFileExplorer(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfilePluginBackupsInFileExplorer", { profile: profile! })
         )));
     }
 
     public launchGame(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:launchGame", { profile: profile! })
         )));
     }
 
     public openGameConfigFile(configPaths: string[]): Observable<unknown> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("profile:openGameConfigFile", { configPaths }));
+        return runOnce(ElectronUtils.invoke("profile:openGameConfigFile", { configPaths }));
     }
     
     public openProfileConfigFile(configFileName: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:openProfileConfigFile", { profile: profile!, configFileName })
         )));
@@ -1027,7 +1025,7 @@ export class ProfileManager {
 
     private deployActiveMods(): Observable<boolean> {
         // First make sure the active profile is verified before deployment
-        return ObservableUtils.hotResult$(this.verifyActiveProfile({
+        return runOnce(this.verifyActiveProfile({
             showSuccessMessage: false,
             updateModErrorState: false,
             updateExternalFiles: false
@@ -1096,7 +1094,7 @@ export class ProfileManager {
     }
 
     private undeployActiveMods(): Observable<boolean> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap((activeProfile) => {
                 // Undeploy the active profile if it's deployed
@@ -1128,26 +1126,26 @@ export class ProfileManager {
     }
 
     private reconcileDataLists(): Observable<void> {
-        return ObservableUtils.hotResult$(this.reconcileActiveModList().pipe(
+        return runOnce(this.reconcileActiveModList().pipe(
             switchMap(() => this.reconcileActivePluginList())
         ));
     }
 
     private reconcileActiveModList(): Observable<void> {
-        return ObservableUtils.hotResult$(this.findProfileModFiles().pipe(
+        return runOnce(this.findProfileModFiles().pipe(
             switchMap(mods => this.store.dispatch(new ActiveProfileActions.ReconcileModList(mods)))
         ));
     }
 
     private findProfileModFiles(): Observable<AppProfile.ModList> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:findModFiles", { profile: profile! }))
         ));
     }
 
     private reconcileActivePluginList(): Observable<void> {
-        return ObservableUtils.hotResult$(forkJoin([
+        return runOnce(forkJoin([
             this.findActivePluginFiles(),
             this.activeGameDetails$.pipe(take(1))
         ]).pipe(
@@ -1159,7 +1157,7 @@ export class ProfileManager {
     }
 
     private findActivePluginFiles(): Observable<GamePluginProfileRef[]> {
-        return ObservableUtils.hotResult$(this.activeProfile$.pipe(
+        return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:findPluginFiles", { profile: profile! }))
         ));

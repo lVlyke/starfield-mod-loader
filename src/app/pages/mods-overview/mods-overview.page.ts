@@ -15,9 +15,8 @@ import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
-import { filterDefined, filterTrue } from "../../core/operators";
+import { filterDefined, filterTrue, runOnce } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
-import { ObservableUtils } from "../../util/observable-utils";
 import { DialogAction } from "../../services/dialog-manager.types";
 import { ActiveProfileState } from "../../state/active-profile/active-profile.state";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
@@ -190,13 +189,13 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected updateConfigFile(fileName: string, data: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.profileManager.updateConfigFile(fileName, data).pipe(
+        return runOnce(this.profileManager.updateConfigFile(fileName, data).pipe(
             tap(() => this.configFileUpdate$.next(new Date()))
         ));
     }
 
     protected reloadConfigFile(fileName: string, control: AbstractControl): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.profileManager.readConfigFile(this.activeProfile!, fileName, true).pipe(
+        return runOnce(this.profileManager.readConfigFile(this.activeProfile!, fileName, true).pipe(
             tap(fileData => control.setValue(fileData)),
             tap(() => this.configFileUpdate$.next(new Date()))
         ));
@@ -222,7 +221,7 @@ export class AppModsOverviewPage extends BasePage {
             );
         }
 
-        return ObservableUtils.hotResult$(check$.pipe(
+        return runOnce(check$.pipe(
             tap(() => this.showedModExternalEditWarning = true),
             filter(result => result === DialogManager.OK_ACTION_PRIMARY),
             switchMap(() => this.profileManager.showProfileModsDirInFileExplorer())
@@ -270,14 +269,14 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected showExportPluginBackupMenu(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.dialogs.showProfileBackupNameDialog().pipe(
+        return runOnce(this.dialogs.showProfileBackupNameDialog().pipe(
             filterDefined(),
             switchMap((backupName) => this.profileManager.createProfilePluginBackup(this.activeProfile!, backupName))
         ));
     }
 
     protected deleteProfilePluginBackup(backupFile: string): Observable<unknown> {
-        return ObservableUtils.hotResult$(
+        return runOnce(
             this.profileManager.deleteProfilePluginBackup(this.activeProfile!, backupFile)
         );
     }

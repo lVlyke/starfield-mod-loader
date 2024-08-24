@@ -11,10 +11,9 @@ import { AppModSyncIndicatorModal, LOADING_MSG_TOKEN } from "../modals/loading-i
 import { AppAboutInfoModal, DEPS_INFO_TOKEN } from "../modals/app-about-info";
 import { ElectronUtils } from "../util/electron-utils";
 import { ExternalFile } from "../models/external-file";
-import { ObservableUtils } from "../util/observable-utils";
 import { AppData } from "../models/app-data";
 import { DialogManager } from "./dialog-manager";
-import { filterDefined } from "../core/operators";
+import { filterDefined, runOnce } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
 import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { GameDatabase } from "../models/game-database";
@@ -124,7 +123,7 @@ export class AppStateBehaviorManager {
     }
 
     public loadSettings(): Observable<AppSettingsUserCfg | null> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadSettings", {}).pipe(
+        return runOnce(ElectronUtils.invoke("app:loadSettings", {}).pipe(
             switchMap((settings) => {
                 const stateActions = [];
 
@@ -156,7 +155,7 @@ export class AppStateBehaviorManager {
     }
 
     public loadProfileList(): Observable<AppProfile.Description[]> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadProfileList", {}).pipe(
+        return runOnce(ElectronUtils.invoke("app:loadProfileList", {}).pipe(
             switchMap((profileList) => this.store.dispatch(new AppActions.SetProfiles(profileList)).pipe(
                 map(() => profileList)
             ))
@@ -164,7 +163,7 @@ export class AppStateBehaviorManager {
     }
 
     public saveSettings(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
+        return runOnce(this.appState$.pipe(
             take(1),
             map(appState => this.appDataToUserCfg(appState)),
             switchMap(settings => ElectronUtils.invoke("app:saveSettings", { settings })),
@@ -173,13 +172,13 @@ export class AppStateBehaviorManager {
     }
 
     public updateSettings(settings: Partial<AppData>): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
+        return runOnce(this.store.dispatch(new AppActions.UpdateSettings(settings)).pipe(
             switchMap(() => this.saveSettings())
         ));
     }
 
     public updateGameDatabase(): Observable<GameDatabase> {
-        return ObservableUtils.hotResult$(ElectronUtils.invoke("app:loadGameDatabase", {}).pipe(
+        return runOnce(ElectronUtils.invoke("app:loadGameDatabase", {}).pipe(
             switchMap((gameDb) => {
                 if (!!gameDb) {
                     return this.store.dispatch(new AppActions.updateGameDb(gameDb)).pipe(
@@ -195,7 +194,7 @@ export class AppStateBehaviorManager {
     }
 
     public showAppPreferences(): Observable<OverlayHelpersComponentRef<AppPreferencesModal>> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
+        return runOnce(this.appState$.pipe(
             take(1),
             map((preferences) => {
                 const modContextMenuRef = this.overlayHelpers.createFullScreen(AppPreferencesModal, {
@@ -228,7 +227,7 @@ export class AppStateBehaviorManager {
     }
 
     private syncUiState(): Observable<unknown> {
-        return ObservableUtils.hotResult$(this.appState$.pipe(
+        return runOnce(this.appState$.pipe(
             take(1),
             switchMap((appState) => ElectronUtils.invoke("app:syncUiState", {
                 appState,

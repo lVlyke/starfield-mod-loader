@@ -19,14 +19,13 @@ import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
 import { catchError, concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
 import { AppModInstaller } from "./mod-installer.types";
 import { BaseComponent } from "../../core/base-component";
-import { filterDefined, filterFalse, filterTrue } from "../../core/operators";
+import { filterDefined, filterFalse, filterTrue, runOnce } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
 import { ModInstaller } from "../../models/mod-installer";
 import { AppProfile } from "../../models/app-profile";
 import { DialogManager } from "../../services/dialog-manager";
 import { AppState } from "../../state";
 import { ProfileManager } from "../../services/profile-manager";
-import { ObservableUtils } from "../../util/observable-utils";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { log } from "../../util/logger";
 
@@ -296,7 +295,7 @@ export class AppModInstallerComponent extends BaseComponent {
 
         // Update active files
         this.updatePluginGroupFiles();
-        return ObservableUtils.hotResult$(this.updateConditionalFiles(this._installerFlags).pipe(
+        return runOnce(this.updateConditionalFiles(this._installerFlags).pipe(
             finalize(() => {
                 this.updateRequiredFiles();
 
