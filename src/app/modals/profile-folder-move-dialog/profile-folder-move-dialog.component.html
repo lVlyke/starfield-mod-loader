@@ -1,0 +1,23 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>Profile Folder Move</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+        <div>Do you want to move files from "{{ oldPath }}" to "{{ newPath }}"?</div>
+
+        <form id="folderMoveForm">
+            <mat-checkbox name="overwrite" [(ngModel)]="overwrite">
+                Overwrite files in new folder
+            </mat-checkbox>
+
+            <mat-checkbox name="keepExisting" [(ngModel)]="keepExisting">
+                Keep old folder
+            </mat-checkbox>
+        </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />
+    </mat-card-actions>
+</mat-card>

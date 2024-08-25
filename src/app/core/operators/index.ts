@@ -1,5 +1,6 @@
 export * from "./hot";
 export * from "./run-once";
+export * from "./concat-join";
 
 export * from "./with-previous";
 export * from "./filter-defined";

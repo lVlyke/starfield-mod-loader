@@ -218,12 +218,23 @@ export namespace AppMessage {
         export const PREFIX = "profile";
     }
 
+    export interface ResolveProfilePath extends Base {
+        id: `${ProfileMessage.Prefix}:resolvePath`;
+        data: {
+            profile: AppProfile;
+            pathKeys: Array<keyof AppProfile>;
+        };
+        result: Array<string | undefined>;
+    }
+
     export interface MoveProfileFolder extends Base {
         id: `${ProfileMessage.Prefix}:moveFolder`;
         data: {
             oldProfile: AppProfile;
             newProfile: AppProfile;
             pathKey: keyof AppProfile;
+            overwrite: boolean;
+            destructive: boolean;
         };
     }
 
@@ -505,7 +516,8 @@ export namespace AppMessage {
         result?: string;
     }
 
-    export type ProfileMessage = MoveProfileFolder
+    export type ProfileMessage = ResolveProfilePath
+                               | MoveProfileFolder
                                | ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
@@ -566,6 +578,7 @@ export namespace AppMessage {
         "app:toggleModListColumn",
         "app:checkLinkSupported",
 
+        "profile:resolvePath",
         "profile:moveFolder",
         "profile:settings",
         "profile:beginModAdd",

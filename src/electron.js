@@ -347,12 +347,12 @@ class ElectronLoader {
                 true,
                 "file"
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-            const manageSaveFilesResult = profile.manageSaveFiles ? (this.#checkLinkSupported(
+            const manageSaveFilesResult = profile.manageSaveFiles ? ((profile.deployed || this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "savesPathOverride") ?? "",
                 [this.getProfileDirByKey(profile, "gameSaveFolderPath") ?? ""],
                 true,
                 "junction"
-            ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
+            )) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
 
             if (!profile.deployed) {
                 gameBinaryPathResult.error = false;
@@ -439,9 +439,22 @@ class ElectronLoader {
             return this.#checkLinkSupported(targetPath, destPaths, symlink, symlinkType);
         });
 
+        ipcMain.handle("profile:resolvePath", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:resolvePath">} */ { profile, pathKeys }
+        ) => {
+            return pathKeys.map(pathKey => this.getProfileDirByKey(profile, pathKey));
+        });
+
         ipcMain.handle("profile:moveFolder", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:moveFolder">} */ { pathKey, oldProfile, newProfile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:moveFolder">} */ {
+                pathKey,
+                oldProfile,
+                newProfile,
+                overwrite,
+                destructive
+            }
         ) => {
             const oldPath = this.getProfileDirByKey(oldProfile, pathKey);
             const newPath = this.getProfileDirByKey(newProfile, pathKey);
@@ -453,14 +466,26 @@ class ElectronLoader {
             // Move files
             if (oldPath !== newPath) {
                 if (fs.existsSync(newPath)) {
-                    fs.readdirSync(oldPath).forEach((pathData) => fs.copySync(
-                        path.join(oldPath, pathData),
-                        path.join(newPath, pathData),
-                        { overwrite: false } // TODO - Prompt user about overwriting
-                    ));
-                    fs.removeSync(oldPath); // TODO - Prompt user about overwriting/deleting
+                    if (overwrite || fs.lstatSync(newPath).isSymbolicLink()) {
+                        fs.removeSync(newPath);
+                        fs.copySync(oldPath, newPath);
+                    } else {
+                        fs.readdirSync(oldPath).forEach((pathData) => fs.copySync(
+                            path.join(oldPath, pathData),
+                            path.join(newPath, pathData),
+                            { overwrite }
+                        ));
+                    }
+
+                    if (destructive) {
+                        fs.removeSync(oldPath);
+                    }
                 } else {
-                    fs.moveSync(oldPath, newPath);
+                    if (destructive) {
+                        fs.moveSync(oldPath, newPath);
+                    } else {
+                        fs.copySync(oldPath, newPath);
+                    }
                 }
             }
 
@@ -1190,9 +1215,10 @@ class ElectronLoader {
         // Make sure the profile and mods directory exists
         fs.mkdirpSync(this.getProfileModsDir(profile));
 
+        // If the profile root has been overridden, create a symlink to the profile at the default path
         if (defaultProfileDir !== profileDir) {
             if (!fs.existsSync(defaultProfileDir)) {
-                fs.symlinkSync(profileDir, defaultProfileDir, "dir");
+                fs.symlinkSync(path.resolve(profileDir), path.resolve(defaultProfileDir), "dir");
             }
         }
 
@@ -1242,12 +1268,12 @@ class ElectronLoader {
     }
 
     /** @returns {void} */
-    updateProfileConfigFile(/** @type {AppProfile} */ profile, /** @type {string} */ fileName, /** @type {string} */ data) {
+    updateProfileConfigFile(/** @type {AppProfile} */ profile, /** @type {string} */ fileName, /** @type {string | undefined} */ data) {
         const profileConfigDir = this.getProfileConfigDir(profile);
         const profileConfigFilePath = path.join(profileConfigDir, fileName);
         
         fs.mkdirpSync(profileConfigDir);
-        fs.writeFileSync(profileConfigFilePath, data, "utf8");
+        fs.writeFileSync(profileConfigFilePath, data ?? "", "utf8");
     }
 
     /** @returns {AppProfile} */
@@ -2297,8 +2323,8 @@ class ElectronLoader {
         const profileConfigFiles = fs.readdirSync(profileConfigDir);
         
         return Promise.all(profileConfigFiles.map(async (configFileName) => {
-            const configSrcPath = path.join(profileConfigDir, configFileName);
-            const configDestPath = path.join(deployConfigDir, configFileName);
+            const configSrcPath = path.resolve(path.join(profileConfigDir, configFileName));
+            const configDestPath = path.resolve(path.join(deployConfigDir, configFileName));
 
             // Backup any existing config files
             if (fs.existsSync(configDestPath)) {
@@ -2306,7 +2332,7 @@ class ElectronLoader {
             }
 
             if (profile.configLinkMode) {
-                await fs.symlinkSync(configSrcPath, configDestPath, "file");
+                await fs.symlink(configSrcPath, configDestPath, "file");
             } else {
                 await fs.copyFile(configSrcPath, configDestPath);
             }
@@ -2321,10 +2347,10 @@ class ElectronLoader {
             throw new Error(`Unable to write save files: Profile's Save Folder Path "${profile.gameSaveFolderPath}" is not valid.`);
         }
 
-        const deploySaveDir = profile.gameSaveFolderPath;
+        const deploySaveDir = path.resolve(profile.gameSaveFolderPath);
         const rootBackupDir = path.join(path.dirname(profile.gameSaveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const savesBackupDir = path.join(rootBackupDir, path.basename(profile.gameSaveFolderPath));
-        const profileSaveDir = this.getProfileSaveDir(profile);
+        const profileSaveDir = path.resolve(this.getProfileSaveDir(profile));
 
         // Backup existing saves
         if (fs.existsSync(deploySaveDir)) {
@@ -2335,11 +2361,7 @@ class ElectronLoader {
         fs.mkdirpSync(profileSaveDir);
 
         if (this.#checkLinkSupported(profileSaveDir, [deploySaveDir], true, "junction")) {
-            await fs.symlink(
-                path.resolve(profileSaveDir),
-                path.resolve(deploySaveDir),
-                "junction"
-            );
+            await fs.symlink(profileSaveDir, deploySaveDir, "junction");
         } else {
             log.error("Cannot deploy profile save files, symlink not supported for path from", profileSaveDir, "to", deploySaveDir);
             throw new Error("Cannot deploy profile save files, symlink not supported for path.");
@@ -2348,11 +2370,7 @@ class ElectronLoader {
         // Create helper symlink for easy access to backed up saves
         const backupDirHelperLink = `${profile.gameSaveFolderPath.replace(/[/\\]$/, "")}.original`;
         if (fs.existsSync(savesBackupDir)) {
-            await fs.symlink(
-                path.resolve(savesBackupDir),
-                path.resolve(backupDirHelperLink),
-                "dir"
-            );
+            await fs.symlink(path.resolve(savesBackupDir), path.resolve(backupDirHelperLink), "dir");
         }
 
         return [deploySaveDir, backupDirHelperLink];
@@ -2716,8 +2734,6 @@ class ElectronLoader {
         let srcTestFile = "";
         let srcCreatedDir = "";
 
-        // TODO - Delete any created directories (i.e. new profile)
-
         try {
             if (!fs.existsSync(targetPath)) {
                 srcCreatedDir = this.#mkdirpSync(targetPath);
@@ -2727,7 +2743,7 @@ class ElectronLoader {
                 targetPath = path.dirname(targetPath);
             }
 
-            srcTestFile = path.join(targetPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+            srcTestFile = path.resolve(path.join(targetPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE));
         
             if (!fs.existsSync(srcTestFile)) {
                 fs.writeFileSync(srcTestFile, "");
@@ -2750,7 +2766,7 @@ class ElectronLoader {
                         destPath = path.dirname(destPath);
                     }
 
-                    destTestFile = path.join(destPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE);
+                    destTestFile = path.resolve(path.join(destPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE));
     
                     // Create a test link
                     if (symlink) {

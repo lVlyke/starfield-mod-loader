@@ -4,11 +4,11 @@ import { NgForm, NgModel } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
-import { delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
+import { defaultIfEmpty, delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ElectronUtils } from "../../util/electron-utils";
-import { filterDefined, filterTrue, runOnce } from "../../core/operators";
+import { concatJoin, filterDefined, filterTrue, runOnce } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
 import { AppState } from "../../state";
 import { GameDatabase } from "../../models/game-database";
@@ -105,9 +105,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
             }))
         ).subscribe(linkSupported => this.configLinkModeSupported = linkSupported);
 
-        this.formModel$.pipe(
-            filter(formModel => !!formModel.name),
-            switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
+        combineLatest(stateRef.getAll("formModel", "initialProfile")).pipe(
+            filter(([formModel]) => !!formModel.name),
+            switchMap(([formModel, initialProfile]) => initialProfile.deployed ? of(!!initialProfile.manageSaveFiles) : ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "savesPathOverride",
                 destDirs: ["gameSaveFolderPath"],
@@ -209,6 +209,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return runOnce(this.formModel$.pipe(
             take(1),
             switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form)),
+            switchMap((formModel) => this.checkUpdatedProfilePathOverrides(formModel)),
             switchMap((formModel) => (() => {
                 // Add/update profile data on submit
                 if (this.createMode) {
@@ -221,16 +222,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
                     return of(formModel);
                 }
             })().pipe(
-                finalize(() => this.onFormSubmit$.next(formModel)),
-                switchMap(() => forkJoin([
-                    this.checkCreateDefaultConfigFiles(formModel),
-                    this.checkUpdatedProfilePathOverrides(formModel),
-                ]))
+                switchMap(() => this.checkCreateDefaultConfigFiles(formModel)),
+                finalize(() => this.onFormSubmit$.next(formModel))
             )
         )));
     }
 
-    private checkCreateDefaultConfigFiles(profile: AppProfile): Observable<unknown> {
+    private checkCreateDefaultConfigFiles(profile: AppProfile): Observable<AppProfile> {
         const gameDetails = this.gameDb[profile.gameId];
     
         // Check if profile-specific config files need to be created
@@ -254,39 +252,59 @@ export class AppProfileSettingsComponent extends BaseComponent {
                             mergeMap(fileData => this.profileManager.updateConfigFile(configFile, fileData))
                         );
                     }));
-                })
+                }),
+                map(() => profile),
+                defaultIfEmpty(profile)
             );
         } else {
-            return of(false);
+            return of(profile);
         }
     }
 
-    private checkUpdatedProfilePathOverrides(profile: AppProfile): Observable<unknown> {
+    private checkUpdatedProfilePathOverrides(profile: AppProfile): Observable<AppProfile> {
         if (this.createMode) {
-            return of(false);
+            return of(profile);
         }
 
-        const profilePathOverrideKeys: Array<keyof AppProfile> = [
-            "rootPathOverride",
+        const profilePathOverrideKeys = [
             "modsPathOverride",
             "savesPathOverride",
             "configPathOverride",
-            "backupsPathOverride"
-        ];
+            "backupsPathOverride",
+            "rootPathOverride"
+        ] as const;
 
-        return forkJoin(profilePathOverrideKeys.map((pathKey) => {
-            const newPath = profile[pathKey];
-            const oldPath = this.initialProfile[pathKey];
-            if (oldPath !== newPath) {
-                // TODO - Verify user wants to move folder
-                return ElectronUtils.invoke("profile:moveFolder", {
-                    pathKey,
-                    oldProfile: this.initialProfile as AppProfile,
-                    newProfile: profile
-                });
-            } else {
-                return of(false);
-            }
-        }));
+        // Determine if any profile paths were changed
+        const pathDiffs$ = profilePathOverrideKeys
+            .filter(pathKey => profile[pathKey] !== this.initialProfile[pathKey])
+            .map((pathKey) => concatJoin(
+                ElectronUtils.invoke("profile:resolvePath", { profile: this.initialProfile as AppProfile, pathKeys: [pathKey] }),
+                ElectronUtils.invoke("profile:resolvePath", { profile, pathKeys: [pathKey] }),
+            ).pipe(
+                switchMap(([[oldPath], [newPath]]) => {
+                    if (oldPath !== newPath) {
+                        const missingPath = `<${pathKey}>`;
+
+                        // Ask the user if they want to move old files to new path
+                        return this.appDialogs.showProfileMoveFolderDialog(oldPath ?? missingPath, newPath ?? missingPath).pipe(
+                            filterDefined(),
+                            switchMap(({ overwrite, destructive }) => ElectronUtils.invoke("profile:moveFolder", {
+                                pathKey,
+                                overwrite,
+                                destructive,
+                                oldProfile: this.initialProfile as AppProfile,
+                                newProfile: profile
+                            }))
+                        );
+                    } else {
+                        return EMPTY;
+                    }
+                })
+            ));
+
+        return concatJoin(...pathDiffs$).pipe(
+            map(() => profile),
+            defaultIfEmpty(profile)
+        );
     }
 }

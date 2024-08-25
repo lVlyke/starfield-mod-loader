@@ -4,6 +4,7 @@ import { DialogConfig, DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
 import { AppModRenameDialog, MOD_CUR_NAME_TOKEN } from "../modals/mod-rename-dialog";
 import { AppProfilePluginBackupNameDialog } from "../modals/profile-plugin-backup-name-dialog";
+import { AppProfileFolderMoveDialog, NEW_PATH_TOKEN, OLD_PATH_TOKEN } from "../modals/profile-folder-move-dialog";
 
 @Injectable({ providedIn: "root" })
 export class AppDialogs {
@@ -57,6 +58,25 @@ export class AppDialogs {
                 ? result.modalInstance.backupName
                 : undefined
             )
+        );
+    }
+
+    public showProfileMoveFolderDialog(
+        oldPath: string,
+        newPath: string
+    ): Observable<{ overwrite: boolean, destructive: boolean } | undefined> {
+        return this.dialogManager.create(AppProfileFolderMoveDialog,
+            [DialogManager.YES_ACTION_PRIMARY, DialogManager.NO_ACTION], {
+                withModalInstance: true,
+                hasBackdrop: true,
+                maxWidth: "55%",
+                panelClass: "mat-app-background"
+            }, [[OLD_PATH_TOKEN, oldPath], [NEW_PATH_TOKEN, newPath]]
+        ).pipe(
+            map(result => result.action === DialogManager.YES_ACTION_PRIMARY ? {
+                overwrite: result.modalInstance.overwrite,
+                destructive: !result.modalInstance.keepExisting
+            } : undefined)
         );
     }
 }
