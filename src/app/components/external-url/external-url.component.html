@@ -1,0 +1,30 @@
+@switch (variant) {
+    @case ("default") {
+        <a mat-button
+            target="_blank"
+            [color]="color ?? null"
+            [href]="href ?? null">
+            <ng-container *ngTemplateOutlet="content" />
+        </a>
+    }
+    @case ("stroked-button") {
+        <a mat-stroked-button
+            target="_blank"
+            [color]="color ?? null"
+            [href]="href ?? null">
+            <ng-container *ngTemplateOutlet="content" />
+        </a>
+    }
+    @case ("icon") {
+        <a mat-icon-button
+            target="_blank"
+            [color]="color ?? null"
+            [href]="href ?? null">
+            <ng-container *ngTemplateOutlet="content" />
+        </a>
+    }
+}
+
+<ng-template #content>
+    <ng-content />
+</ng-template>

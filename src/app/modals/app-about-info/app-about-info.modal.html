@@ -5,13 +5,17 @@
 
     <mat-card-content>
         <div class="actions">
-            <a mat-stroked-button color="accent" target="_blank" href="https://github.com/lVlyke/starfield-mod-loader">
+            <app-external-url variant="stroked-button" color="accent" resource="homepage">
                 Homepage
-            </a>
+            </app-external-url>
 
-            <a mat-stroked-button color="accent" target="_blank" href="https://github.com/lVlyke/starfield-mod-loader/blob/master/LICENSE">
+            <app-external-url variant="stroked-button" color="accent" resource="readme_offline">
+                README
+            </app-external-url>
+
+            <app-external-url variant="stroked-button" color="accent" resource="license">
                 License
-            </a>
+            </app-external-url>
         </div>
         
         <details class="app-deps">
@@ -36,5 +40,8 @@
         <button mat-raised-button color="primary" (click)="overlayRef.close()">
             Close
         </button>
+        <div class="copyright">
+            Copyright (C) 2024 Mychal Thompson
+        </div>
     </mat-card-actions>
 </mat-card>

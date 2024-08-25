@@ -12,6 +12,7 @@ const SEQUENTIAL_MODE = process.argv.includes("--sequential");
     process.chdir(PKG_DIR);
 
     const appLicensePath = path.join("..", "LICENSE");
+    const appReadmePath = path.join("..", "README.md");
     const packages = fs.readdirSync(".");
     const tasks = [];
 
@@ -20,16 +21,22 @@ const SEQUENTIAL_MODE = process.argv.includes("--sequential");
             // Read each built package
             if (fs.lstatSync(pkgPath).isDirectory() && !pkgPath.includes("template")) {
                 const archivePath = `${pkgPath}_${version}.7z`;
+                const pkgLicensePath = path.join(pkgPath, "LICENSE");
+                const pkgReadmePath = path.join(pkgPath, "README.md");
 
+                // Remove any previous archive
                 fs.rmSync(archivePath, { force: true });
 
-                // Copy app license
-                const pkgLicensePath = path.join(pkgPath, "LICENSE");
+                // Rename the Electron license
                 if (fs.existsSync(pkgLicensePath)) {
                     fs.moveSync(pkgLicensePath, path.join(pkgPath, "LICENSE.electron"), { overwrite: true });
                 }
 
-                fs.cpSync(appLicensePath, pkgLicensePath, { force: true });
+                // Copy the app license to base dir
+                fs.copySync(appLicensePath, pkgLicensePath, { overwrite: true });
+
+                // Copy the README to base dir
+                fs.copySync(appReadmePath, pkgReadmePath, { overwrite: true });
 
                 console.log(`Archiving package ${archivePath}`);
 

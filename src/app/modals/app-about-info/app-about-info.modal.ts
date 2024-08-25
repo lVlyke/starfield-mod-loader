@@ -6,6 +6,7 @@ import { ComponentState } from "@lithiumjs/angular";
 import { BaseComponent } from "../../core/base-component";
 import { AppMessageData } from "../../models/app-message";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
+import { AppExternalUrlComponentModule } from "../../components/external-url";
 
 export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutInfo">>("DEPS_INFO_TOKEN");
 
@@ -17,9 +18,9 @@ export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutI
     standalone: true,
     imports: [
         CommonModule,
-
         MatCardModule,
-        MatButtonModule
+        MatButtonModule,
+        AppExternalUrlComponentModule
     ],
     providers: [ComponentState.create(AppAboutInfoModal)]
 })

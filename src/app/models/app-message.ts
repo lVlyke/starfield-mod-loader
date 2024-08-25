@@ -1,6 +1,7 @@
 import { AppData } from "./app-data";
 import { AppDependenciesInfo } from "./app-dependency-info";
 import { AppBaseProfile, AppProfile } from "./app-profile";
+import { AppResource } from "./app-resource";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 import { ExternalFile } from "./external-file";
 import { GameDatabase } from "./game-database";
@@ -186,6 +187,14 @@ export namespace AppMessage {
         };
         result: boolean;
     }
+    
+    export interface ResolveResourceUrl extends Base {
+        id: `${Prefix}:resolveResourceUrl`;
+        data: {
+            resource: AppResource;
+        };
+        result: string | undefined;
+    }
 
     export type AppMessage = SyncUiState
                            | ChooseDirectory
@@ -207,7 +216,8 @@ export namespace AppMessage {
                            | FindBestProfileDefaults
                            | ShowAboutInfo
                            | ToggleModListColumn
-                           | CheckLinkSupported;
+                           | CheckLinkSupported
+                           | ResolveResourceUrl;
 
     // Profile messages:
 
@@ -577,6 +587,7 @@ export namespace AppMessage {
         "app:showAboutInfo",
         "app:toggleModListColumn",
         "app:checkLinkSupported",
+        "app:resolveResourceUrl",
 
         "profile:resolvePath",
         "profile:moveFolder",

@@ -15,6 +15,7 @@ import { ModImportRequest } from "../../models/mod-import-status";
 import { AppPipesModule } from "../../pipes";
 import { DialogManager } from "../../services/dialog-manager";
 import { AppDialogs } from "../../services/app-dialogs";
+import { AppExternalUrlComponentModule } from "../../components/external-url";
 
 @Component({
     templateUrl: "./mod-installer.modal.html",
@@ -35,7 +36,8 @@ import { AppDialogs } from "../../services/app-dialogs";
 
         AppPipesModule,
         
-        AppModInstallerComponentModule
+        AppModInstallerComponentModule,
+        AppExternalUrlComponentModule
     ]
 })
 export class AppModInstallerModal extends BaseComponent {
