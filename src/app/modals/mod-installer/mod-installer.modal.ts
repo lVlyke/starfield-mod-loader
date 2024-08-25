@@ -14,6 +14,7 @@ import { AppModInstallerComponent, AppModInstallerComponentModule } from "../../
 import { ModImportRequest } from "../../models/mod-import-status";
 import { AppPipesModule } from "../../pipes";
 import { DialogManager } from "../../services/dialog-manager";
+import { AppDialogs } from "../../services/app-dialogs";
 
 @Component({
     templateUrl: "./mod-installer.modal.html",
@@ -52,7 +53,7 @@ export class AppModInstallerModal extends BaseComponent {
 
     constructor(
         @Inject(OverlayRefSymbol) public readonly overlayRef: OverlayHelpersRef,
-        dialogManager: DialogManager,
+        appDialogs: AppDialogs,
         cdRef: ChangeDetectorRef
     ) {
         super({ cdRef });
@@ -65,18 +66,10 @@ export class AppModInstallerModal extends BaseComponent {
                 if (Object.keys(this.importRequest.modFilePathMapFilter ?? {}).length > 0) {
                     return of(form);
                 } else {
-                    return dialogManager.createDefault("No files are active for this mod. Do you want to install it anyway?", [
+                    return appDialogs.showDefault("No files are active for this mod. Do you want to install it anyway?", [
                         DialogManager.YES_ACTION,
                         DialogManager.NO_ACTION_PRIMARY
-                    ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
-                        switchMap((selectedAction) => {
-                            if (selectedAction === DialogManager.YES_ACTION) {
-                                return of(form);
-                            }
-                            
-                            return EMPTY;
-                        })
-                    );
+                    ]).pipe(switchMap(continueInstall => continueInstall ? of(form) : EMPTY));
                 }
             })
         ).subscribe((form) => {

@@ -2,13 +2,6 @@
     <mat-card-content [innerText]="prompt" />
 
     <mat-card-actions>
-        <button *ngFor="let action of actions"
-                mat-raised-button
-                [color]="action.primary ? 'primary' : (action.accent ? 'accent' : (action.warn ? 'warn' : undefined))"
-                [matTooltip]="action.tooltip ?? ''"
-                [matTooltipDisabled]="!action.tooltip"
-                (click)="actionSelected$.emit(action)">
-            {{ action.label }}
-        </button>
+        <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />
     </mat-card-actions>
 </mat-card>

@@ -8,10 +8,10 @@ import { MatDividerModule } from "@angular/material/divider";
 import { Observable } from "rxjs";
 import { share, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
+import { filterDefined } from "../../core/operators";
 import { AppProfile } from "../../models/app-profile";
 import { AppProfileSettingsComponent, AppProfileSettingsComponentModule } from "../../components/profile-settings";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
-import { filterDefined } from "src/app/core/operators";
 
 @Component({
     templateUrl: "./profile-settings.modal.html",

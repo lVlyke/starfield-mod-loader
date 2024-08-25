@@ -1,10 +1,11 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter } from "@angular/core";
 import { ComponentState } from "@lithiumjs/angular";
-import { filter } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
+import { filterTrue } from "../../core/operators";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
 import { DialogManager } from "../../services/dialog-manager";
+import { AppDialogs } from "../../services/app-dialogs";
 
 @Component({
     selector: "app-mod-actions",
@@ -32,7 +33,7 @@ export class AppModActionsComponent extends BaseComponent {
     constructor(
         cdRef: ChangeDetectorRef,
         private readonly profileManager: ProfileManager,
-        private readonly dialogManager: DialogManager
+        private readonly appDialogs: AppDialogs
     ) {
         super({ cdRef });
     }
@@ -44,11 +45,11 @@ export class AppModActionsComponent extends BaseComponent {
     }
 
     protected deleteMod(): void {
-        this.dialogManager.createDefault("Are you sure you want to delete this mod?", [
+        this.appDialogs.showDefault("Are you sure you want to delete this mod?", [
             DialogManager.YES_ACTION,
             DialogManager.NO_ACTION_PRIMARY
-        ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
-            filter(choice => choice === DialogManager.YES_ACTION)
+        ]).pipe(
+            filterTrue()
         ).subscribe(() => this.profileManager.deleteMod(this.root, this.modName));
 
         this.actionSelect$.emit();

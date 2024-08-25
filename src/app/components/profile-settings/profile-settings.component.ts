@@ -15,6 +15,7 @@ import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
 import { LangUtils } from "../../util/lang-utils";
+import { AppDialogs } from "../../services/app-dialogs";
 
 @Component({
     selector: "app-profile-settings",
@@ -61,7 +62,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileSettingsComponent>,
         store: Store,
-        private readonly dialogManager: DialogManager,
+        private readonly appDialogs: AppDialogs,
         protected readonly profileManager: ProfileManager
     ) {
         super({ cdRef });
@@ -188,13 +189,11 @@ export class AppProfileSettingsComponent extends BaseComponent {
                     }
                 }),
                 filterTrue(),
-                switchMap(() => this.dialogManager.createDefault(
+                switchMap(() => this.appDialogs.showDefault(
                     "No config files exist for this profile. Do you want to create them now?",
-                    [DialogManager.YES_ACTION_PRIMARY, DialogManager.NO_ACTION], {
-                        hasBackdrop: true
-                    }
+                    [DialogManager.YES_ACTION_PRIMARY, DialogManager.NO_ACTION]
                 )),
-                filter(result => result === DialogManager.YES_ACTION_PRIMARY),
+                filterTrue(),
                 switchMap(() => {
                     // Write default config files
                     const gameDetails = this.gameDb[formModel.gameId];

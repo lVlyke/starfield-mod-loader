@@ -1,0 +1,10 @@
+:host {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+
+    > button {
+        margin: 0 1rem;
+        width: 6rem;
+    }
+}

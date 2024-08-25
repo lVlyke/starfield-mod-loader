@@ -13,11 +13,11 @@ import { ComponentState } from "@lithiumjs/angular";
 import { CommonModule, formatDate } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
-import { MatButtonModule } from "@angular/material/button";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
+import { AppDialogActionsComponentModule } from "../../components/dialog-actions";
 
 export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN");
 
@@ -30,18 +30,17 @@ export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN")
     ],
     standalone: true,
     imports: [
-        CommonModule,
-        FormsModule,
-
-        MatCardModule,
-        MatButtonModule,
-        MatFormFieldModule,
-        MatInputModule
-    ]
+    CommonModule,
+    FormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    AppDialogActionsComponentModule
+]
 })
 export class AppProfilePluginBackupNameDialog extends BaseComponent implements DialogComponent {
 
-    @Output()
+    @Output("actionSelected")
     public readonly actionSelected$ = new EventEmitter<DialogAction>();
 
     constructor(

@@ -17,7 +17,6 @@ import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
 import { filterDefined, filterTrue, runOnce } from "../../core/operators";
 import { AppDialogs } from "../../services/app-dialogs";
-import { DialogAction } from "../../services/dialog-manager.types";
 import { ActiveProfileState } from "../../state/active-profile/active-profile.state";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { LangUtils } from "../../util/lang-utils";
@@ -114,7 +113,6 @@ export class AppModsOverviewPage extends BasePage {
         store: Store,
         protected readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers,
-        private readonly dialogManager: DialogManager,
         private readonly dialogs: AppDialogs
     ) {
         super({ cdRef });
@@ -167,11 +165,11 @@ export class AppModsOverviewPage extends BasePage {
         // Confirm with user to re-deploy profile after config file changes
         this.configFileUpdate$.pipe(
             filter(() => this.isProfileDeployed),
-            switchMap(() => dialogManager.createDefault("Config files have been changed or reloaded. Do you want to deploy these changes now?", [
+            switchMap(() => dialogs.showDefault("Config files have been changed or reloaded. Do you want to deploy these changes now?", [
                 DialogManager.YES_ACTION_PRIMARY,
                 DialogManager.NO_ACTION
-            ], { hasBackdrop: true, disposeOnBackdropClick: true })),
-            filter(result => result === DialogManager.YES_ACTION_PRIMARY),
+            ], DialogManager.POSITIVE_ACTIONS, { disposeOnBackdropClick: true })),
+            filterTrue(),
             switchMap(() => profileManager.refreshDeployedMods())
         ).subscribe();
     }
@@ -210,20 +208,19 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected showProfileModsDirInFileExplorer(): Observable<unknown> {
-        let check$: Observable<DialogAction>;
+        let check$: Observable<boolean>;
         if (this.showedModExternalEditWarning || this.activeProfile?.linkMode) {
-            check$ = of(DialogManager.OK_ACTION_PRIMARY);
+            check$ = of(true);
         } else {
-            check$ = this.dialogManager.createDefault(
+            check$ = this.dialogs.showDefault(
                 "If you update any of this profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the Refresh Files button after, otherwise your changes will not be applied.",
-                DialogManager.DEFAULT_ACTIONS,
-                { hasBackdrop: true }
+                [DialogManager.OK_ACTION_PRIMARY]
             );
         }
 
         return runOnce(check$.pipe(
             tap(() => this.showedModExternalEditWarning = true),
-            filter(result => result === DialogManager.OK_ACTION_PRIMARY),
+            filterTrue(),
             switchMap(() => this.profileManager.showProfileModsDirInFileExplorer())
         ));
     }
@@ -282,11 +279,11 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected deleteActiveProfile(): void {
-        this.dialogManager.createDefault("Are you sure you want to delete the current profile?", [
+        this.dialogs.showDefault("Are you sure you want to delete the current profile?", [
             DialogManager.YES_ACTION,
             DialogManager.NO_ACTION_PRIMARY
-        ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
-            filter(choice => choice === DialogManager.YES_ACTION)
+        ]).pipe(
+            filterTrue()
         ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
     }
 

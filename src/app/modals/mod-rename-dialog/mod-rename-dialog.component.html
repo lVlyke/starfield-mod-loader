@@ -16,11 +16,6 @@
     </mat-card-content>
 
     <mat-card-actions>
-        <button *ngFor="let action of actions"
-                mat-raised-button
-                [color]="action.primary ? 'primary' : undefined"
-                (click)="actionSelected$.emit(action)">
-            {{ action.label }}
-        </button>
+        <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />
     </mat-card-actions>
 </mat-card>

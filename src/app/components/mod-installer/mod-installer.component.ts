@@ -28,6 +28,7 @@ import { AppState } from "../../state";
 import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { log } from "../../util/logger";
+import { AppDialogs } from "../../services/app-dialogs";
 
 @Component({
     selector: "app-mod-installer",
@@ -98,7 +99,7 @@ export class AppModInstallerComponent extends BaseComponent {
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModInstallerComponent>,
         store: Store,
-        dialogManager: DialogManager,
+        appDialogs: AppDialogs,
         private readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers
     ) {
@@ -121,13 +122,13 @@ export class AppModInstallerComponent extends BaseComponent {
                 log.info("FOMOD installer dependency check failed: ", importRequest.installer!.config?.moduleDependencies);
 
                 // TODO - Show missing deps
-                return dialogManager.createDefault(
+                return appDialogs.showDefault(
                     "Mod is missing required dependencies.",
                     [ignoreAction, DialogManager.CANCEL_ACTION_PRIMARY],
-                    { hasBackdrop: true}
+                    DialogManager.NEGATIVE_ACTIONS
                 ).pipe(
-                    tap((selectedAction) => {
-                        if (selectedAction === DialogManager.CANCEL_ACTION_PRIMARY) {
+                    tap((userCancelled) => {
+                        if (userCancelled) {
                             importRequest.importStatus = "CANCELED";
                             this.onFormSubmit$.next(this.form);
                         }

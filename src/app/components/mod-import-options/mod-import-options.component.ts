@@ -216,9 +216,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
                 if (!usingScriptExtender) {
                     return dialogManager.createDefault(
-                        `This mod requires the script extender ${scriptExtender.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`,
-                        [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION],
-                        { hasBackdrop: true, disposeOnBackdropClick: false }
+                        `This mod requires the script extender ${scriptExtender.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`
                     );
                 } else {
                     return EMPTY;
@@ -249,8 +247,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                     
                     return dialogManager.createDefault(
                         `This mod has plugins, but plugins are not currently enabled.`,
-                        [ACTION_ENABLE_PLUGINS, DialogManager.CANCEL_ACTION_ACCENT, ACTION_IGNORE],
-                        { hasBackdrop: true, disposeOnBackdropClick: false }
+                        [ACTION_ENABLE_PLUGINS, DialogManager.CANCEL_ACTION_ACCENT, ACTION_IGNORE]
                     ).pipe(
                         tap((action) => {
                             switch (action) {

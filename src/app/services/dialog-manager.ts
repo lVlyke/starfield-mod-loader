@@ -75,6 +75,8 @@ export class DialogManager {
                 width: "30%",
                 minHeight: "25%",
                 maxHeight: "90%",
+                hasBackdrop: true,
+                disposeOnBackdropClick: actions.length <= 1,
                 ...config,
                 withModalInstance: false,
                 panelClass: "panel-card"
@@ -111,5 +113,29 @@ export namespace DialogManager {
     export const CANCEL_ACTION_PRIMARY = { ...CANCEL_ACTION, primary: true };
     export const CANCEL_ACTION_ACCENT = { ...CANCEL_ACTION, accent: true };
 
-    export const DEFAULT_ACTIONS: DialogAction[] = [OK_ACTION_PRIMARY, CANCEL_ACTION];
+    // Default actions:
+    export const DEFAULT_ACTIONS: DialogAction[] = [
+        OK_ACTION_PRIMARY,
+        CANCEL_ACTION
+    ];
+
+    // Positive actions:
+    export const POSITIVE_ACTIONS: DialogAction[] = [
+        YES_ACTION,
+        YES_ACTION_PRIMARY,
+        YES_ACTION_ACCENT,
+        OK_ACTION,
+        OK_ACTION_PRIMARY,
+        OK_ACTION_ACCENT
+    ];
+
+    // Negative actions:
+    export const NEGATIVE_ACTIONS: DialogAction[] = [
+        NO_ACTION,
+        NO_ACTION_PRIMARY,
+        NO_ACTION_ACCENT,
+        CANCEL_ACTION,
+        CANCEL_ACTION_PRIMARY,
+        CANCEL_ACTION_ACCENT
+    ];
 }
