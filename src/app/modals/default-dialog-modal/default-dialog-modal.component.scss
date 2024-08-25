@@ -12,14 +12,4 @@
         padding: 1.5rem;
         flex-grow: 1;
     }
-
-    mat-card-actions {
-        display: flex;
-        justify-content: center;
-
-        > button {
-            margin: 1rem;
-            width: 6rem;
-        }
-    }
 }

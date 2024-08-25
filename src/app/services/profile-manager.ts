@@ -642,7 +642,7 @@ export class ProfileManager {
                     return of(undefined);
                 } else if (importRequest.importStatus === "FAILED") {
                     // TODO - Show error
-                    return this.dialogManager.createDefault("Failed to add mod.", [
+                    return this.dialogs.showDefault("Failed to add mod.", [
                         DialogManager.OK_ACTION
                     ]).pipe(
                         switchMap(() => throwError(() => "Failed to add mod."))
@@ -702,12 +702,7 @@ export class ProfileManager {
                             ACTION_OVERWRITE,
                             ACTION_ADD,
                             DialogManager.CANCEL_ACTION_PRIMARY
-                        ], {
-                            width: "auto",
-                            maxWidth: "50vw",
-                            hasBackdrop: true,
-                            disposeOnBackdropClick: false
-                        }
+                        ], { width: "auto", maxWidth: "50vw" }
                     ).pipe(
                         switchMap((result) => {
                             switch (result) {
@@ -1041,15 +1036,10 @@ export class ProfileManager {
                                 return ElectronUtils.invoke("profile:findDeployedProfile", { refProfile: activeProfile }).pipe(
                                     switchMap((deployedProfileName) => {
                                         if (deployedProfileName && deployedProfileName !== activeProfile.name) {
-                                            return this.dialogManager.createDefault(`Mods for profile "${deployedProfileName}" will be deactivated. Continue?`, [
+                                            return this.dialogs.showDefault(`Mods for profile "${deployedProfileName}" will be deactivated. Continue?`, [
                                                 DialogManager.YES_ACTION_PRIMARY,
                                                 DialogManager.NO_ACTION,
-                                            ], { hasBackdrop: true, disposeOnBackdropClick: false }).pipe(
-                                                switchMap(result => result === DialogManager.YES_ACTION_PRIMARY
-                                                    ? of(activeProfile)
-                                                    : EMPTY
-                                                )
-                                            );
+                                            ]).pipe(switchMap(userContinue => userContinue ? of(activeProfile) : EMPTY));
                                         } else {
                                             return of(activeProfile);
                                         }
@@ -1062,7 +1052,7 @@ export class ProfileManager {
                                     })),
                                     catchError(() => {
                                         // TODO - Show error in dialog
-                                        return this.dialogManager.createDefault("Mod deployment failed. Check app.log file for more information.", [
+                                        return this.dialogs.showDefault("Mod deployment failed. Check app.log file for more information.", [
                                             DialogManager.OK_ACTION_PRIMARY
                                         ]).pipe(
                                             switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
@@ -1103,7 +1093,7 @@ export class ProfileManager {
                         switchMap(() => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile })),
                         catchError(() => {
                             // TODO - Show error in dialog
-                            return this.dialogManager.createDefault("Mod undeployment failed. Check app.log file for more information.", [
+                            return this.dialogs.showDefault("Mod undeployment failed. Check app.log file for more information.", [
                                 DialogManager.OK_ACTION_PRIMARY
                             ]).pipe(
                                 switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),

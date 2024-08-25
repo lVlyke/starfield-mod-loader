@@ -1,8 +1,9 @@
 import { Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
+import { DialogConfig, DialogManager } from "./dialog-manager";
+import { DialogAction } from "./dialog-manager.types";
 import { AppModRenameDialog, MOD_CUR_NAME_TOKEN } from "../modals/mod-rename-dialog";
 import { AppProfilePluginBackupNameDialog } from "../modals/profile-plugin-backup-name-dialog";
-import { DialogManager } from "./dialog-manager";
 
 @Injectable({ providedIn: "root" })
 export class AppDialogs {
@@ -10,6 +11,17 @@ export class AppDialogs {
     constructor(
         public readonly dialogManager: DialogManager
     ) {}
+
+    public showDefault(
+        prompt: string,
+        actions: DialogAction[] = DialogManager.DEFAULT_ACTIONS,
+        actionMatch: DialogAction[] = DialogManager.POSITIVE_ACTIONS,
+        config?: DialogConfig
+    ): Observable<boolean> {
+        return this.dialogManager.createDefault(prompt, actions, config).pipe(
+            map(result => actionMatch.includes(result))
+        );
+    }
 
     public showModRenameDialog(modCurName: string): Observable<string | undefined> {
         return this.dialogManager.create(AppModRenameDialog, [

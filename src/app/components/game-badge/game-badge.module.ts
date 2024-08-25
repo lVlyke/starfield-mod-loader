@@ -1,6 +1,6 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { AppPipesModule } from "src/app/pipes";
+import { AppPipesModule } from "../../pipes";
 import { AppGameBadgeComponent } from "./game-badge.component";
 
 @NgModule({

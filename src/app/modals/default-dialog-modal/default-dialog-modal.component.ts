@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Inject, Output } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
-import { MatButtonModule } from "@angular/material/button";
-import { MatTooltipModule } from "@angular/material/tooltip";
 import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
+import { AppDialogActionsComponentModule } from "../../components/dialog-actions/dialog-actions.module";
 
 @Component({
     templateUrl: "./default-dialog-modal.component.html",
@@ -12,15 +11,13 @@ import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTI
     standalone: true,
     imports: [
         CommonModule,
-
         MatCardModule,
-        MatButtonModule,
-        MatTooltipModule
+        AppDialogActionsComponentModule
     ]
 })
 export class AppDefaultDialogComponent implements DialogComponent {
 
-    @Output()
+    @Output("actionSelected")
     public readonly actionSelected$ = new EventEmitter<DialogAction>();
 
     constructor(

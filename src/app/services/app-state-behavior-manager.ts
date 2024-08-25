@@ -19,6 +19,7 @@ import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { GameDatabase } from "../models/game-database";
 import { AppPreferencesModal } from "../modals/app-preferences";
 import { log } from "../util/logger";
+import { AppDialogs } from "./app-dialogs";
 
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
@@ -30,7 +31,7 @@ export class AppStateBehaviorManager {
         messageHandler: AppMessageHandler,
         private readonly store: Store,
         private readonly overlayHelpers: OverlayHelpers,
-        private readonly dialogManager: DialogManager,
+        private readonly dialogs: AppDialogs,
     ) {
         let deployInProgressOverlayRef: OverlayHelpersRef | undefined;
 
@@ -186,7 +187,7 @@ export class AppStateBehaviorManager {
                     );
                 } else {
                     const errorText = "Unable to open game database file.";
-                    this.dialogManager.createDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
+                    this.dialogs.showDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
                     return throwError(() => errorText);
                 }
             })
