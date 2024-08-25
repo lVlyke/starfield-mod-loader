@@ -1,4 +1,14 @@
 {
+    "$none": {
+        "title": "None",
+        "bkgColor": "#bbbbbb",
+        "fgColor": "#ffffff"
+    },
+    "$unknown": {
+        "title": "??????",
+        "bkgColor": "#ff0000",
+        "fgColor": "#ffffff"
+    },
     "fallout_4": {
         "title": "Fallout 4",
         "bkgColor": "#007300",

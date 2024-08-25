@@ -1028,7 +1028,7 @@ class ElectronLoader {
             const profile = this.loadProfile(profileName);
             return {
                 name: profileName,
-                gameId: profile?.gameId ?? "",
+                gameId: profile?.gameId ?? "$unknown",
                 deployed: profile?.deployed ?? false
             };
         });
@@ -1051,7 +1051,7 @@ class ElectronLoader {
         );
     }
 
-    /** @returns {GameDatabase} */
+    /** @returns {GameDatabase | {}} */
     loadGameDatabase() {
         if (!fs.existsSync(ElectronLoader.GAME_DB_FILE)) {
             return {};
