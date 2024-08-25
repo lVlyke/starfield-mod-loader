@@ -6,6 +6,7 @@ import { AppState } from "../../state";
 import { BaseComponent } from "../../core/base-component";
 import { GameDetails } from "../../models/game-details";
 import { GameDatabase } from "../../models/game-database";
+import { GameId } from "../../models/game-id";
 
 @Component({
     selector: "app-game-badge",
@@ -26,7 +27,7 @@ export class AppGameBadgeComponent extends BaseComponent {
     public readonly gameDb!: GameDatabase;
 
     @Input()
-    public gameId!: string;
+    public gameId: GameId = GameId.UNKNOWN;
 
     protected gameDetails?: GameDetails;
 
@@ -40,7 +41,7 @@ export class AppGameBadgeComponent extends BaseComponent {
         this.gameDb$ = store.select(AppState.getGameDb);
 
         combineLatest(stateRef.getAll("gameId", "gameDb")).subscribe(([gameId, gameDb]) => {
-            this.gameDetails = gameDb[gameId];
+            this.gameDetails = gameDb[gameId] ?? gameDb[GameId.UNKNOWN];
         });
     }
 }

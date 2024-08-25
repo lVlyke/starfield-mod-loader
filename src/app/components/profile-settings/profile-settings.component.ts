@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
-import { NgForm, NgModel } from "@angular/forms";
+import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/forms";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
@@ -33,9 +33,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
     public readonly gameDb$: Observable<GameDatabase>;
+    public readonly appProfileDescs$: Observable<AppProfile.Description[]>;
 
     @AsyncState()
     public readonly gameDb!: GameDatabase;
+
+    @AsyncState()
+    public readonly appProfileDescs!: AppProfile.Description[];
 
     @AsyncState()
     public readonly formModel!: Readonly<Partial<AppProfile>>;
@@ -55,6 +59,12 @@ export class AppProfileSettingsComponent extends BaseComponent {
     protected gameIds: GameId[] = [];
     protected linkModeSupported = false;
 
+    private readonly validateProfileName = (control: AbstractControl): ValidationErrors | null => {
+        return this.appProfileDescs.some(existingProfile => control.value.toLowerCase() === existingProfile.name.toLowerCase())
+            ? { invalidProfileName: true }
+            : null;
+    };
+
     @DeclareState("defaultPaths")
     private _defaultPaths?: AppProfile.DefaultablePaths;
 
@@ -68,10 +78,18 @@ export class AppProfileSettingsComponent extends BaseComponent {
         super({ cdRef });
 
         this.gameDb$ = store.select(AppState.getGameDb);
+        this.appProfileDescs$ = store.select(AppState.getProfileDescriptions);
 
-        this.gameDb$.pipe(
-            this.managedSource()
-        ).subscribe(gameDb => this.gameIds = Object.keys(gameDb) as GameId[]);
+        stateRef.get("gameDb").pipe(
+            map((gameDb) => (Object.keys(gameDb) as GameId[]).filter(
+                gameId => gameId !== "$unknown" && gameId !== "$none"
+            ))
+        ).subscribe(gameIds => this.gameIds = gameIds);
+
+        stateRef.get("form").pipe(
+            filterDefined(),
+            distinctUntilChanged()
+        ).subscribe(({ form }) => form.controls["name"].addValidators([this.validateProfileName]));
 
         this.formModel$.pipe(
             switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel as AppProfile }))
@@ -95,7 +113,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         // Get the default profile paths for the current game
         this.formModel$.pipe(
             map((profile: Partial<AppProfile>) => profile.gameId),
-            filter((gameId): gameId is string => !!gameId),
+            filter((gameId): gameId is GameId => !!gameId),
             distinctUntilChanged(),
             switchMap(gameId => ElectronUtils.invoke("app:findBestProfileDefaults", { gameId }))
         ).subscribe(profileDefaults => this._defaultPaths = profileDefaults);

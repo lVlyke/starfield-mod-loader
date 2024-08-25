@@ -15,7 +15,7 @@ import { GameDetails } from "../models/game-details";
     defaults: {
         profiles: [],
         theme: AppTheme.Dark,
-        gameDb: {},
+        gameDb: {} as GameDatabase,
         pluginsEnabled: true,
         normalizePathCasing: false,
         verifyProfileOnStart: true
