@@ -2,6 +2,7 @@
 
 /**
  * @typedef {import("./app/models/app-message").AppMessage} AppMessage;
+ * @typedef {import("./app/models/app-resource").AppResource} AppResource;
  * @typedef {import("./app/models/app-profile").AppProfile} AppProfile;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResult} AppProfileVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResults} AppProfileVerificationResults;
@@ -64,6 +65,13 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     static /** @type {string} */ PROFILE_LINK_SUPPORT_TEST_FILE = ".sml_link_test";
     static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
+
+    static /** @type {Record<AppResource, string>} */ APP_RESOURCES = {
+        "readme_offline": `file://${process.cwd()}/README.md`,
+        "readme_online": "https://github.com/lVlyke/starfield-mod-loader/blob/master/README.md",
+        "license": `file://${process.cwd()}/LICENSE`,
+        "homepage": "https://github.com/lVlyke/starfield-mod-loader"
+    };
     
     /** @type {BrowserWindow} */ mainWindow;
     /** @type {Menu} */ menu;
@@ -227,6 +235,13 @@ class ElectronLoader {
                 log.error(e);
                 return null;
             }
+        });
+
+        ipcMain.handle("app:resolveResourceUrl", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:resolveResourceUrl">} */ { resource }
+        ) => {
+            return ElectronLoader.APP_RESOURCES[resource];
         });
 
         ipcMain.handle("app:loadProfile", async (
@@ -796,7 +811,7 @@ class ElectronLoader {
                     },
                     {
                         label: "View Project Homepage",
-                        click: () => shell.openExternal("https://github.com/lVlyke/starfield-mod-loader")
+                        click: () => shell.openExternal(ElectronLoader.APP_RESOURCES["homepage"])
                     },
                     {
                         type: "separator"
@@ -902,7 +917,7 @@ class ElectronLoader {
                 submenu: [
                     {
                         label: "View README",
-                        click: () => shell.openExternal("https://github.com/lVlyke/starfield-mod-loader/blob/master/README.md")
+                        click: () => shell.openExternal(ElectronLoader.APP_RESOURCES["readme_online"])
                     },
                     {
                         label: "About Starfield Mod Loader",

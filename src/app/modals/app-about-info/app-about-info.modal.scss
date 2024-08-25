@@ -38,5 +38,16 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        position: relative;
+
+        > .copyright {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
     }
 }

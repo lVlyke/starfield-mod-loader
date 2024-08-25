@@ -18,6 +18,7 @@ import { filterDefined, runOnce } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
 import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { GameDatabase } from "../models/game-database";
+import { AppResource } from "../models/app-resource";
 import { AppPreferencesModal } from "../modals/app-preferences";
 import { log } from "../util/logger";
 import { AppDialogs } from "./app-dialogs";
@@ -226,6 +227,10 @@ export class AppStateBehaviorManager {
             disposeOnBackdropClick: true,
             panelClass: "mat-app-background"
         }, [[DEPS_INFO_TOKEN, aboutData]]);
+    }
+
+    public resolveResourceUrl(resource: AppResource): Observable<string | undefined> {
+        return ElectronUtils.invoke("app:resolveResourceUrl", { resource });
     }
 
     private syncUiState(): Observable<unknown> {

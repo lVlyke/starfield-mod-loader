@@ -1,5 +1,5 @@
 <mat-card>
-    <mat-card-content [innerText]="prompt" />
+    <mat-card-content [innerHTML]="renderedPrompt ?? prompt" />
 
     <mat-card-actions>
         <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />

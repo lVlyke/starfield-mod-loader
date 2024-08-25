@@ -6,6 +6,7 @@
 
     mat-card-content {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         font-size: 1.2rem;
         line-height: 1.5rem;

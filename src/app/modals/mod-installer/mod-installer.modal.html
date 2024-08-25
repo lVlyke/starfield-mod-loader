@@ -12,14 +12,13 @@
             <span>
                 By {{ modAuthor }}
             </span>
-            <a *ngIf="importRequest.installer!.info!.website as modWebsite"
-                mat-icon-button
+            <app-external-url *ngIf="importRequest.installer!.info!.website as modWebsite"
+                variant="icon"
                 class="mod-website-button"
                 color="accent"
-                target="_blank"
                 [href]="modWebsite">
                 <mat-icon>launch</mat-icon>
-            </a>
+            </app-external-url>
         </mat-card-subtitle>
 
         <ng-container *ngIf="importRequest.installer!.config?.moduleImage?.path?.[0] as modHeaderImgPath">
