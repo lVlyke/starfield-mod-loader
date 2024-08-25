@@ -2782,6 +2782,11 @@ class ElectronLoader {
                     }
 
                     destTestFile = path.resolve(path.join(destPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE));
+
+                    // Allow link tests to the same dir if symlink type is file
+                    if (srcTestFile === destTestFile && (!symlinkType || symlinkType === "file")) {
+                        destTestFile = `${destTestFile}.1`;
+                    }
     
                     // Create a test link
                     if (symlink) {

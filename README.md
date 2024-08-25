@@ -226,6 +226,12 @@ bEnableMessageOfTheDay=0
 sPhotoModeFolder=Photos
 ```
 
+### Symlinks are not enabled <a name="symlinks"></a>
+
+If you get a warning about symlinks not being enabled when creating or editing a profile, you need to enable symlink permissions.
+
+To enable symlinks in Windows, you can either A) run Starfield Mod Loader as administrator (not recommended) or B) enable Windows Developer Mode. To enable Developer Mode, open the Windows "Settings" app, go to "For developers", and then enable "Developer Mode". Once enabled, Starfield Mod Loader should now be able to use symlinks.
+
 ### The app sits on the "Verifying Profile..." loading screen for a long time during startup
 
 This can happen when very large profiles are activated. If profile verification is taking too long, you can disable verification on app startup via the menu bar under **File > Preferences**.

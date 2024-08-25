@@ -5,6 +5,7 @@ import { DialogAction } from "./dialog-manager.types";
 import { AppModRenameDialog, MOD_CUR_NAME_TOKEN } from "../modals/mod-rename-dialog";
 import { AppProfilePluginBackupNameDialog } from "../modals/profile-plugin-backup-name-dialog";
 import { AppProfileFolderMoveDialog, NEW_PATH_TOKEN, OLD_PATH_TOKEN } from "../modals/profile-folder-move-dialog";
+import { AppSymlinkWarningDialog } from "../modals/symlink-warning-dialog";
 
 @Injectable({ providedIn: "root" })
 export class AppDialogs {
@@ -78,5 +79,14 @@ export class AppDialogs {
                 destructive: !result.modalInstance.keepExisting
             } : undefined)
         );
+    }
+
+    public showSymlinkWarningDialog(): Observable<unknown> {
+        return this.dialogManager.create(AppSymlinkWarningDialog, [DialogManager.OK_ACTION_PRIMARY], {
+            hasBackdrop: true,
+            disposeOnBackdropClick: true,
+            maxWidth: "35%",
+            panelClass: "mat-app-background"
+        });
     }
 }

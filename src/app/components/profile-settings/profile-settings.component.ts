@@ -8,7 +8,7 @@ import { defaultIfEmpty, delay, distinctUntilChanged, filter, finalize, map, mer
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ElectronUtils } from "../../util/electron-utils";
-import { concatJoin, filterDefined, filterTrue, runOnce } from "../../core/operators";
+import { concatJoin, filterDefined, filterFalse, filterTrue, runOnce } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
 import { AppState } from "../../state";
 import { GameDatabase } from "../../models/game-database";
@@ -64,11 +64,25 @@ export class AppProfileSettingsComponent extends BaseComponent {
     protected modLinkModeSupported = false;
     protected configLinkModeSupported = false;
     protected manageSavesSupported = false;
+    protected profileRootPathValid = false;
 
     private readonly validateProfileName = (control: AbstractControl): ValidationErrors | null => {
         return this.appProfileDescs.some(existingProfile => control.value.toLowerCase() === existingProfile.name.toLowerCase())
             ? { invalidProfileName: true }
             : null;
+    };
+
+    private readonly validateProfileRoot = (control: AbstractControl): Observable<ValidationErrors | null> => {
+        if (!control.value) {
+            return of(null);
+        }
+
+        return ElectronUtils.invoke("app:checkLinkSupported", {
+            targetPath: ".",
+            destPaths: [control.value],
+            symlink: true,
+            symlinkType: "dir"
+        }).pipe(map(supported => supported ? null : { invalidProfileRoot: true }));
     };
 
     @DeclareState("defaultPaths")
@@ -86,6 +100,17 @@ export class AppProfileSettingsComponent extends BaseComponent {
         this.gameDb$ = store.select(AppState.getGameDb);
         this.appProfileDescs$ = store.select(AppState.getProfileDescriptions);
 
+        // Check if app has symlink permissions
+        ElectronUtils.invoke("app:checkLinkSupported", {
+            targetPath: ".",
+            destPaths: ["."],
+            symlink: true,
+            symlinkType: "file"
+        }).pipe(
+            filterFalse(),
+            switchMap(() => appDialogs.showSymlinkWarningDialog())
+        ).subscribe();
+
         stateRef.get("gameDb").pipe(
             map((gameDb) => (Object.keys(gameDb) as GameId[]).filter(
                 gameId => gameId !== "$unknown" && gameId !== "$none"
@@ -95,7 +120,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         stateRef.get("form").pipe(
             filterDefined(),
             distinctUntilChanged()
-        ).subscribe(({ form }) => form.controls["name"].addValidators([this.validateProfileName]));
+        ).subscribe((form) => {
+            form.controls["name"].addValidators([this.validateProfileName]);
+            form.controls["rootPathOverride"].addAsyncValidators([this.validateProfileRoot]);
+        });
 
         this.formModel$.pipe(
             filter(formModel => !!formModel.name),

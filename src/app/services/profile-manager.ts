@@ -187,7 +187,11 @@ export class ProfileManager {
             this.isPluginsEnabled$,
             this.activeProfile$
         ]).pipe(
-            map(([isPluginsEnabled, activeProfile]) => isPluginsEnabled && !!activeProfile && !activeProfile.gamePluginListPath),
+            map(([isPluginsEnabled, activeProfile]) => AppProfile.isFullProfile(activeProfile)
+                && isPluginsEnabled
+                && !!activeProfile
+                && !activeProfile.gamePluginListPath
+            ),
             distinctUntilChanged(),
             filterTrue(),
             withLatestFrom(this.activeGameDetails$),
