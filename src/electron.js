@@ -2327,6 +2327,7 @@ class ElectronLoader {
             throw new Error(`Unable to write config files: Profile's Game Config File Path "${profile.gameConfigFilePath}" is not valid.`);
         }
 
+        const gameDetails = this.#getGameDetails(profile.gameId);
         const deployConfigDir = profile.gameConfigFilePath;
         const backupDir = path.join(deployConfigDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const profileConfigDir = this.getProfileConfigDir(profile);
@@ -2335,10 +2336,14 @@ class ElectronLoader {
             return [];
         }
 
-        const profileConfigFiles = fs.readdirSync(profileConfigDir);
+        const profileConfigFiles = gameDetails?.gameConfigFiles
+            ? Object.keys(gameDetails?.gameConfigFiles)
+            : fs.readdirSync(profileConfigDir);
         
         return Promise.all(profileConfigFiles.map(async (configFileName) => {
-            const configSrcPath = path.resolve(path.join(profileConfigDir, configFileName));
+            const rawConfigSrcPath = path.resolve(path.join(profileConfigDir, configFileName));
+            // Resolve src config file path with any potential overrides
+            const configSrcPath = this.resolveGameConfigFilePath(profile, configFileName) ?? rawConfigSrcPath;
             const configDestPath = path.resolve(path.join(deployConfigDir, configFileName));
 
             // Backup any existing config files
