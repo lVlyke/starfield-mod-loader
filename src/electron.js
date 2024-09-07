@@ -768,7 +768,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:openProfileConfigFile">} */ { profile, configFileName }
         ) => {
-            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName);
+            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName, false);
 
             if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
                 return shell.openPath(path.resolve(profileConfigFilePath));
@@ -1270,7 +1270,7 @@ class ElectronLoader {
         if (!fs.existsSync(profileConfigFilePath)) {
             // Attempt to load default config values if profile file doesn't exist yet
             if (loadDefaults) {
-                const defaultConfigFilePath = this.resolveGameConfigFilePath(profile, fileName);
+                const defaultConfigFilePath = this.resolveGameConfigFilePath(profile, fileName, true);
                 if (defaultConfigFilePath !== undefined && fs.existsSync(defaultConfigFilePath)) {
                     return fs.readFileSync(defaultConfigFilePath, "utf8");
                 }
@@ -2012,7 +2012,11 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    resolveGameConfigFilePath(/** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile, /** @type {string} */ configFileName) {
+    resolveGameConfigFilePath(
+        /** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile,
+        /** @type {string} */ configFileName,
+        /** @type {boolean} */ includeGameFiles
+    ) {
         if ("manageConfigFiles" in profile && profile.manageConfigFiles) {
             const profileConfigFilePath = path.join(this.getProfileConfigDir(profile), configFileName);
 
@@ -2030,23 +2034,25 @@ class ElectronLoader {
             }
 
             if (!!baseProfile) {
-                const configFilePath = this.resolveGameConfigFilePath(baseProfile, configFileName);
+                const configFilePath = this.resolveGameConfigFilePath(baseProfile, configFileName, false);
                 if (configFilePath !== undefined && fs.existsSync(configFilePath)) {
                     return configFilePath;
                 }
             }
         }
 
-        if ("gameConfigFilePath" in profile && !!profile.gameConfigFilePath) {
-            return path.join(profile.gameConfigFilePath, configFileName);
-        }
+        if (includeGameFiles) {
+            if ("gameConfigFilePath" in profile && !!profile.gameConfigFilePath) {
+                return path.join(profile.gameConfigFilePath, configFileName);
+            }
 
-        const gameDetails = this.#getGameDetails(profile.gameId);
-        const configFilePaths = gameDetails?.gameConfigFiles?.[configFileName] ?? [];
-        for (let configFilePath of configFilePaths) {
-            configFilePath = this.#expandPath(configFilePath);
-            if (fs.existsSync(configFilePath)) {
-                return configFilePath;
+            const gameDetails = this.#getGameDetails(profile.gameId);
+            const configFilePaths = gameDetails?.gameConfigFiles?.[configFileName] ?? [];
+            for (let configFilePath of configFilePaths) {
+                configFilePath = this.#expandPath(configFilePath);
+                if (fs.existsSync(configFilePath)) {
+                    return configFilePath;
+                }
             }
         }
 
@@ -2063,7 +2069,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName);
+            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName, true);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -2092,7 +2098,7 @@ class ElectronLoader {
         const archiveInvalidationConfig = Object.entries(gameDetails.archiveInvalidation ?? {});
 
         for (const [configFileName, configData] of archiveInvalidationConfig) {
-            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName);
+            const configFilePath = this.resolveGameConfigFilePath(profile, configFileName, true);
 
             if (!configFilePath || !fs.existsSync(configFilePath)) {
                 continue;
@@ -2343,8 +2349,13 @@ class ElectronLoader {
         return Promise.all(profileConfigFiles.map(async (configFileName) => {
             const rawConfigSrcPath = path.resolve(path.join(profileConfigDir, configFileName));
             // Resolve src config file path with any potential overrides
-            const configSrcPath = this.resolveGameConfigFilePath(profile, configFileName) ?? rawConfigSrcPath;
+            const configSrcPath = path.resolve(this.resolveGameConfigFilePath(profile, configFileName, false) ?? rawConfigSrcPath);
             const configDestPath = path.resolve(path.join(deployConfigDir, configFileName));
+
+            if (!fs.existsSync(configSrcPath)) {
+                log.error("Invalid config file path: ", configSrcPath);
+                throw new Error("Invalid config file path");
+            }
 
             // Backup any existing config files
             if (fs.existsSync(configDestPath)) {
