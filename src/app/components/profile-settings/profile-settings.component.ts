@@ -210,6 +210,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return this._defaultPaths;
     }
 
+    public get copyMode(): boolean {
+        return this.createMode && !!this.initialProfile;
+    }
+
     protected isFieldGroup(fieldEntry: DefaultProfilePathFieldEntry): fieldEntry is DefaultProfilePathFieldGroup {
         return "groupTitle" in fieldEntry;
     }
@@ -249,7 +253,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         return runOnce(this.formModel$.pipe(
             take(1),
-            switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form)),
+            switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form, this.baseProfileMode)),
             switchMap((formModel) => this.checkUpdatedProfilePathOverrides(formModel)),
             switchMap((formModel) => (() => {
                 // Add/update profile data on submit
@@ -273,7 +277,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         const gameDetails = this.gameDb[profile.gameId];
     
         // Check if profile-specific config files need to be created
-        if (profile.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
+        if (!this.copyMode && profile.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
             // Check if any profile-specific config files exist
             return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
                 return this.profileManager.readConfigFile(profile, configFile, false);

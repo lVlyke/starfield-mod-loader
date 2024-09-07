@@ -21,7 +21,7 @@ import {
 import { EMPTY, Observable, asyncScheduler, combineLatest, concat, forkJoin, from, fromEvent, merge, of, throwError } from "rxjs";
 import { filterDefined, filterTrue, runOnce } from "../core/operators";
 import { ElectronUtils } from "../util/electron-utils";
-import { AppProfile } from "../models/app-profile";
+import { AppBaseProfile, AppProfile } from "../models/app-profile";
 import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
@@ -336,12 +336,19 @@ export class ProfileManager {
         ));
     }
 
-    public resolveProfileFromForm(profile: AppProfile.Form): Observable<AppProfile> {
+    public resolveProfileFromForm(profile: AppProfile.Form, baseProfile: boolean): Observable<AppProfile> {
         profile = (Object.keys(profile) as Array<keyof AppProfile.Form>).reduce((filteredProfile, profileProp) => {
             const profilePropVal = profile[profileProp];
-            if (!_.isNil(profilePropVal) && profilePropVal !== "") {
-                (filteredProfile as any)[profileProp] = profilePropVal;
+
+            if (_.isNil(profilePropVal) || profilePropVal === "") {
+                return filteredProfile;
             }
+
+            if (baseProfile && !AppProfile.BASE_PROFILE_KEYS.includes(profileProp as keyof AppBaseProfile)) {
+                return filteredProfile;
+            }
+            
+            (filteredProfile as any)[profileProp] = profilePropVal;
             return filteredProfile;
         }, {} as AppProfile.Form);
 

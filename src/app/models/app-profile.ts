@@ -9,6 +9,7 @@ export interface AppBaseProfile {
     mods: AppProfile.ModList;
     rootMods: AppProfile.ModList;
     plugins: GamePluginProfileRef[];
+    manageConfigFiles?: boolean;
     rootPathOverride?: string;
     modsPathOverride?: string;
     configPathOverride?: string;
@@ -25,7 +26,6 @@ export interface AppProfile extends AppBaseProfile {
     gameConfigFilePath?: string;
     gameSaveFolderPath?: string;
     manageExternalPlugins?: boolean;
-    manageConfigFiles?: boolean;
     manageSaveFiles?: boolean;
     modLinkMode?: boolean;
     configLinkMode?: boolean;
@@ -48,7 +48,7 @@ export namespace AppProfile {
     export type ModList = RelativeOrderedMap.List<string, ModProfileRef>;
 
     export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed"> & { baseProfile?: string };
-    export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string };
+    export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string; };
     export type DefaultablePaths = Pick<AppProfile,
           "gameRootDir"
         | "gameModDir"
@@ -95,6 +95,21 @@ export namespace AppProfile {
         filePath: string;
         backupDate: Date;
     }
+
+    export const BASE_PROFILE_KEYS: Array<keyof AppBaseProfile> = [
+        "name",
+        "gameId",
+        "mods",
+        "rootMods",
+        "plugins",
+        "manageConfigFiles",
+        "rootPathOverride",
+        "modsPathOverride",
+        "configPathOverride",
+        "savesPathOverride",
+        "backupsPathOverride",
+        "deployed"
+    ];
 
     export function isFullProfile(value?: Partial<AppProfile>): value is AppProfile {
         return !!value && "gameRootDir" in value && "gameModDir" in value;
