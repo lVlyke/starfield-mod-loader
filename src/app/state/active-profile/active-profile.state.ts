@@ -6,6 +6,7 @@ import { ActiveProfileActions } from "./active-profile.actions";
 import { ProfileUtils } from "../../util/profile-utils";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { RelativeOrderedMap } from "../../util/relative-ordered-map";
+import { log } from "../../util/logger";
 
 @State<ActiveProfileState.Model>({
     name: "activeProfile",
@@ -166,8 +167,8 @@ export class ActiveProfileState {
 
             // Add missing profile mods (this shouldn't normally be needed unless someone added mods manually)
             RelativeOrderedMap.forEach(mods, (externalMod, externalModName) => {
-                if (!RelativeOrderedMap.has(state.mods, externalModName)) {
-                    // TODO - Warn user that this may have been a root mod and will be demoted
+                if (!RelativeOrderedMap.has(state.mods, externalModName) && !RelativeOrderedMap.has(state.rootMods, externalModName)) {
+                    log.warn("Missing mod found:", externalModName, " (Note: If this was a root mod it will be demoted to standard mod.)");
                     RelativeOrderedMap.insert(state.mods, externalModName, externalMod);
                 }
             });
