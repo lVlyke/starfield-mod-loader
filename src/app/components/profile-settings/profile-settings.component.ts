@@ -122,7 +122,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
             distinctUntilChanged()
         ).subscribe((form) => {
             form.controls["name"].addValidators([this.validateProfileName]);
+            form.controls["name"].updateValueAndValidity();
+
             form.controls["rootPathOverride"].addAsyncValidators([this.validateProfileRoot]);
+            form.controls["rootPathOverride"].updateValueAndValidity();
         });
 
         this.formModel$.pipe(

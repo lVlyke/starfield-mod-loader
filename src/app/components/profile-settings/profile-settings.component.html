@@ -34,9 +34,9 @@
                 [disabled]="!createMode"
                 [readonly]="!createMode"
                 [ngModel]="initialProfile.name">
-        <mat-error *ngIf="nameModel.errors?.['invalidProfileName']">
-            Profile "{{ nameModel.value }}" already exists
-        </mat-error>
+        <mat-hint *ngIf="(nameModel.control.statusChanges | async) && nameModel.hasError('invalidProfileName')" [attr.matWarn]="true">
+            Profile already exists
+        </mat-hint>
     </mat-form-field>
 
     <mat-form-field *ngIf="!baseProfileMode" appearance="fill">

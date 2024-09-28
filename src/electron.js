@@ -885,11 +885,14 @@ class ElectronLoader {
         chokidar.watch(BUILD_DATE_FILE, {
             interval: 500,
             usePolling: true,
-            awaitWriteFinish: true
+            awaitWriteFinish: true,
+            ignoreInitial: true
         }).on("change", () => {
             console.info("Changes detected, reloading app...");
     
             this.loadApp();
+
+            console.info("App reloaded");
         });
     }
 
@@ -2075,8 +2078,8 @@ class ElectronLoader {
                 continue;
             }
 
-            const configFileData = fs.readFileSync(configFilePath, { encoding: "utf-8" });
-            if (configFileData.includes(configData)) {
+            const configFileData = fs.readFileSync(configFilePath, { encoding: "utf-8" }).replace(/\r/g, "");
+            if (configFileData.includes(configData.replace(/\r/g, ""))) {
                 return true;
             }
         }
