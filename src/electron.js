@@ -351,18 +351,18 @@ class ElectronLoader {
             const configPathOverrideResult = profile.configPathOverride ? this.verifyProfilePathExists(profile.configPathOverride) : VERIFY_SUCCESS;
             const savesPathOverrideResult = profile.savesPathOverride ? this.verifyProfilePathExists(profile.savesPathOverride) : VERIFY_SUCCESS;
             const backupsPathOverrideResult = profile.backupsPathOverride ? this.verifyProfilePathExists(profile.backupsPathOverride) : VERIFY_SUCCESS;
-            const modLinkModeResult = profile.modLinkMode ? (this.#checkLinkSupported(
+            const modLinkModeResult = ("gameModDir" in profile && profile.modLinkMode) ? (this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "modsPathOverride") ?? "",
                 [this.getProfileDirByKey(profile, "gameModDir") ?? "", this.getProfileDirByKey(profile, "gameRootDir") ?? ""],
                 false
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-            const configLinkModeResult = profile.configLinkMode ? (this.#checkLinkSupported(
+            const configLinkModeResult = ("gameConfigFilePath" in profile && profile.configLinkMode) ? (this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "configPathOverride") ?? "",
                 [this.getProfileDirByKey(profile, "gameConfigFilePath") ?? ""],
                 true,
                 "file"
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-            const manageSaveFilesResult = profile.manageSaveFiles ? ((profile.deployed || this.#checkLinkSupported(
+            const manageSaveFilesResult = ("gameSaveFolderPath" in profile && profile.manageSaveFiles) ? ((profile.deployed || this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "savesPathOverride") ?? "",
                 [this.getProfileDirByKey(profile, "gameSaveFolderPath") ?? ""],
                 true,
