@@ -245,7 +245,7 @@ export class ProfileManager {
             filter(([, activeProfile]) => !!activeProfile),
             switchMap(([event, activeProfile]) => from(event.dataTransfer!.files).pipe(
                 concatMap((file) => this.addModFromUser(activeProfile!, {
-                    modPath: file.path,
+                    modPath: ElectronUtils.getFilePath(file),
                     externalImport: !file.type && !file.size // `file` is a dir if no type & size
                 }).pipe(
                     catchError((err) => (log.error(err), EMPTY))

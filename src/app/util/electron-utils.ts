@@ -14,4 +14,8 @@ export namespace ElectronUtils {
     export function chooseFilePath(baseDir?: string, fileTypes?: string[]): Observable<string | undefined> {
         return invoke("app:chooseFilePath", { baseDir, fileTypes });
     }
+
+    export function getFilePath(file: File): string {
+        return window.appMessenger.getFilePath(file);
+    }
 }
