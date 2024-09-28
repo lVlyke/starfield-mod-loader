@@ -12,17 +12,17 @@ import { log } from "./app/util/logger";
 
 
 if (environment.production) {
-  enableProdMode();
+    enableProdMode();
 }
 
 bootstrapApplication(AppComponent, {
-  providers: [
-      provideAnimations(),
-      provideStore(
-        appStates,
-        { developmentMode: !environment.production },
-        withNgxsReduxDevtoolsPlugin({ disabled: environment.production})
-      ),
-      provideRouter(APP_ROUTES)
-  ]
+    providers: [
+        provideAnimations(),
+        provideStore(
+            appStates,
+            { developmentMode: !environment.production },
+            withNgxsReduxDevtoolsPlugin({ disabled: environment.production })
+        ),
+        provideRouter(APP_ROUTES)
+    ]
 }).catch(err => log.error(err));

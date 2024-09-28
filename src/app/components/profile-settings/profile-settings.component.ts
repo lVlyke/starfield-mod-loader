@@ -89,7 +89,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         stateRef.get("form").pipe(
             filterDefined(),
             distinctUntilChanged()
-        ).subscribe(({ form }) => form.controls["name"].addValidators([this.validateProfileName]));
+        ).subscribe(({ form }) => {
+            form.controls["name"].addValidators([this.validateProfileName]);
+            form.controls["name"].updateValueAndValidity();
+        });
 
         this.formModel$.pipe(
             switchMap(formModel => ElectronUtils.invoke("profile:linkModeSupported", { profile: formModel as AppProfile }))

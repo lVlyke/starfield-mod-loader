@@ -28,15 +28,19 @@ let electronProcess;
 buildTask.stdout.on("data", (data) => {
     console.log(data.toString());
 
+    if (!data.includes("complete")) {
+        return;
+    }
+
+    execSync(
+        "node ./scripts/copy-assets.js",
+        { stdio: "inherit" }
+    );
+
     // Update the build date file (used for hot reloading)
     fs.writeJsonSync(BUILD_DATE_FILE, { date: new Date() });
                 
     if (!electronProcess) {
-        execSync(
-            "node ./scripts/copy-assets.js",
-            { stdio: "inherit" }
-        );
-
         console.log("Starting Electron app");
 
         electronProcess = spawn("npx", [

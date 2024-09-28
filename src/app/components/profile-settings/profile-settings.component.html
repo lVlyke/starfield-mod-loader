@@ -16,13 +16,17 @@
 
     <mat-form-field appearance="fill">
         <mat-label>Profile Name</mat-label>
-        <input matInput
+        <input #nameModel="ngModel"
+                matInput
                 name="name"
                 type="text"
                 [required]="true"
                 [disabled]="!createMode"
                 [readonly]="!createMode"
                 [ngModel]="initialProfile.name">
+        <mat-hint *ngIf="(nameModel.control.statusChanges | async) && nameModel.hasError('invalidProfileName')" [attr.matWarn]="true">
+            Profile already exists
+        </mat-hint>
     </mat-form-field>
 
     @for (fieldInfo of formModel$ | async | appProfileSettingsStandardPathFields; track fieldInfo) {
