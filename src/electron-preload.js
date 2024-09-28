@@ -1,5 +1,5 @@
 // @ts-check
-const { ipcRenderer, contextBridge } = require("electron");
+const { ipcRenderer, contextBridge, webUtils } = require("electron");
 
 const ALLOWED_CHANNEL_PREFIXES = ["app:", "profile:"];
 
@@ -18,5 +18,8 @@ contextBridge.exposeInMainWorld("appMessenger", {
         } else {
             throw new Error(`Unknown channel ${channel}`);
         }
+    },
+    getFilePath: (/** @type { File } */ file) => {
+        return webUtils.getPathForFile(file);
     }
 });

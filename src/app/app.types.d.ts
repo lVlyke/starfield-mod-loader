@@ -7,6 +7,7 @@ declare global {
         appMessenger: {
             on: (channel: string, func: any) => void;
             invoke: <T = any>(channel: string, ...args: any[]) => Promise<T>;
+            getFilePath: (file: File) => string;
         };
     }
 }
