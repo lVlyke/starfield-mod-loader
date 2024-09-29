@@ -264,6 +264,7 @@ class ElectronLoader {
             }
 
             if (profilePath) {
+                profilePath = path.resolve(profilePath); // Make sure path is absolute
                 return this.loadProfileFromPath(profilePath, profilePath);
             }
         });
@@ -1553,11 +1554,12 @@ class ElectronLoader {
 
                     if (mappedEntry) {
                         const mappedSrcPath = this.#expandPath(mappedEntry[0]);
-                        const mappedDestPath = this.#expandPath(mappedEntry[1].replace(/^[Dd]ata[\\/]/, ""));
+                        const mappedDestPath = this.#expandPath(mappedEntry[1]);
                         // Map the file path to the destination path, excluding any root data dir
                         if (fileEntry.filePath.toLowerCase().startsWith(mappedSrcPath.toLowerCase())) {
                             fileEntry.mappedFilePath = `${mappedDestPath}${fileEntry.filePath.substring(mappedSrcPath.length)}`;
                             fileEntry.mappedFilePath = fileEntry.mappedFilePath.replace(/^[/\\]+/, "");
+                            fileEntry.mappedFilePath = fileEntry.mappedFilePath.replace(/^[Dd]ata[\\/]/, "");
                         }
                     }
                 } else {

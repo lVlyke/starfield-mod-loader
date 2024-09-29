@@ -147,6 +147,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return this._defaultPaths;
     }
 
+    public get copyMode(): boolean {
+        return this.createMode && !!this.initialProfile;
+    }
+
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
         return runOnce(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
             filterDefined(),
@@ -200,7 +204,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
                     const gameDetails = this.gameDb[formModel.gameId];
     
                     // Check if profile-specific config files need to be created
-                    if (formModel.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
+                    if (!this.copyMode && formModel.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
                         // Check if any profile-specific config files exist
                         return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
                             return this.profileManager.readConfigFile(formModel, configFile, false);

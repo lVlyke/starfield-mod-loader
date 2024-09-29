@@ -105,7 +105,7 @@ export namespace DialogManager {
     export const NO_ACTION_PRIMARY = { ...NO_ACTION, primary: true };
     export const NO_ACTION_ACCENT = { ...NO_ACTION, accent: true };
 
-    export const OK_ACTION = { label: "Ok" };
+    export const OK_ACTION = { label: "OK" };
     export const OK_ACTION_PRIMARY = { ...OK_ACTION, primary: true };
     export const OK_ACTION_ACCENT = { ...OK_ACTION, accent: true };
 

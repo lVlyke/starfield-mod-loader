@@ -464,6 +464,10 @@ export class ProfileManager {
                 } else {
                     return of(undefined);
                 }
+            }),
+            catchError(() => {
+                this.dialogManager.createDefault("Failed to import profile. See app.log for more information.", [DialogManager.OK_ACTION]);
+                return of(undefined)
             })
         ));
     }
@@ -472,12 +476,11 @@ export class ProfileManager {
         profileToCopy: AppProfile,
         profileName: string = `${profileToCopy.name} - Copy`
     ): Observable<AppProfile | undefined> {
-        return runOnce(of(false).pipe(
-            switchMap(() => this.showProfileWizard({
-                ...profileToCopy,
-                name: profileName,
-                deployed: false
-            }, { createMode: true, verifyProfile: false })),
+        return runOnce(this.showProfileWizard({
+            ...profileToCopy,
+            name: profileName,
+            deployed: false
+        }, { createMode: true, verifyProfile: false }).pipe(
             switchMap((newProfile) => {
                 if (!!newProfile) {
                     // Copy mods to the newly created profile
@@ -487,13 +490,17 @@ export class ProfileManager {
                         srcProfile: profileToCopy,
                         destProfile: newProfile
                     }).pipe(
-                        switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
                         tap(() => loadingIndicator.close()),
+                        switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
                         map(() => newProfile)
                     );
                 } else {
                     return of(undefined);
                 }
+            }),
+            catchError(() => {
+                this.dialogManager.createDefault("Failed to copy profile. See app.log for more information.", [DialogManager.OK_ACTION]);
+                return of(undefined)
             })
         ));
     }
@@ -502,7 +509,7 @@ export class ProfileManager {
         log.info(`Switching to profile ${profile.name}`);
 
         return runOnce(this.store.dispatch(new AppActions.updateActiveProfile(profile)).pipe(
-            switchMap(() => verify ? this.verifyActiveProfile({ showSuccessMessage: false }) : of(true)),
+            verify ? switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })) : map(() => true),
             map(() => profile)
         ));
     }
