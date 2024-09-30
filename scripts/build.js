@@ -9,7 +9,7 @@ execSync(
 );
 
 execSync(
-    `npx ng build ${RELEASE_MODE ? "--configuration production" : ""}`,
+    `npx ng build --configuration ${RELEASE_MODE ? "production" : "development"}`,
     { stdio: "inherit" }
 );
 

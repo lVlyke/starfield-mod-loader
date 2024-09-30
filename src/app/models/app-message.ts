@@ -97,6 +97,10 @@ export namespace AppMessage {
         id: `${Prefix}:newProfile`;
     }
 
+    export interface ImportProfile extends Base {
+        id: `${Prefix}:importProfile`;
+    }
+
     export interface DeleteProfile extends Base {
         id: `${Prefix}:deleteProfile`;
         data: {
@@ -205,6 +209,7 @@ export namespace AppMessage {
                            | LoadSettings
                            | SaveSettings
                            | NewProfile
+                           | ImportProfile
                            | DeleteProfile
                            | LoadProfile
                            | LoadExternalProfile
@@ -575,6 +580,7 @@ export namespace AppMessage {
         "app:loadSettings",
         "app:saveSettings",
         "app:newProfile",
+        "app:importProfile",
         "app:deleteProfile",
         "app:loadProfile",
         "app:loadExternalProfile",
