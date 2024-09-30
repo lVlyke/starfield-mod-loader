@@ -278,8 +278,17 @@ export class AppModsOverviewPage extends BasePage {
         );
     }
 
+    protected exportActiveProfile(): void {
+        this.dialogs.showDefault("Are you sure you want to export this profile?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filterTrue()
+        ).subscribe(() => this.profileManager.exportProfile(this.activeProfile!));
+    }
+
     protected deleteActiveProfile(): void {
-        this.dialogs.showDefault("Are you sure you want to delete the current profile?", [
+        this.dialogs.showDefault("Are you sure you want to delete this profile?", [
             DialogManager.YES_ACTION,
             DialogManager.NO_ACTION_PRIMARY
         ]).pipe(

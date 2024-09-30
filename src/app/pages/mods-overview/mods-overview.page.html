@@ -12,25 +12,38 @@
                             [compareWith]="profileDescCompareFn"
                             (ngModelChange)="profileManager.loadProfile($event, true)">
                     <mat-select-trigger id="profile-select-trigger">
-                        <span matColor="primary">{{ activeProfile.name }}</span>
+                        <span class="profile-name" matColor="primary">
+                            <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: activeProfile }" />
+                        </span>
                     </mat-select-trigger>
 
-                    <ng-container *ngFor="let profileDesc of profiles">
+                    @for (profileDesc of profiles; track profileDesc.name) {
                         <mat-option [value]="profileDesc">
                             <app-game-badge class="game-title" [gameId]="profileDesc.gameId" />
 
                             <span class="profile-name">
-                                {{ profileDesc.name }}
-                                <mat-icon *ngIf="profileDesc.deployed"
-                                          class="deployed-icon"
-                                          color="primary"
-                                          matTooltip="Profile is active">
-                                    play_circle
-                                </mat-icon>
+                                <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: profileDesc }" />
                             </span>
                         </mat-option>
+
                         <mat-divider />
-                    </ng-container>
+                    }
+
+                    <ng-template #profileNameDecorated let-profileDesc>
+                        {{ profileDesc.name }}
+                        <mat-icon *ngIf="profileDesc.rootPathOverride"
+                                  class="profile-icon external-icon"
+                                  color="accent"
+                                  [matTooltip]="profileDesc.rootPathOverride">
+                            link
+                        </mat-icon>
+                        <mat-icon *ngIf="profileDesc.deployed"
+                                  class="profile-icon deployed-icon"
+                                  color="primary"
+                                  matTooltip="Profile is active">
+                            play_circle
+                        </mat-icon>
+                    </ng-template>
                 </mat-select>
             </mat-form-field>
 
@@ -413,7 +426,12 @@
             <mat-action-list>
                 <button mat-list-item (click)="profileManager.showProfileWizard(); showProfileMgmtMenuRef?.close()">
                     <mat-icon matListIcon color="primary">person_add</mat-icon>
-                    <span matLine>Add Profile</span>
+                    <span matLine>New Profile</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.importProfileFromUser(true); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">person_add_alt_1</mat-icon>
+                    <span matLine>Add External Profile</span>
                 </button>
 
                 <button mat-list-item (click)="profileManager.importProfileFromUser(); showProfileMgmtMenuRef?.close()">
@@ -426,8 +444,13 @@
                     <span matLine>Copy Profile</span>
                 </button>
 
-                <button mat-list-item (click)="deleteActiveProfile(); showProfileMgmtMenuRef?.close()">
+                <button mat-list-item (click)="exportActiveProfile(); showProfileMgmtMenuRef?.close()">
                     <mat-icon matListIcon color="primary">person_remove</mat-icon>
+                    <span matLine>Export Profile</span>
+                </button>
+
+                <button mat-list-item (click)="deleteActiveProfile(); showProfileMgmtMenuRef?.close()">
+                    <mat-icon matListIcon color="warn">person_off</mat-icon>
                     <span matLine>Delete Profile</span>
                 </button>
             </mat-action-list>

@@ -280,6 +280,43 @@ class ElectronLoader {
             return this.saveProfile(profile);
         });
 
+        ipcMain.handle("app:exportProfile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:exportProfile">} */ { profile }
+        ) => {
+            const profileDir = this.getProfileDir(profile);
+            const defaultProfileDir = this.getDefaultProfileDir(profile.name);
+
+            if (profileDir === defaultProfileDir) {
+                /** @type { string | undefined } */ let exportFolder = undefined;
+
+                // Pick a path that isn't in the profiles directory
+                do {
+                    const exportFolderPick = (await dialog.showOpenDialog({
+                        properties: ["openDirectory"]
+                    }));
+                    
+                    exportFolder = exportFolderPick?.filePaths[0];
+                } while (exportFolder && path.resolve(exportFolder).startsWith(path.resolve(ElectronLoader.APP_PROFILES_DIR)));
+
+                if (!exportFolder) {
+                    return undefined;
+                }
+
+                // Move profile to the new folder
+                fs.moveSync(profileDir, exportFolder, { overwrite: true });
+
+                return exportFolder;
+            } else if (fs.existsSync(defaultProfileDir)) {
+                // If the profile is located at a non-default path, we just need to remove its symlink
+                fs.removeSync(defaultProfileDir);
+
+                return profileDir;
+            }
+
+            return undefined;
+        });
+
         ipcMain.handle("app:deleteProfile", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"app:deleteProfile">} */ { profile }
@@ -509,7 +546,8 @@ class ElectronLoader {
                 const defaultPath = this.getDefaultProfileDir(newProfile.name);
 
                 if (newPath !== defaultPath) {
-                    fs.ensureSymlinkSync(newPath, path.resolve(this.getDefaultProfileDir(newProfile.name)), "dir");
+                    fs.removeSync(defaultPath);
+                    fs.ensureSymlinkSync(newPath, path.resolve(defaultPath), "dir");
                 }
             }
         });
@@ -927,8 +965,12 @@ class ElectronLoader {
                 label: "Profile",
                 submenu: [
                     {
-                        label: "Add New Profile",
+                        label: "New Profile",
                         click: () => this.mainWindow.webContents.send("app:newProfile")
+                    },
+                    {
+                        label: "Add External Profile",
+                        click: () => this.mainWindow.webContents.send("app:importProfile", { directImport: true })
                     },
                     {
                         label: "Import Profile",
@@ -1052,7 +1094,8 @@ class ElectronLoader {
             return {
                 name: profileName,
                 gameId: profile?.gameId ?? "$unknown",
-                deployed: profile?.deployed ?? false
+                deployed: profile?.deployed ?? false,
+                rootPathOverride: profile?.rootPathOverride
             };
         });
     }
@@ -1176,10 +1219,19 @@ class ElectronLoader {
 
         const profileSrc = fs.readFileSync(profileSettingsPath);
         const profile = JSON.parse(profileSrc.toString("utf8"));
+
+        // Add profile name to profile
         profile.name = profileName;
-        // Deserialize mods entries to Map
+
+        // Ensure mod lists exist
         profile.mods ??= [];
         profile.rootMods ??= [];
+
+        // Resolve profile's `rootPathOverride` if applicable
+        const realProfilePath = fs.realpathSync(profilePath);
+        if (path.resolve(realProfilePath) !== path.resolve(profilePath)) {
+            profile.rootPathOverride = realProfilePath;
+        }
 
         // BC: <0.10.0
         {
@@ -1215,11 +1267,11 @@ class ElectronLoader {
         }
 
         if (profile.baseProfile) {
-            // TODO - Load base profile from custom path
+            // TODO - Allow loading base profile from custom path?
             profile.baseProfile = this.loadProfileFromPath(profile.baseProfile, this.getDefaultProfileDir(profile.baseProfile));
         }
 
-        // TODO
+        // Check if profile is deployed
         if ("gameModDir" in profile) {
             // Update deployment status
             profile.deployed = this.isProfileDeployed(profile);
@@ -1241,13 +1293,18 @@ class ElectronLoader {
         // If the profile root has been overridden, create a symlink to the profile at the default path
         if (defaultProfileDir !== profileDir) {
             if (!fs.existsSync(defaultProfileDir)) {
-                fs.symlinkSync(path.resolve(profileDir), path.resolve(defaultProfileDir), "dir");
+                fs.ensureSymlinkSync(path.resolve(profileDir), path.resolve(defaultProfileDir), "dir");
             }
         }
 
+        /** @type {Array<keyof AppProfile>} */ const PROFILE_RUNTIME_PROPERTIES = [
+            "name",
+            "rootPathOverride"
+        ];
+
         return fs.writeFileSync(
             path.join(profileDir, profileSettingsName),
-            JSON.stringify(_.omit(profileToWrite, "name")),
+            JSON.stringify(_.omit(profileToWrite, ...PROFILE_RUNTIME_PROPERTIES)),
             options
         );
     }

@@ -78,7 +78,7 @@ export class ProfileManager {
 
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:importProfile"),
-            switchMap(({ data }) => this.importProfileFromUser().pipe(
+            switchMap(({ data }) => this.importProfileFromUser(data.directImport).pipe(
                 catchError((err) => (log.error("Failed to import profile: ", err), EMPTY))
             ))
         ).subscribe();
@@ -319,9 +319,14 @@ export class ProfileManager {
     }
 
     public saveProfile(profile: AppProfile): Observable<any> {
-        return runOnce(
-            ElectronUtils.invoke("app:saveProfile", { profile })
-        );
+        return runOnce(ElectronUtils.invoke("app:saveProfile", { profile }));
+    }
+
+    public addProfile(profile: AppProfile): Observable<AppProfile> {
+        return runOnce(this.saveProfile(profile).pipe(
+            switchMap(() => this.store.dispatch(new AppActions.AddProfile(AppProfile.asDescription(profile)))),
+            map(() => profile)
+        ));
     }
 
     public reloadBaseProfile(): Observable<AppProfile | undefined> {
@@ -514,44 +519,39 @@ export class ProfileManager {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(root, modVerificationResults));
     }
 
-    public addProfile(profile: AppProfile): Observable<any> {
-        return this.store.dispatch(new AppActions.AddProfile(AppProfile.asDescription(profile)));
+    public exportProfile(profile: AppProfile): Observable<any> {
+        return runOnce(ElectronUtils.invoke("app:exportProfile", { profile }).pipe(
+            filterDefined(),
+            switchMap(() => this.removeProfile(profile))
+        ));
     }
 
     public deleteProfile(profile: AppProfile): Observable<any> {
         const loadingIndicator = this.appManager.showLoadingIndicator("Deleting Profile...");
 
         return runOnce(ElectronUtils.invoke("app:deleteProfile", { profile }).pipe(
-            switchMap(() => this.store.dispatch(new AppActions.DeleteProfile(AppProfile.asDescription(profile)))),
+            switchMap(() => this.removeProfile(profile)),
             tap(() => loadingIndicator.close()),
-            switchMap(() => this.activeProfile$),
-            take(1),
-            switchMap((activeProfile) => {
-                // If the deleted profile was active, switch to the first profile in the list
-                // If no other profile exists, show the create profile modal
-                if (activeProfile === profile) {
-                    return this.appState$.pipe(
-                        take(1),
-                        switchMap(({ profiles }) => {
-                            if (profiles.length > 0) {
-                                return this.loadProfile(profiles[0], true);
-                            } else {
-                                return this.showProfileWizard();
-                            }
-                        })
-                    );
-                } else {
-                    return of(true);
-                }
-            })
         ));
     }
 
-    public importProfileFromUser(): Observable<AppProfile | undefined> {
+    public importProfileFromUser(directImport: boolean = false): Observable<AppProfile | undefined> {
+        // Load the external profile
         return runOnce(ElectronUtils.invoke("app:loadExternalProfile", {}).pipe(
             switchMap((profile) => {
                 if (profile) {
-                    return this.copyProfileFromUser(profile, "Imported Profile");
+                    const profileName = _.last(profile.name.split(/[\\/]/)) ?? "Imported Profile";
+
+                    if (directImport) {
+                        // Add the profile directly from its current location
+                        return this.addProfile(Object.assign(profile, {
+                            rootPathOverride: profile.name,
+                            name: profileName
+                        })).pipe(switchMap(profile => this.setActiveProfile(profile, true)));
+                    } else {
+                        // Copy the profile interactively
+                        return this.copyProfileFromUser(profile, profileName);
+                    }
                 } else {
                     return of(undefined);
                 }
@@ -574,17 +574,21 @@ export class ProfileManager {
         }, { createMode: true, verifyProfile: false }).pipe(
             switchMap((newProfile) => {
                 if (!!newProfile) {
-                    // Copy mods to the newly created profile
-                    const loadingIndicator = this.appManager.showLoadingIndicator("Copying Profile...");
+                    // Copy profile files to the newly created profile if not using the existing folder
+                    if (profileToCopy.name !== newProfile.rootPathOverride) {
+                        const loadingIndicator = this.appManager.showLoadingIndicator("Copying Profile...");
 
-                    return ElectronUtils.invoke("app:copyProfileData", {
-                        srcProfile: profileToCopy,
-                        destProfile: newProfile
-                    }).pipe(
-                        tap(() => loadingIndicator.close()),
-                        switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
-                        map(() => newProfile)
-                    );
+                        return ElectronUtils.invoke("app:copyProfileData", {
+                            srcProfile: profileToCopy,
+                            destProfile: newProfile
+                        }).pipe(
+                            tap(() => loadingIndicator.close()),
+                            switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
+                            map(() => newProfile)
+                        );
+                    } else {
+                        return of(newProfile);
+                    }
                 } else {
                     return of(undefined);
                 }
@@ -1135,6 +1139,31 @@ export class ProfileManager {
                     );
                 } else {
                     return of(false); // Failed
+                }
+            })
+        ));
+    }
+
+    public removeProfile(profile: AppProfile): Observable<any> {
+        return runOnce(this.store.dispatch(new AppActions.DeleteProfile(AppProfile.asDescription(profile))).pipe(
+            switchMap(() => this.activeProfile$),
+            take(1),
+            switchMap((activeProfile) => {
+                // If the deleted profile was active, switch to the first profile in the list
+                // If no other profile exists, show the create profile modal
+                if (activeProfile === profile) {
+                    return this.appState$.pipe(
+                        take(1),
+                        switchMap(({ profiles }) => {
+                            if (profiles.length > 0) {
+                                return this.loadProfile(profiles[0], true);
+                            } else {
+                                return this.showProfileWizard();
+                            }
+                        })
+                    );
+                } else {
+                    return of(true);
                 }
             })
         ));

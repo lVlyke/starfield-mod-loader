@@ -261,7 +261,6 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap((formModel) => (() => {
                 // Add/update profile data on submit
                 if (this.createMode) {
-                    this.profileManager.saveProfile(formModel);
                     return this.profileManager.addProfile(formModel);
                 } else if (!LangUtils.isEqual(this.initialProfile, formModel)) {
                     return this.profileManager.updateActiveProfile(formModel);

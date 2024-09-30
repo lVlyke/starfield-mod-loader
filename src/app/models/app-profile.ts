@@ -47,7 +47,7 @@ export namespace AppProfile {
 
     export type ModList = RelativeOrderedMap.List<string, ModProfileRef>;
 
-    export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed"> & { baseProfile?: string };
+    export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed" | "rootPathOverride"> & { baseProfile?: string };
     export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string; };
     export type DefaultablePaths = Pick<AppProfile,
           "gameRootDir"

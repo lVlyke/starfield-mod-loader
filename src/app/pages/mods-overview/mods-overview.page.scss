@@ -377,13 +377,15 @@
         text-wrap: nowrap;
         overflow: hidden;
     }
+}
 
-    @at-root mat-option .profile-name {
+.profile-name {
+    @at-root mat-option &, :host & {
         display: inline-flex;
         align-items: center;
         font-weight: 500;
 
-        .deployed-icon {
+        .profile-icon {
             margin-left: 0.5rem;
         }
     }
