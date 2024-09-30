@@ -6,8 +6,10 @@
   "version": "0.9.1",
   "main": "electron.js",
   "scripts": {
+    "app:build-dist-debug": "npm run build && npm run package",
     "app:build-dist": "npm run build:release && npm run package",
     "app:build-dist:all": "npm run build:release && npm run package:all",
+    "app:build-debug": "npm run app:build-dist-debug && npm run prepare-packages",
     "app:build-release": "npm run app:build-dist && npm run prepare-packages",
     "app:build-release:all": "npm run app:build-dist:all && npm run prepare-packages",
     "ng": "./node_modules/.bin/ng",

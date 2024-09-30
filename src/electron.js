@@ -834,6 +834,10 @@ class ElectronLoader {
                         click: () => this.mainWindow.webContents.send("app:newProfile")
                     },
                     {
+                        label: "Import Profile",
+                        click: () => this.mainWindow.webContents.send("app:importProfile")
+                    },
+                    {
                         type: "separator"
                     },
                     {

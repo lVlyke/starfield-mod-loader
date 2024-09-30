@@ -76,6 +76,13 @@ export class ProfileManager {
         ).subscribe();
 
         messageHandler.messages$.pipe(
+            filter(message => message.id === "app:importProfile"),
+            switchMap(({ data }) => this.importProfileFromUser().pipe(
+                catchError((err) => (log.error("Failed to import profile: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModAdd => message.id === "profile:beginModAdd"),
             withLatestFrom(this.activeProfile$),
             filter(([, activeProfile]) => !!activeProfile),
