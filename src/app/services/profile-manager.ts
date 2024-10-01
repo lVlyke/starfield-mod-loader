@@ -25,6 +25,7 @@ import { AppBaseProfile, AppProfile } from "../models/app-profile";
 import { AppActions, AppState } from "../state";
 import { AppData } from "../models/app-data";
 import { ActiveProfileActions } from "../state/active-profile/active-profile.actions";
+import { ActiveProfileState } from "../state/active-profile/active-profile.state";
 import { ModProfileRef } from "../models/mod-profile-ref";
 import { OverlayHelpers } from "./overlay-helpers";
 import { AppProfileSettingsModal } from "../modals/profile-settings";
@@ -40,6 +41,7 @@ import { AppStateBehaviorManager } from "./app-state-behavior-manager";
 import { moveItemInArray } from "@angular/cdk/drag-drop";
 import { GamePluginProfileRef } from "../models/game-plugin-profile-ref";
 import { GameDetails } from "../models/game-details";
+import { GameAction } from "../models/game-action";
 import { NgForm } from "@angular/forms";
 import { ProfileUtils } from "../util/profile-utils";
 import { AppMessage } from "../models/app-message";
@@ -50,9 +52,15 @@ import { RelativeOrderedMap } from "../util/relative-ordered-map";
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
 
+    public readonly LAUNCH_GAME_ACTION: GameAction = {
+        name: "Start Game",
+        actionScript: "${gameBinaryPath}"
+    }
+
     public readonly appState$: Observable<AppData>;
     public readonly activeProfile$: Observable<AppProfile | undefined>;
     public readonly activeGameDetails$: Observable<GameDetails | undefined>;
+    public readonly activeGameAction$: Observable<GameAction | undefined>;
     public readonly isPluginsEnabled$: Observable<boolean>;
 
     constructor(
@@ -67,6 +75,7 @@ export class ProfileManager {
         this.appState$ = store.select(AppState.get);
         this.activeProfile$ = store.select(AppState.getActiveProfile);
         this.activeGameDetails$ = store.select(AppState.getActiveGameDetails);
+        this.activeGameAction$ = store.select(ActiveProfileState.getActiveGameAction);
         this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
 
         messageHandler.messages$.pipe(
@@ -973,6 +982,36 @@ export class ProfileManager {
         ));
     }
 
+    public setActiveGameAction(gameAction: GameAction): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.setActiveGameAction(gameAction));
+    }
+
+    public addCustomGameAction(gameAction: GameAction): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.AddCustomGameAction(gameAction));
+    }
+
+    public removeCustomGameActionByIndex(index: number): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.RemoveCustomGameAction(index));
+    }
+
+    public runGameAction(gameAction?: GameAction): Observable<unknown> {
+        return runOnce(combineLatest([this.activeProfile$, this.activeGameAction$]).pipe(
+            take(1),
+            switchMap(([activeProfile, activeGameAction]) => {
+                const resolvedGameAction = gameAction ?? activeGameAction ?? this.LAUNCH_GAME_ACTION;
+
+                return ElectronUtils.invoke("profile:runGameAction", {
+                    profile: activeProfile!,
+                    gameAction: resolvedGameAction
+                });
+            }),
+            catchError((error) => {
+                this.dialogManager.createDefault(`Failed to run game action: ${error.toString()}`, [DialogManager.OK_ACTION_PRIMARY]);
+                return of(undefined);
+            })
+        ));
+    }
+
     public resolveGameBinaryVersion(): Observable<string | undefined> {
         return this.activeProfile$.pipe(
             take(1),
@@ -1026,13 +1065,6 @@ export class ProfileManager {
         return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfilePluginBackupsInFileExplorer", { profile: profile! })
-        )));
-    }
-
-    public launchGame(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:launchGame", { profile: profile! })
         )));
     }
 

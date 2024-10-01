@@ -2,6 +2,7 @@ import { ModProfileRef } from "./mod-profile-ref";
 import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { GameId } from "./game-id";
 import { RelativeOrderedMap } from "../util/relative-ordered-map";
+import { GameAction } from "./game-action";
 
 export interface AppBaseProfile {
     name: string;
@@ -31,6 +32,8 @@ export interface AppProfile extends AppBaseProfile {
     configLinkMode?: boolean;
     externalFilesCache?: AppProfile.ExternalFiles;
     baseProfile?: AppBaseProfile;
+    customGameActions?: GameAction[];
+    activeGameAction?: GameAction;
 }
 
 export type AppProfileModList = AppProfile.ModList;

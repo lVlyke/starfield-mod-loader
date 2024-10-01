@@ -34,7 +34,7 @@ const log = require("electron-log/main");
 const url = require("url");
 const path = require("path");
 const os = require("os");
-const { spawn } = require("child_process");
+const { exec } = require("child_process");
 const fs = require("fs-extra");
 const _ = require("lodash");
 const Seven = require("node-7z");
@@ -439,7 +439,9 @@ class ElectronLoader {
                 modLinkMode: modLinkModeResult,
                 configLinkMode: configLinkModeResult,
                 deployed: VERIFY_SUCCESS,
-                baseProfile: baseProfileResult
+                baseProfile: baseProfileResult,
+                customGameActions: VERIFY_SUCCESS, // TODO
+                activeGameAction: VERIFY_SUCCESS // TODO
             };
 
             return {
@@ -779,21 +781,24 @@ class ElectronLoader {
             shell.openPath(path.resolve(profileModsDir));
         });
 
-        ipcMain.handle("profile:launchGame", async (
+        ipcMain.handle("profile:runGameAction", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:launchGame">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:runGameAction">} */ { profile, gameAction }
         ) => {
-            let binaryPath = profile.gameBinaryPath;
-
-            // If binary path is relative, use the `gameRootDir` as the binary dir
-            if (!path.isAbsolute(binaryPath)) {
-                binaryPath = path.join(profile.gameRootDir, binaryPath);
+            // If game binary path is relative, use the `gameRootDir` as the binary dir
+            if (!path.isAbsolute(profile.gameBinaryPath)) {
+                profile.gameBinaryPath = path.join(profile.gameRootDir, profile.gameBinaryPath);
             }
 
-            spawn(path.resolve(binaryPath), {
-                detached: true,
-                cwd: profile.gameRootDir
-            });
+            // Substitute variables for profile
+            const gameActionCmd = _.template(gameAction.actionScript)(profile);
+            
+            // Run the action
+            try {
+                exec(gameActionCmd);
+            } catch(error) {
+                throw new Error(error.toString());
+            }
         });
 
         ipcMain.handle("profile:openGameConfigFile", async (

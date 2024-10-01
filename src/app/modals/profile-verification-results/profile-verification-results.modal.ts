@@ -46,6 +46,8 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         configLinkMode: "Invalid Config Link Mode state",
         externalFilesCache: "Invalid external files",
         baseProfile: "Invalid Base Profile",
+        customGameActions: "Invalid custom game actions",
+        activeGameAction: "Invalid active game action",
         error: "Invalid Profile",
         found: "Invalid Profile"
     }

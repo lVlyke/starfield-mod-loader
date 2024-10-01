@@ -316,12 +316,36 @@
 
         #game-actions {
 
-            #launch-game-button {
-                height: 5rem;
-                font-size: 1.5rem;
-    
-                > mat-icon {
-                    @include mixins.mat-icon-size(3rem);
+            #game-action-button-wrapper {
+                display: flex;
+
+                > button {
+                    height: 5rem;
+                    font-size: 1.5rem;
+        
+                    > mat-icon {
+                        @include mixins.mat-icon-size(3rem);
+                    }
+
+                    &#game-action-button {
+                        border-top-right-radius: 0;
+                        border-bottom-right-radius: 0;
+                    }
+
+                    &#game-action-menu-button {
+                        border-top-left-radius: 0;
+                        border-bottom-left-radius: 0;
+                        border-left: 0;
+                        min-width: 1.5rem !important;
+                        width: 1.5rem !important;
+                        padding: 0 !important;
+
+                        > mat-icon {
+                            @include mixins.mat-icon-size(2rem);
+                            margin-left: 0.2rem !important;
+                            margin-right: 0 !important;
+                        }
+                    }
                 }
             }
         }
@@ -388,5 +412,11 @@
         .profile-icon {
             margin-left: 0.5rem;
         }
+    }
+}
+
+.game-action-name {
+    @at-root .game-actions-popup &, :host & {
+        flex-grow: 1;
     }
 }

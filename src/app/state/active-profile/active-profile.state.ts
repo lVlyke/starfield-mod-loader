@@ -5,6 +5,7 @@ import { AppProfile } from "../../models/app-profile";
 import { ActiveProfileActions } from "./active-profile.actions";
 import { ProfileUtils } from "../../util/profile-utils";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
+import { GameAction } from "../../models/game-action";
 import { RelativeOrderedMap } from "../../util/relative-ordered-map";
 import { log } from "../../util/logger";
 
@@ -24,6 +25,11 @@ export class ActiveProfileState {
     @Selector()
     public static getPlugins(state: ActiveProfileState.Model): GamePluginProfileRef[] | undefined {
         return state?.plugins;
+    }
+
+    @Selector()
+    public static getActiveGameAction(state: ActiveProfileState.Model): GameAction | undefined {
+        return state?.activeGameAction;
     }
 
     @Selector()
@@ -303,6 +309,29 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
+    @Action(ActiveProfileActions.AddCustomGameAction)
+    public addCustomGameAction(context: ActiveProfileState.Context, { gameAction }: ActiveProfileActions.AddCustomGameAction): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        state.customGameActions ??= [];
+        state.customGameActions.push(gameAction);
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.RemoveCustomGameAction)
+    public removeCustomGameAction(context: ActiveProfileState.Context, { gameActionIndex }: ActiveProfileActions.RemoveCustomGameAction): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        if (state.customGameActions && gameActionIndex < state.customGameActions.length) {
+            state.customGameActions.splice(gameActionIndex, 1);
+        } else {
+            log.error("Tried to remove game action at invalid index", gameActionIndex);
+        }
+
+        context.setState(state);
+    }
+
     @Action(ActiveProfileActions.setDeployed)
     public setDeployed(context: ActiveProfileState.Context, state: ActiveProfileActions.DeployedAction): void {
         context.patchState(state);
@@ -320,6 +349,11 @@ export class ActiveProfileState {
 
     @Action(ActiveProfileActions.manageExternalPlugins)
     public manageExternalPlugins(context: ActiveProfileState.Context, state: ActiveProfileActions.ManageExternalPluginsAction): void {
+        context.patchState(state);
+    }
+
+    @Action(ActiveProfileActions.setActiveGameAction)
+    public setActiveGameAction(context: ActiveProfileState.Context, state: ActiveProfileActions.ActiveGameActionAction): void {
         context.patchState(state);
     }
 

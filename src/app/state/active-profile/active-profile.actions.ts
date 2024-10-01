@@ -2,6 +2,7 @@ import { ModProfileRef } from "../../models/mod-profile-ref";
 import { AppProfile } from "../../models/app-profile";
 import { BasicAction } from "../basic-action";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
+import { GameAction } from "../../models/game-action";
 
 export namespace ActiveProfileActions {
 
@@ -21,11 +22,14 @@ export namespace ActiveProfileActions {
     export type ManageExternalPluginsAction = BasicAction<AppProfile, "manageExternalPlugins">;
     export type GamePluginListPathAction = BasicAction<AppProfile, "gamePluginListPath">;
     export type BaseProfileAction = BasicAction<AppProfile, "baseProfile">;
+    export type CustomGameActionsAction = BasicAction<AppProfile, "customGameActions">;
+    export type ActiveGameActionAction = BasicAction<AppProfile, "activeGameAction">;
 
     export const setDeployed = createUpdateAction("deployed");
     export const setGamePluginListPath = createUpdateAction("gamePluginListPath");
     export const setBaseProfile = createUpdateAction("baseProfile");
     export const manageExternalPlugins = createUpdateAction("manageExternalPlugins");
+    export const setActiveGameAction = createUpdateAction("activeGameAction");
 
     export class AddMod {
         public static readonly type = `[activeProfile] add mod`;
@@ -122,6 +126,22 @@ export namespace ActiveProfileActions {
 
         constructor(
             public plugin: GamePluginProfileRef
+        ) {}
+    }
+
+    export class AddCustomGameAction {
+        public static readonly type = `[activeProfile] add custom game action`;
+
+        constructor(
+            public gameAction: GameAction
+        ) {}
+    }
+
+    export class RemoveCustomGameAction {
+        public static readonly type = `[activeProfile] remove custom game action`;
+
+        constructor(
+            public gameActionIndex: number
         ) {}
     }
 }

@@ -78,6 +78,9 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("importPluginBackupMenu", { read: CdkPortal })
     protected readonly ImportPluginBackupMenuPortal!: CdkPortal;
 
+    @ViewChild("gameActionsMenu", { read: CdkPortal })
+    protected readonly gameActionsMenuPortal!: CdkPortal;
+
     @ViewChild("profileActionsPanel")
     protected readonly profileActionsPanel!: MatExpansionPanel;
 
@@ -97,6 +100,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @DeclareState()
     protected importPluginBackupMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
+    protected gameActionsMenuRef?: OverlayHelpersRef;
 
     @DeclareState("activeDataAction")
     protected _activeDataAction?: AppModsOverviewPage.DataAction;
@@ -265,6 +271,22 @@ export class AppModsOverviewPage extends BasePage {
         );
     }
 
+    protected showGameActionsMenu($event: MouseEvent): void {
+        this.gameActionsMenuRef = this.overlayHelpers.createAttached(this.gameActionsMenuPortal,
+            $event.target as HTMLElement,
+            [
+                OverlayHelpers.fromDefaultConnectionPosition({
+                    originX: "end",
+                    overlayX: "end"
+                }), ...OverlayHelpers.ConnectionPositions.contextMenu
+            ],
+            {
+                managed: false,
+                panelClass: "mat-app-background"
+            }
+        );
+    }
+
     protected showExportPluginBackupMenu(): Observable<unknown> {
         return runOnce(this.dialogs.showProfileBackupNameDialog().pipe(
             filterDefined(),
@@ -294,6 +316,21 @@ export class AppModsOverviewPage extends BasePage {
         ]).pipe(
             filterTrue()
         ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
+    }
+
+    protected addCustomGameAction(): void {
+        this.dialogs.showAddCustomGameActionDialog().pipe(
+            filterDefined()
+        ).subscribe(gameAction => this.profileManager.addCustomGameAction(gameAction));
+    }
+
+    protected removeCustomGameActionByIndex(index: number): void {
+        this.dialogs.showDefault("Are you sure you want to delete this action?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filterTrue()
+        ).subscribe(() => this.profileManager.removeCustomGameActionByIndex(index - 1));
     }
 
     protected resolveBackupName(backupEntry: AppProfile.PluginBackupEntry): string {

@@ -282,15 +282,15 @@
                     <span>
                         <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
 
-                        <button id="launch-game-button-compact"
+                        <button id="game-action-button-compact"
                                 class="mat-elevation-z3"
                                 mat-stroked-button
                                 matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
                                 [matTooltipDisabled]="isProfileDeployed"
-                                (click)="profileManager.launchGame(); $event.stopPropagation()">
+                                (click)="profileManager.runGameAction(); $event.stopPropagation()">
                             <mat-icon color="accent">play_circle</mat-icon>
         
-                            Start Game
+                            {{ (activeProfile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
                         </button>
                     </span>
                 </mat-panel-description>
@@ -375,14 +375,22 @@
                     </div>
         
                     <div id="game-actions" class="actions">
-                        <button id="launch-game-button"
-                                class="mat-elevation-z3"
-                                mat-stroked-button
-                                (click)="profileManager.launchGame()">
-                            <mat-icon color="accent">play_circle</mat-icon>
-        
-                            Start Game
-                        </button>
+                        <span id="game-action-button-wrapper">
+                            <button id="game-action-button"
+                                    class="mat-elevation-z3"
+                                    mat-stroked-button
+                                    (click)="profileManager.runGameAction()">
+                                <mat-icon color="accent">play_circle</mat-icon>
+            
+                                {{ (activeProfile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
+                            </button>
+                            <button id="game-action-menu-button"
+                                    class="mat-elevation-z3"
+                                    mat-stroked-button
+                                    (click)="showGameActionsMenu($event)">
+                                <mat-icon>arrow_drop_down</mat-icon>
+                            </button>
+                        </span>
                     </div>
                 </div>
             </ng-template>
@@ -513,6 +521,38 @@
                     No backups
                 </ng-template>
             </ng-container>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Game actions button popup -->
+<ng-template #gameActionsMenu cdkPortal>
+    <mat-card class="mat-elevation-z3 game-actions-popup">
+        <mat-card-content>
+            <mat-action-list>
+                @let gameActions = [profileManager.LAUNCH_GAME_ACTION].concat(activeProfile!.customGameActions ?? []);
+
+                @for (gameAction of gameActions; track $index) {
+                    <button mat-list-item (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
+                        <mat-icon matListIcon color="accent">play_circle</mat-icon>
+
+                        <span class="game-action-name">{{ gameAction.name }}</span>
+
+                        @if ($index > 0) {
+                            <button mat-icon-button
+                                    (click)="removeCustomGameActionByIndex($index - 1); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                                <mat-icon color="warn">delete</mat-icon>
+                            </button>
+                        }
+                    </button>
+                }
+
+                <button mat-list-item (click)="addCustomGameAction(); gameActionsMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">add</mat-icon>
+
+                    New Action
+                </button>
+            </mat-action-list>
         </mat-card-content>
     </mat-card>
 </ng-template>

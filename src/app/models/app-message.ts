@@ -4,6 +4,7 @@ import { AppBaseProfile, AppProfile } from "./app-profile";
 import { AppResource } from "./app-resource";
 import { AppSettingsUserCfg } from "./app-settings-user-cfg";
 import { ExternalFile } from "./external-file";
+import { GameAction } from "./game-action";
 import { GameDatabase } from "./game-database";
 import { GameId } from "./game-id";
 import { GamePluginProfileRef } from "./game-plugin-profile-ref";
@@ -482,10 +483,11 @@ export namespace AppMessage {
         };
     }
 
-    export interface LaunchGame extends Base {
-        id: `${ProfileMessage.Prefix}:launchGame`;
+    export interface RunGameAction extends Base {
+        id: `${ProfileMessage.Prefix}:runGameAction`;
         data: {
             profile: AppProfile;
+            gameAction: GameAction;
         };
     }
 
@@ -572,7 +574,7 @@ export namespace AppMessage {
                                | ShowProfileModsDirInFileExplorer
                                | ShowProfileConfigDirInFileExplorer
                                | ShowProfilePluginBackupsInFileExplorer
-                               | LaunchGame
+                               | RunGameAction
                                | OpenGameConfigFile
                                | OpenProfileConfigFile
                                | ReadConfigFile
@@ -637,7 +639,7 @@ export namespace AppMessage {
         "profile:showProfileConfigDirInFileExplorer",
         "profile:showGameRootDirInFileExplorer",
         "profile:showProfilePluginBackupsInFileExplorer",
-        "profile:launchGame",
+        "profile:runGameAction",
         "profile:openGameConfigFile",
         "profile:openProfileConfigFile",
         "profile:readConfigFile",

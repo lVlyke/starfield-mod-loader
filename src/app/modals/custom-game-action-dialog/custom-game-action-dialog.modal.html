@@ -1,0 +1,31 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>Game Action</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+        <form id="gameActionForm">
+            <mat-form-field>
+                <mat-label>Name</mat-label>
+                <input matInput
+                    type="text"
+                    name="gameActionName"
+                    [(ngModel)]="gameAction.name"
+                    [required]="true">
+            </mat-form-field>
+
+            <mat-form-field>
+                <mat-label>Action</mat-label>
+                <input matInput
+                    type="text"
+                    name="gameActionScript"
+                    [(ngModel)]="gameAction.actionScript"
+                    [required]="true">
+            </mat-form-field>
+        </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />
+    </mat-card-actions>
+</mat-card>
