@@ -11,6 +11,7 @@
     },
     "fallout_4": {
         "title": "Fallout 4",
+        "steamId": "377160",
         "bkgColor": "#007300",
         "fgColor": "#ffffff",
         "modDirs": [
@@ -70,6 +71,7 @@
     },
     "fallout_new_vegas": {
         "title": "Fallout: New Vegas",
+        "steamId": "22380",
         "bkgColor": "#ae260e",
         "fgColor": "#ffffff",
         "modDirs": [
@@ -137,6 +139,7 @@
     },
     "starfield": {
         "title": "Starfield",
+        "steamId": "1716740",
         "bkgColor": "#be6326",
         "fgColor": "#ffffff",
         "modDirs": [

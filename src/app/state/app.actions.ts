@@ -1,6 +1,7 @@
 import { BasicAction } from "./basic-action";
 import { AppData } from "../models/app-data";
 import { AppProfile } from "../models/app-profile";
+import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 
 export namespace AppActions {
 
@@ -37,6 +38,14 @@ export namespace AppActions {
 
         constructor(
             public settings: Partial<AppData>
+        ) {}
+    }
+
+    export class UpdateSettingsFromUserCfg {
+        public static readonly type = `[app] update from user cfg`;
+
+        constructor(
+            public settings: Partial<AppSettingsUserCfg>
         ) {}
     }
 

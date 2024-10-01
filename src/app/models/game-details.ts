@@ -4,6 +4,7 @@ export interface GameDetails {
     title: string;
     pluginFormats: string[];
     requireExternalPlugins: boolean;
+    steamId?: string;
     bkgColor?: string;
     fgColor?: string;
     modDirs?: string[];

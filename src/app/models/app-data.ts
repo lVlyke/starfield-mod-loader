@@ -12,6 +12,7 @@ export interface AppData {
     verifyProfileOnStart: boolean;
     modListColumns?: string[];
     deployInProgress?: boolean;
+    steamCompatDataRoot?: string;
 }
 
 export namespace AppData {

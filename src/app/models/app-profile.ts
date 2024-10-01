@@ -26,8 +26,10 @@ export interface AppProfile extends AppBaseProfile {
     gamePluginListPath?: string;
     gameConfigFilePath?: string;
     gameSaveFolderPath?: string;
+    steamGameId?: string;
     manageExternalPlugins?: boolean;
     manageSaveFiles?: boolean;
+    manageSteamCompatSymlinks?: boolean;
     modLinkMode?: boolean;
     configLinkMode?: boolean;
     externalFilesCache?: AppProfile.ExternalFiles;

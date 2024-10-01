@@ -537,6 +537,14 @@ export namespace AppMessage {
         result: boolean;
     }
 
+    export interface SteamCompatSymlinksSupported extends Base {
+        id: `${ProfileMessage.Prefix}:steamCompatSymlinksSupported`;
+        data: {
+            profile: AppProfile;
+        };
+        result: boolean;
+    }
+
     export interface ResolveGameBinaryVersion extends Base {
         id: `${ProfileMessage.Prefix}:resolveGameBinaryVersion`;
         data: {
@@ -580,6 +588,7 @@ export namespace AppMessage {
                                | ReadConfigFile
                                | UpdateConfigFile
                                | ProfileDirLinkSupported
+                               | SteamCompatSymlinksSupported
                                | ResolveGameBinaryVersion;
 
     // Message record:
@@ -644,6 +653,8 @@ export namespace AppMessage {
         "profile:openProfileConfigFile",
         "profile:readConfigFile",
         "profile:updateConfigFile",
+        "profile:dirLinkSupported",
+        "profile:steamCompatSymlinksSupported",
         "profile:resolveGameBinaryVersion"
     ];
 }

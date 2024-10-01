@@ -242,6 +242,7 @@ export class ProfileManager {
                         "gamePluginListPath",
                         "gameConfigFilePath",
                         "gameSaveFolderPath",
+                        "steamGameId",
                         "mods",
                         "rootMods",
                         "plugins",
@@ -253,6 +254,7 @@ export class ProfileManager {
                         "manageExternalPlugins",
                         "manageConfigFiles",
                         "manageSaveFiles",
+                        "manageSteamCompatSymlinks",
                         "modLinkMode",
                         "configLinkMode",
                     ),
@@ -260,7 +262,8 @@ export class ProfileManager {
                     // Monitor these app settings:
                     _.pick<AppData, keyof AppData>(appState,
                         "pluginsEnabled",
-                        "normalizePathCasing"
+                        "normalizePathCasing",
+                        "steamCompatDataRoot"
                     )
                 ])),
                 distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),

@@ -3,9 +3,10 @@ import { NgForm } from "@angular/forms";
 import { AppProfile } from "../../models/app-profile";
 
 export interface DefaultProfilePathField {
-    formId: keyof AppProfile.DefaultablePaths;
+    formId: keyof AppProfile;
     title: string;
     required: boolean;
+    path: boolean;
     fileTypes?: string[];
     linkable?: boolean;
     linked?: boolean;
@@ -24,11 +25,11 @@ export type DefaultProfilePathFieldEntry = DefaultProfilePathField | DefaultProf
 function PROFILE_OVERRIDE_FIELDS({}: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
     return [
         { formId: "profilePathOverrides", groupTitle: "Profile Path Overrides", hint: "Override standard profile paths", fields: [
-            { formId: "rootPathOverride", title: "Profile Root Path", required: false },
-            { formId: "modsPathOverride", title: "Profile Mods Path", required: false },
-            { formId: "savesPathOverride", title: "Profile Saves Path", required: false },
-            { formId: "configPathOverride", title: "Profile Config Path", required: false },
-            { formId: "backupsPathOverride", title: "Profile Backups Path", required: false },
+            { formId: "rootPathOverride", title: "Profile Root Path", path: true, required: false },
+            { formId: "modsPathOverride", title: "Profile Mods Path", path: true, required: false },
+            { formId: "savesPathOverride", title: "Profile Saves Path", path: true, required: false },
+            { formId: "configPathOverride", title: "Profile Config Path", path: true, required: false },
+            { formId: "backupsPathOverride", title: "Profile Backups Path", path: true, required: false },
         ] }
     ];
 }
@@ -43,6 +44,7 @@ function STANDARD_FIELDS({
         {
             formId: "gameModDir",
             title: "Game Data Directory",
+            path: true, 
             required: true,
             linkable: true,
             linked: formModel.modLinkMode,
@@ -53,6 +55,7 @@ function STANDARD_FIELDS({
         {
             formId: "gameRootDir",
             title: "Game Root Directory",
+            path: true, 
             required: true,
             linkable: true,
             linked: formModel.modLinkMode,
@@ -64,17 +67,20 @@ function STANDARD_FIELDS({
             formId: "gameBinaryPath",
             title: "Game Executable",
             fileTypes: ["exe", "bat", "cmd", "lnk", "sh"],
+            path: true, 
             required: true
         },
         { 
             formId: "gamePluginListPath",
             title: "Game Plugin List Path",
             fileTypes: ["txt"],
+            path: true, 
             required: true
         },
         {
             formId: "gameConfigFilePath",
             title: "Game Config Files Directory",
+            path: true, 
             required: !!formModel.manageConfigFiles,
             linkable: formModel.manageConfigFiles,
             linked: formModel.configLinkMode,
@@ -85,9 +91,17 @@ function STANDARD_FIELDS({
         {
             formId: "gameSaveFolderPath",
             title: "Game Saves Directory",
+            path: true, 
             required: !!formModel.manageSaveFiles,
             linkable: formModel.manageSaveFiles,
             linked: true
+        },
+        {
+            formId: "steamGameId",
+            title: "Custom Steam Game ID",
+            path: false,
+            required: !!formModel.manageSteamCompatSymlinks,
+            hint: "The ID of a custom Steam game entry (i.e. for script extenders)."
         }
     ];
 }

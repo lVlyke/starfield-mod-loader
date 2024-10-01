@@ -65,6 +65,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     protected configLinkModeSupported = false;
     protected manageSavesSupported = false;
     protected profileRootPathValid = false;
+    protected manageSteamCompatSymlinksSupported = false;
 
     private readonly validateProfileName = (control: AbstractControl): ValidationErrors | null => {
         return this.appProfileDescs.some(existingProfile => control.value.toLowerCase() === existingProfile.name.toLowerCase())
@@ -159,6 +160,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 symlinkType: "junction"
             }))
         ).subscribe(managedSavesSupported => this.manageSavesSupported = managedSavesSupported);
+
+        this.formModel$.pipe(
+            switchMap(formModel => formModel.steamGameId ? ElectronUtils.invoke("profile:steamCompatSymlinksSupported", {
+                profile: formModel as AppProfile
+            }) : of(false)),
+            tap(console.log)
+        ).subscribe(manageSteamCompatSymlinksSupported => this.manageSteamCompatSymlinksSupported = manageSteamCompatSymlinksSupported);
 
         combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(
             filter(([, createMode]) => !createMode)

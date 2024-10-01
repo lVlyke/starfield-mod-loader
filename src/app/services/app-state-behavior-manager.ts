@@ -127,26 +127,8 @@ export class AppStateBehaviorManager {
     public loadSettings(): Observable<AppSettingsUserCfg | null> {
         return runOnce(ElectronUtils.invoke("app:loadSettings", {}).pipe(
             switchMap((settings) => {
-                const stateActions = [];
-
-                if (settings?.modListColumns !== undefined) {
-                    stateActions.push(new AppActions.updateModListColumns(settings.modListColumns));
-                }
-
-                if (settings?.pluginsEnabled !== undefined) {
-                    stateActions.push(new AppActions.setPluginsEnabled(settings.pluginsEnabled));
-                }
-
-                if (settings?.normalizePathCasing !== undefined) {
-                    stateActions.push(new AppActions.setNormalizePathCasing(settings.normalizePathCasing));
-                }
-
-                if (settings?.verifyProfileOnStart !== undefined) {
-                    stateActions.push(new AppActions.setVerifyProfileOnStart(settings.verifyProfileOnStart));
-                }
-
-                if (stateActions.length > 0) {
-                    return this.store.dispatch(stateActions).pipe(
+                if (settings) {
+                    return this.store.dispatch(new AppActions.UpdateSettingsFromUserCfg(settings)).pipe(
                         map(() => settings)
                     );
                 } else {
@@ -249,7 +231,8 @@ export class AppStateBehaviorManager {
             pluginsEnabled: appData.pluginsEnabled,
             normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns,
-            verifyProfileOnStart: appData.verifyProfileOnStart
+            verifyProfileOnStart: appData.verifyProfileOnStart,
+            steamCompatDataRoot: appData.steamCompatDataRoot
         };
     }
 }

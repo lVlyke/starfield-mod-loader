@@ -105,6 +105,7 @@
                         type="button"
                         color="accent"
                         matTooltip="Reset to Default Value"
+                        [attr.hidden]="!fieldInfo.path || null"
                         (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
                     <mat-icon>refresh</mat-icon>
                 </button>
@@ -114,9 +115,12 @@
                         type="button"
                         color="accent"
                         matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
+                        [attr.hidden]="!fieldInfo.path || null"
                         (click)="choosePath(fieldModel, fieldInfo.fileTypes); $event.stopPropagation()">
                     <mat-icon>folder</mat-icon>
                 </button>
+
+                <mat-icon *ngIf="fieldInfo.hint" matSuffix [matTooltip]="fieldInfo.hint">help</mat-icon>
 
                 <mat-error *ngIf="fieldModel.errors?.['invalidProfileRoot']">
                     Invalid directory
@@ -157,6 +161,14 @@
                       [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
             Manage Save Files
             <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
+        </mat-checkbox>
+    </div>
+
+    <div *ngIf="manageSteamCompatSymlinksSupported">
+        <mat-checkbox name="manageSteamCompatSymlinks"
+                      [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
+            Manage Steam Compat Symlinks
+            <mat-icon class="tooltip-icon" matTooltip="Automatically create symlinks that synchronize game data for your custom Steam game entry.">help</mat-icon>
         </mat-checkbox>
     </div>
 

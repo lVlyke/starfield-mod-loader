@@ -79,6 +79,33 @@ export class AppState {
         context.patchState(settings);
     }
 
+    @Action(AppActions.UpdateSettingsFromUserCfg)
+    public updateSettingsFromUserCfg(context: AppState.Context, { settings }: AppActions.UpdateSettingsFromUserCfg): void {
+        const state = _.cloneDeep(context.getState());
+
+        if (settings.modListColumns !== undefined) {
+            state.modListColumns = settings.modListColumns;
+        }
+
+        if (settings.pluginsEnabled !== undefined) {
+            state.pluginsEnabled = settings.pluginsEnabled;
+        }
+
+        if (settings.normalizePathCasing !== undefined) {
+            state.normalizePathCasing = settings.normalizePathCasing;
+        }
+
+        if (settings.verifyProfileOnStart !== undefined) {
+            state.verifyProfileOnStart = settings.verifyProfileOnStart
+        }
+
+        if (settings.steamCompatDataRoot !== undefined) {
+            state.steamCompatDataRoot = settings.steamCompatDataRoot;
+        }
+
+        context.setState(state);
+    }
+
     @Action(AppActions.SetProfiles)
     public setProfiles(context: AppState.Context, { profiles }: AppActions.SetProfiles): void {
         context.setState(patch({
