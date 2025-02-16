@@ -174,7 +174,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         stateRef.get("form").pipe(
             filterDefined(),
-            switchMap(form => form.statusChanges!)
+            switchMap(form => form.statusChanges!.pipe(
+                startWith(form.status)
+            ))
         ).subscribe(this.onFormStatusChange$);
 
         stateRef.get("form").pipe(
