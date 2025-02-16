@@ -2077,9 +2077,9 @@ class ElectronLoader {
             
             // Backup any existing plugins file
             if (fs.existsSync(pluginListPath)) {
-                const backupFile = `${pluginListPath}.sml_bak`;
-                if (fs.existsSync(backupFile)) {
-                    fs.moveSync(backupFile, `${backupFile}_${this.#currentDateTimeAsFileName()}`);
+                let backupFile = `${pluginListPath}.sml_bak`;
+                while (fs.existsSync(backupFile)) {
+                    backupFile += `_${this.#currentDateTimeAsFileName()}`;
                 }
 
                 fs.copyFileSync(pluginListPath, backupFile);
@@ -2126,7 +2126,12 @@ class ElectronLoader {
 
             // Backup any existing config files
             if (fs.existsSync(configDestPath)) {
-                fs.moveSync(configDestPath, path.join(backupDir, configFileName));
+                let backupFile = path.join(backupDir, configFileName);
+                while (fs.existsSync(backupFile)) {
+                    backupFile += `_${this.#currentDateTimeAsFileName()}`;
+                }
+
+                fs.moveSync(configDestPath, backupFile);
             }
 
             await fs.copyFile(configSrcPath, configDestPath);
