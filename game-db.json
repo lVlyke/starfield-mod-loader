@@ -9,6 +9,66 @@
         "bkgColor": "#ff0000",
         "fgColor": "#ffffff"
     },
+    "elder_scrolls_oblivion": {
+        "title": "Elder Scrolls: Oblivion",
+        "steamId": "22330",
+        "bkgColor": "#e0dac5",
+        "fgColor": "#050700",
+        "modDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Oblivion\\Data",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Oblivion\\Data",
+            "~/.local/share/Steam/steamapps/common/Oblivion/Data"
+        ],
+        "rootDirs": [
+            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Oblivion",
+            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Oblivion",
+            "C:\\XboxGames\\Oblivion\\Content",
+            "~/.local/share/Steam/steamapps/common/Oblivion"
+        ],
+        "pluginListPaths": [
+            "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
+            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/AppData/Local/Oblivion/Plugins.txt"
+        ],
+        "configFilePaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Oblivion",
+            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion"
+        ],
+        "saveFolderPaths": [
+            "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves",
+            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion/Saves"
+        ],
+        "gameBinary": ["Oblivion.exe", "obse_loader.exe"],
+        "pluginListType": "Gamebryo",
+        "pluginFormats": ["esm", "esp"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Oblivion.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": true,
+        "scriptExtenders": [
+            {
+                "name": "OBSE",
+                "binaries": ["obse_loader.exe"],
+                "modPaths": ["OBSE"]
+            }
+        ],
+        "gameConfigFiles": {
+            "Oblivion.ini": [
+                "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Oblivion.ini",
+                "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion/Oblivion.ini"
+            ]
+        },
+        "resources": {
+            "mods": {
+                "elder_scrolls_oblivion/Invalidation.bsa": "Invalidation.bsa"
+            }
+        },
+        "archiveInvalidation": {
+            "Oblivion.ini": "; The following section has been added automatically by Starfield Mod Loader. Place any additional changes after this section.\r\n[Archive]\r\nSArchiveList=Invalidation.bsa, Oblivion - Meshes.bsa, Oblivion - Textures - Compressed.bsa, Oblivion - Sounds.bsa, Oblivion - Voices1.bsa, Oblivion - Voices2.bsa, Oblivion - Misc.bsa\r\n\r\n"
+        }
+    },
     "fallout_4": {
         "title": "Fallout 4",
         "steamId": "377160",

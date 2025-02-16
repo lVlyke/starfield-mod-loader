@@ -23,9 +23,10 @@ Releases can be found here:
 # Supported Games
 Starfield Mod Loader currently supports the following games:
 
-* **Starfield**
+* **Elder Scrolls IV: Oblivion**
 * **Fallout 4**
 * **Fallout: New Vegas**
+* **Starfield**
 
 # Installation
 
