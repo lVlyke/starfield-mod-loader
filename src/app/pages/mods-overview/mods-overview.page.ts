@@ -170,7 +170,7 @@ export class AppModsOverviewPage extends BasePage {
 
         // Confirm with user to re-deploy profile after config file changes
         this.configFileUpdate$.pipe(
-            filter(() => this.isProfileDeployed),
+            filter(() => this.isProfileDeployed && !this.activeProfile?.configLinkMode),
             switchMap(() => dialogs.showDefault("Config files have been changed or reloaded. Do you want to deploy these changes now?", [
                 DialogManager.YES_ACTION_PRIMARY,
                 DialogManager.NO_ACTION

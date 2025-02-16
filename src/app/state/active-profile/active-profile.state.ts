@@ -212,10 +212,16 @@ export class ActiveProfileState {
             .filter(plugin => plugin.modId !== undefined || externalPlugins.some(externalPlugin => externalPlugin.plugin === plugin.plugin))
             .concat(externalPlugins.filter(externalPlugin => !state.plugins.some(plugin => plugin.plugin === externalPlugin.plugin)));
 
-        // Preserve previous plugin order while using latest plugin data and add new plugins
         orderedPlugins = orderedPlugins
             .map((plugin) => {
-                const activePlugin = plugins.find(activePlugin => plugin.plugin === activePlugin.plugin);
+                // Preserve previous plugin order while using latest plugin data and add new plugins
+                let activePlugin = plugins.find(activePlugin => plugin.plugin === activePlugin.plugin);
+
+                // Ensure external mods are preserved
+                if (plugin.modId === undefined) {
+                    activePlugin ??= plugin;
+                }    
+
                 // Preserve plugin enabled and promotion state of existing plugins
                 return activePlugin ? Object.assign(activePlugin,
                     _.pick<GamePluginProfileRef, keyof GamePluginProfileRef>(plugin, "enabled", "promotedType")

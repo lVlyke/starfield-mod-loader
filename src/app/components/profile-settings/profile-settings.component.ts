@@ -164,8 +164,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         this.formModel$.pipe(
             switchMap(formModel => formModel.steamGameId ? ElectronUtils.invoke("profile:steamCompatSymlinksSupported", {
                 profile: formModel as AppProfile
-            }) : of(false)),
-            tap(console.log)
+            }) : of(false))
         ).subscribe(manageSteamCompatSymlinksSupported => this.manageSteamCompatSymlinksSupported = manageSteamCompatSymlinksSupported);
 
         combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(

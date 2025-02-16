@@ -1990,7 +1990,7 @@ class ElectronLoader {
      * @returns {boolean}
      * */
     isSimilarProfileDeployed(/** @type {AppProfile} */ profile) {
-        const metaFilePath = path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE);
+        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
         return fs.existsSync(metaFilePath);
     }
 
@@ -2004,7 +2004,7 @@ class ElectronLoader {
 
     /** @returns {ModDeploymentMetadata | undefined} */
     readProfileDeploymentMetadata(/** @type {AppProfile} */ profile) {
-        const metaFilePath = path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE);
+        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
         const metaFileExists = fs.existsSync(metaFilePath);
 
         if (!metaFileExists) {
@@ -2016,7 +2016,7 @@ class ElectronLoader {
 
     /** @returns {void} */
     writeProfileDeploymentMetadata(/** @type {AppProfile} */ profile, /** @type {ModDeploymentMetadata} */ deploymentMetadata) {
-        const metaFilePath = path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE);
+        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
 
         return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
     }
@@ -2074,7 +2074,8 @@ class ElectronLoader {
     /** @returns {Promise<Array<string>>} */
     async findProfileExternalPluginFiles(/** @type {AppProfile} */ profile) {
         const gameDetails = this.#getGameDetails(profile.gameId);
-        let externalFiles = await this.findProfileExternalFilesInDir(profile, profile.gameModDir, false);
+        const gameModDir = this.#expandPath(profile.gameModDir);
+        let externalFiles = await this.findProfileExternalFilesInDir(profile, gameModDir, false);
 
         externalFiles = externalFiles.filter((modFile) => {
             // Make sure this is a mod file
@@ -2083,7 +2084,7 @@ class ElectronLoader {
 
         externalFiles = _.sortBy(externalFiles, (externalPlugin) => {
             // Retrieve external plugin order using plugin file's "last modified" timestamp
-            return fs.statSync(path.join(profile.gameModDir, externalPlugin)).mtime;
+            return fs.statSync(path.join(gameModDir, externalPlugin)).mtime;
         });
 
         return externalFiles;
@@ -2226,7 +2227,7 @@ class ElectronLoader {
                     // TODO - Apply normalization rules to `resourceDest`
                 }
 
-                const destFilePath = path.join(profile.gameModDir, resourceDest);
+                const destFilePath = this.#expandPath(path.join(profile.gameModDir, resourceDest));
 
                 if (fs.existsSync(destFilePath)) {
                     return;
@@ -2298,7 +2299,7 @@ class ElectronLoader {
         /** @type {boolean} */ normalizePathCasing
     ) {
         const profileModFiles = [];
-        const relModDir = root ? profile.gameRootDir : profile.gameModDir;
+        const relModDir = this.#expandPath(root ? profile.gameRootDir : profile.gameModDir);
         const gameModDir = path.resolve(relModDir);
         const extFilesBackupDir = path.join(relModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const extFilesList = await this.findProfileExternalFilesInDir(profile, relModDir, !root);
@@ -2376,8 +2377,8 @@ class ElectronLoader {
 
                     if (shouldCopy) {
                         if (profile.modLinkMode) {
-                            copyTasks.push(fs.mkdirp(path.dirname(destFilePath))
-                                .then(() => fs.link(srcFilePath, destFilePath)));
+                            await fs.mkdirp(path.dirname(destFilePath));
+                            copyTasks.push(fs.link(srcFilePath, destFilePath));
                         } else {
                             copyTasks.push(fs.copy(srcFilePath, destFilePath, { overwrite: false }));
                         }
@@ -2423,12 +2424,13 @@ class ElectronLoader {
 
     /** @returns {Promise<string[]>} */
     async writeConfigFiles(/** @type {AppProfile} */ profile) {
-        if (!profile.gameConfigFilePath || !fs.existsSync(profile.gameConfigFilePath)) {
+        const deployConfigDir = profile.gameConfigFilePath ? this.#expandPath(profile.gameConfigFilePath) : undefined;
+
+        if (!deployConfigDir || !fs.existsSync(deployConfigDir)) {
             throw new Error(`Unable to write config files: Profile's Game Config File Path "${profile.gameConfigFilePath}" is not valid.`);
         }
 
         const gameDetails = this.#getGameDetails(profile.gameId);
-        const deployConfigDir = profile.gameConfigFilePath;
         const backupDir = path.join(deployConfigDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const profileConfigDir = this.getProfileConfigDir(profile);
 
@@ -2440,15 +2442,15 @@ class ElectronLoader {
             ? Object.keys(gameDetails?.gameConfigFiles)
             : fs.readdirSync(profileConfigDir);
         
-        return Promise.all(profileConfigFiles.map(async (configFileName) => {
+        const writtenConfigFiles = [];
+        for (const configFileName of profileConfigFiles) {
             const rawConfigSrcPath = path.resolve(path.join(profileConfigDir, configFileName));
             // Resolve src config file path with any potential overrides
             const configSrcPath = path.resolve(this.resolveGameConfigFilePath(profile, configFileName, false) ?? rawConfigSrcPath);
             const configDestPath = path.resolve(path.join(deployConfigDir, configFileName));
 
             if (!fs.existsSync(configSrcPath)) {
-                log.error("Invalid config file path: ", configSrcPath);
-                throw new Error("Invalid config file path");
+                break;
             }
 
             if (!fs.existsSync(configSrcPath)) {
@@ -2471,8 +2473,10 @@ class ElectronLoader {
                 await fs.copyFile(configSrcPath, configDestPath);
             }
             
-            return configDestPath;
-        }));
+            writtenConfigFiles.push(configDestPath);
+        }
+
+        return writtenConfigFiles;
     }
 
     /** @returns {Promise<string[]>} */
@@ -2553,7 +2557,7 @@ class ElectronLoader {
 
         // Gamebryo games require processing of plugin file timestamps to enforce load order
         if (!!gameDetails && profile.plugins && gameDetails.pluginListType === "Gamebryo") {
-            const gameModDir = path.resolve(profile.gameModDir);
+            const gameModDir = path.resolve(this.#expandPath(profile.gameModDir));
             let pluginTimestamp = Date.now() / 1000 | 0;
             profile.plugins.forEach((pluginRef) => {
                 // Set plugin order using the plugin file's "last modified" timestamp
@@ -2577,7 +2581,7 @@ class ElectronLoader {
 
         try {
             // Ensure the mod base dir exists
-            fs.mkdirpSync(profile.gameModDir);
+            fs.mkdirpSync(this.#expandPath(profile.gameModDir));
 
             if (this.isSimilarProfileDeployed(profile)) {
                 await this.undeployProfile(profile);
@@ -2667,11 +2671,14 @@ class ElectronLoader {
                 log.warn("The profile being undeployed is orphaned. Data loss may occur.");
             }
 
+            const gameModDir = this.#expandPath(profile.gameModDir);
+            const gameRootDir = this.#expandPath(profile.gameRootDir);
+
             // Only remove files managed by this profile
             const undeployJobs = deploymentMetadata.profileModFiles.map(async (existingFile) => {
                 const fullExistingPath = path.isAbsolute(existingFile)
                     ? existingFile
-                    : path.join(profile.gameModDir, existingFile);
+                    : path.join(gameModDir, existingFile);
 
                 if (fs.existsSync(fullExistingPath)) {
                     await fs.remove(fullExistingPath);
@@ -2691,8 +2698,8 @@ class ElectronLoader {
             const userSteamCompatRoot = this.#getUserSteamCompatRoot(profile);
 
             const extFilesBackupDirs = _.uniq([
-                path.join(profile.gameModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
-                path.join(profile.gameRootDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
+                path.join(gameModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
+                path.join(gameRootDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 ... profile.gameConfigFilePath ? [path.join(profile.gameConfigFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
                 ... profile.gameSaveFolderPath ? [path.join(path.dirname(profile.gameSaveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
                 ... userSteamCompatRoot ? [path.join(userSteamCompatRoot, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
@@ -2719,9 +2726,9 @@ class ElectronLoader {
             }
 
             // If all undeploy operations succeeded, remove deployment metadata file
-            const metadataFilePath = path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE);
+            const metadataFilePath = path.join(gameModDir, ElectronLoader.PROFILE_METADATA_FILE);
             if (fs.existsSync(metadataFilePath)) {
-                fs.rmSync(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
+                fs.rmSync(path.join(gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
             }
 
             // Remove file backup directories
@@ -2784,7 +2791,7 @@ class ElectronLoader {
     /** @returns {string | undefined} */
     #getGameSteamCompatRoot(/** @type {GameDetails} */ gameDetails) {
         const appSettings = this.loadSettings();
-        const compatDataRoot = appSettings.steamCompatDataRoot ?? ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT;
+        const compatDataRoot = appSettings.steamCompatDataRoot || ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT;
         
         if (!gameDetails?.steamId || !compatDataRoot) {
             return undefined;
@@ -2807,7 +2814,7 @@ class ElectronLoader {
     /** @returns {string | undefined} */
     #getUserSteamCompatRoot(/** @type {AppProfile} */ profile) {
         const appSettings = this.loadSettings();
-        const compatDataRoot = appSettings.steamCompatDataRoot ?? ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT;
+        const compatDataRoot = this.#expandPath(appSettings.steamCompatDataRoot || ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT);
 
         if (!compatDataRoot || !profile.steamGameId) {
             return undefined;

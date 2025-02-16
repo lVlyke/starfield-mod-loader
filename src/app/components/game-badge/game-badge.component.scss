@@ -5,7 +5,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 2px 2px black;
     text-align: center;
     padding: 0.5rem;
+
+    &.high-contrast {
+        text-shadow: 2px 2px black;
+    }
 }

@@ -25,7 +25,7 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         name: "Invalid profile name",
         gameId: "Invalid Game ID",
         mods: "Invalid or missing mod files",
-        rootMods: "Invalid or missing root mod files",
+        rootMods: "Invalid or missing mod files",
         plugins: "Invalid plugins",
         rootPathOverride: "Invalid Profile Root directory",
         modsPathOverride: "Invalid Profile Mods directory",
@@ -52,7 +52,12 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         activeGameAction: "Invalid active game action",
         error: "Invalid Profile",
         found: "Invalid Profile"
-    }
+    };
+
+    private static readonly BLACKLISTED_ERROR_KEYS: Array<keyof AppProfile.VerificationResults> = [
+        "error",
+        "found"
+    ];
 
     protected readonly errors: string[];
 
@@ -70,10 +75,13 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
                 typeof verificationResult !== "boolean" && verificationResult.error,
             ].some(Boolean);
 
-            if (hasError) {
+            if (hasError && !AppProfileVerificationResultsModal.BLACKLISTED_ERROR_KEYS.includes(propertyKey)) {
                 const errorText = AppProfileVerificationResultsModal.VERIFICATION_ERROR_DESCS[propertyKey];
-                log.error(`Profile verification error:`, errorText, verificationResult);
-                errors.push(errorText);
+
+                if (!errors.includes(errorText)) {
+                    log.error(`Profile verification error:`, errorText, verificationResult);
+                    errors.push(errorText);
+                }
             }
             
             return errors;

@@ -46,7 +46,7 @@
                     [ngModel]="initialProfile.baseProfile?.name">
             <mat-select-trigger>{{ baseProfileModel.value }}</mat-select-trigger>
             @for (profileDesc of appProfileDescs; track profileDesc.name) {
-                <mat-option *ngIf="showAllBaseProfiles.checked || profileDesc.gameId === formModel.gameId || profileDesc.gameId === '$none'"
+                <mat-option *ngIf="profileDesc.name !== formModel.name && (showAllBaseProfiles.checked || profileDesc.gameId === formModel.gameId || profileDesc.gameId === '$none')"
                             [value]="profileDesc.name">
                     <app-game-badge *ngIf="showAllBaseProfiles.checked" [gameId]="profileDesc.gameId" />
                     {{ profileDesc.name }}

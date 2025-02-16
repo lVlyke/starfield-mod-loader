@@ -16,7 +16,8 @@ import { GameId } from "../../models/game-id";
     providers: [ComponentState.create(AppGameBadgeComponent)],
     host: {
         "[style.background-color]": "gameDetails?.bkgColor ?? null",
-        "[style.color]": "gameDetails?.fgColor ?? null"
+        "[style.color]": "gameDetails?.fgColor ?? null",
+        "[class.high-contrast]": "gameDetails?.fgColor === '#ffffff'"
     }
 })
 export class AppGameBadgeComponent extends BaseComponent {
