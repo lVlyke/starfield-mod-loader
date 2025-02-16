@@ -64,7 +64,7 @@
     <div>
         <mat-checkbox name="linkMode"
                       [disabled]="!linkModeSupported"
-                      [ngModel]="initialProfile.linkMode ?? linkModeSupported">
+                      [ngModel]="linkModeSupported ? (initialProfile.linkMode ?? linkModeSupported) : false">
             Link Mode
         </mat-checkbox>
 
