@@ -174,9 +174,12 @@ export class ProfileManager {
         ).subscribe();
 
         // Make sure that `manageExternalPlugins` is true if the game requires external plugin management
-        this.activeGameDetails$.pipe(
-            map(gameDetails => !!gameDetails?.requireExternalPlugins),
+        this.activeProfile$.pipe(
+            filterDefined(),
+            map(profile => profile.name),
             distinctUntilChanged(),
+            withLatestFrom(this.activeGameDetails$),
+            map(([, gameDetails]) => !!gameDetails?.requireExternalPlugins),
             filterTrue(),
             switchMap(() => this.manageExternalPlugins(true))
         ).subscribe();

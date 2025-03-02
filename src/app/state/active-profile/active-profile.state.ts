@@ -200,6 +200,9 @@ export class ActiveProfileState {
             state.plugins = [];
         }
 
+        // Filter any plugins that are from disabled mods
+        plugins = plugins.filter(plugin => plugin.modId === undefined || modList.find(([modId]) => plugin.modId === modId)?.[1].enabled);
+
         // Calculate available external plugins
         const externalPlugins = (state.manageExternalPlugins && state.externalFilesCache) ? state.externalFilesCache.pluginFiles.map((externalPluginFile) => ({
             modId: undefined,
@@ -215,7 +218,7 @@ export class ActiveProfileState {
         orderedPlugins = orderedPlugins
             .map((plugin) => {
                 // Preserve previous plugin order while using latest plugin data and add new plugins
-                let activePlugin = plugins.find(activePlugin => plugin.plugin === activePlugin.plugin);
+                let activePlugin = plugins.findLast(activePlugin => plugin.plugin === activePlugin.plugin);
 
                 // Ensure external mods are preserved
                 if (plugin.modId === undefined) {
@@ -228,8 +231,8 @@ export class ActiveProfileState {
                 ) : undefined;
             })
             .filter((plugin): plugin is GamePluginProfileRef => !!plugin)
+            // Add all remaining plugins that didn't exist previously
             .concat(plugins.filter(plugin => !orderedPlugins.some(activePlugin => plugin.plugin === activePlugin.plugin)))
-            .filter(plugin => plugin.modId === undefined || modList.find(([modId]) => plugin.modId === modId)?.[1].enabled);
 
         if (!!state.baseProfile) {
             const baseProfilePlugins = state.baseProfile.plugins ?? [];

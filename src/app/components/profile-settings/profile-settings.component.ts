@@ -4,7 +4,7 @@ import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/for
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
-import { defaultIfEmpty, delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap } from "rxjs/operators";
+import { defaultIfEmpty, delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap, withLatestFrom } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ElectronUtils } from "../../util/electron-utils";
@@ -263,8 +263,21 @@ export class AppProfileSettingsComponent extends BaseComponent {
             return EMPTY;
         }
 
+        let wasDeployed = false;
         return runOnce(this.formModel$.pipe(
             take(1),
+            withLatestFrom(this.profileManager.activeProfile$),
+            switchMap(([formModel, activeProfile]) => {
+                // Undeploy the profile before making any changes
+                if (formModel.name === activeProfile?.name && activeProfile?.deployed) {
+                    wasDeployed = true;
+                    return this.profileManager.updateActiveModDeployment(false).pipe(
+                        map(() => formModel)
+                    )
+                } else {
+                    return of(formModel);
+                }
+            }),
             switchMap((formModel) => this.profileManager.resolveProfileFromForm(formModel as AppProfile.Form, this.baseProfileMode)),
             switchMap((formModel) => this.checkUpdatedProfilePathOverrides(formModel)),
             switchMap((formModel) => (() => {
@@ -279,7 +292,13 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 }
             })().pipe(
                 switchMap(() => this.checkCreateDefaultConfigFiles(formModel)),
-                finalize(() => this.onFormSubmit$.next(formModel))
+                finalize(() => {
+                    if (wasDeployed) {
+                        this.profileManager.updateActiveModDeployment(true);
+                    }
+                    
+                    this.onFormSubmit$.next(formModel)
+                })
             )
         )));
     }

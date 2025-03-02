@@ -164,7 +164,7 @@
         </mat-checkbox>
     </div>
 
-    <div *ngIf="manageSteamCompatSymlinksSupported">
+    <div *ngIf="!baseProfileMode && manageSteamCompatSymlinksSupported">
         <mat-checkbox name="manageSteamCompatSymlinks"
                       [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
             Manage Steam Compat Symlinks
