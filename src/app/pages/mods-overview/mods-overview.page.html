@@ -181,6 +181,11 @@
                     @case ("config") {
                         <!-- Config File Editor -->
                         <ng-container *ngIf="gameDetails?.gameConfigFiles as configFiles">
+                            @let lastUpdateTime = configFileUpdate$ | async;
+                            @let profileConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
+                            @let baseProfileConfigData = activeProfile!.baseProfile | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
+                            @let resolvedConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:null:true | async;
+
                             <!-- File selector -->
                             <mat-form-field [attr.subscript]="false">
                                 <mat-select #activeConfigFileModel="ngModel"
@@ -188,8 +193,16 @@
                                             (ngModelChange)="configFileDataModel.reset()">
                                     <mat-select-trigger>
                                         <span class="config-file-name"
-                                              [attr.new-file]="(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async) === undefined">
+                                              [attr.new-file]="profileConfigData === undefined">
                                             {{ activeConfigFileModel.value }}
+
+                                            @if (!!baseProfileConfigData && !profileConfigData) {
+                                                <mat-icon color="accent"
+                                                          class="base-profile-marker"
+                                                          matTooltip="Inherited from {{activeProfile!.baseProfile!.name}}">
+                                                    arrow_outward
+                                                </mat-icon>
+                                            }
                                         </span>
                                         <span *ngIf="configFileDataModel.dirty" matColor="accent">*</span>
                                     </mat-select-trigger>
@@ -204,12 +217,12 @@
                                         class="config-file-editor"
                                         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                                         [disabled]="!activeConfigFileModel.value"
-                                        [ngModel]="activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:null:true | async">
+                                        [ngModel]="resolvedConfigData">
                             </textarea>
 
                             <!-- File actions -->
                             <div class="config-file-actions">
-                                <button *ngIf="(activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:(configFileUpdate$ | async) | async) !== undefined"
+                                <button *ngIf="profileConfigData !== undefined"
                                         mat-icon-button
                                         matTooltip="Open in external file editor"
                                         matColor="accent"

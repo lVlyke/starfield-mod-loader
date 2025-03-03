@@ -509,7 +509,7 @@ export namespace AppMessage {
     export interface ReadConfigFile extends Base {
         id: `${ProfileMessage.Prefix}:readConfigFile`;
         data: {
-            profile: AppProfile;
+            profile: AppBaseProfile;
             fileName: string;
             loadDefaults: boolean;
         };

@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform } from "@angular/core";
 import { NEVER, Observable } from "rxjs";
 import { ElectronUtils } from "../util/electron-utils";
-import { AppProfile } from "../models/app-profile";
+import { AppBaseProfile } from "../models/app-profile";
 
 @Pipe({
     name: "appProfileConfigFile$"
@@ -9,7 +9,7 @@ import { AppProfile } from "../models/app-profile";
 export class AppProfileConfigFilePipe implements PipeTransform {
 
     public transform(
-        profile: AppProfile | undefined | null,
+        profile: AppBaseProfile | undefined | null,
         configFileName: string | undefined,
         _lastUpdate?: Date | null,
         loadDefaults: boolean = false

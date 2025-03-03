@@ -27,9 +27,9 @@
                         <mat-icon class="mod-base-profile-icon" color="accent">arrow_outward</mat-icon>
                     </span>
                             
-                    <mat-icon *ngIf="!!modEntry.modRef.verificationError"
+                    <mat-icon *ngIf="!!modEntry.modRef.verificationError?.error"
                                 class="mod-verification-error-icon"
-                                matTooltip="This mod has a verification error">
+                                [matTooltip]="modEntry.modRef.verificationError.reason ?? 'This mod has a verification error'">
                         error
                     </mat-icon>
                 </div>

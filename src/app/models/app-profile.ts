@@ -41,9 +41,9 @@ export interface AppProfile extends AppBaseProfile {
 export type AppProfileModList = AppProfile.ModList;
 export type AppProfileForm = AppProfile.Form;
 export type AppProfileDefaultablePaths = AppProfile.DefaultablePaths;
+export type AppProfileCollectedVerificationResult = AppProfile.CollectedVerificationResult;
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
-export type AppProfileModVerificationResults = AppProfile.ModVerificationResults;
 export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
 export type AppProfileDescription = AppProfile.Description;
 export type AppProfileExternalFiles = AppProfile.ExternalFiles;
@@ -77,24 +77,27 @@ export namespace AppProfile {
     export interface VerificationResult {
         error: boolean;
         found: boolean;
+        reason?: string;
     }
+
+    export type VerificationResultRecord<K extends string | number | symbol = string> = Record<
+        K,
+        VerificationResult | CollectedVerificationResult
+    >;
 
     export interface CollectedVerificationResult<K extends string | number | symbol = string> extends VerificationResult {
-        results: Record<K, VerificationResult>;
+        results: VerificationResultRecord<K>;
     }
 
-    export type BaseVerificationResults = VerificationResult & {
-        [K in keyof Required<AppProfile>]: VerificationResult;
-    };
-
-    export interface VerificationResults extends BaseVerificationResults {
+    export interface PropertiesVerificationResult extends VerificationResultRecord<keyof AppProfile> {
         mods: CollectedVerificationResult;
         rootMods: CollectedVerificationResult;
         plugins: CollectedVerificationResult;
     }
 
-    export type ModVerificationResults = VerificationResults["mods"];
-    export type PluginVerificationResults = VerificationResults["plugins"];
+    export interface VerificationResults extends VerificationResult {
+        properties: PropertiesVerificationResult;
+    }
 
     export interface PluginBackupEntry {
         filePath: string;

@@ -470,8 +470,8 @@ export class ProfileManager {
                             if (options.updateModErrorState) {
                                 // Update profile mod verification state
                                 result$ = forkJoin([
-                                    this.updateModVerifications(false, verificationResults.mods),
-                                    this.updateModVerifications(true, verificationResults.rootMods)
+                                    this.updateModVerifications(false, verificationResults.properties.mods),
+                                    this.updateModVerifications(true, verificationResults.properties.rootMods)
                                 ]).pipe(
                                     map(() => !verificationResults.error)
                                 );
@@ -481,7 +481,7 @@ export class ProfileManager {
                                 tap((result) => {
                                     if ((result && options.showSuccessMessage) || (!result && options.showErrorMessage)) {
                                         this.snackbar.openFromComponent(AppProfileVerificationResultsModal, {
-                                            data: verificationResults,
+                                            data: verificationResults.properties,
                                             duration: result ? 3000 : undefined
                                         });
                                     } else if (result) {
@@ -500,15 +500,7 @@ export class ProfileManager {
     }
 
     public findExternalFiles(profile: AppProfile): Observable<AppProfile.ExternalFiles> {
-        if (AppProfile.isFullProfile(profile)) {
-            return ElectronUtils.invoke("profile:findExternalFiles", { profile });
-        } else {
-            return of({
-                gameDirFiles: [],
-                modDirFiles: [],
-                pluginFiles: []
-            });
-        }
+        return ElectronUtils.invoke("profile:findExternalFiles", { profile });
     }
 
     public updateActiveProfileExternalFiles(): Observable<any> {
@@ -526,11 +518,11 @@ export class ProfileManager {
         ));
     }
 
-    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.ModVerificationResults): Observable<any> {
+    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.CollectedVerificationResult): Observable<any> {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(root, modName, verificationResult));
     }
 
-    public updateModVerifications(root: boolean, modVerificationResults: AppProfile.ModVerificationResults): Observable<any> {
+    public updateModVerifications(root: boolean, modVerificationResults: AppProfile.CollectedVerificationResult): Observable<any> {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(root, modVerificationResults));
     }
 
@@ -719,58 +711,70 @@ export class ProfileManager {
                 }
 
                 const modList = importRequest.root ? profile!.rootMods : profile!.mods;
-                const modAlreadyExists = RelativeOrderedMap.keys(modList).includes(importRequest.modName);
+                const existingMod = RelativeOrderedMap.get(modList, importRequest.modName);
 
                 // Check if this mod already exists in the active profile
-                if (modAlreadyExists && importRequest.importStatus !== "CANCELED") {
-                    const ACTION_REPLACE: DialogAction = {
-                        label: "Replace",
-                        accent: true,
-                        tooltip: "Removes all existing mod files and replaces them with the new files"
-                    };
-                    const ACTION_OVERWRITE: DialogAction = {
-                        label: "Overwrite",
-                        accent: true,
-                        tooltip: "Keeps existing mod files and adds new files, overwriting any existing files"
-                    };
-                    const ACTION_ADD: DialogAction = {
-                        label: "Add",
-                        accent: true,
-                        tooltip: "Keeps existing mod files and only adds new files that do not exist"
-                    };
+                if (!!existingMod && importRequest.importStatus !== "CANCELED") {
+                    if (!!existingMod.baseProfile) {
+                        return this.dialogManager.createDefault(
+                            `"${importRequest.modName}" already exists in base profile "${existingMod.baseProfile}". Please choose a different mod name.`, [
+                            DialogManager.OK_ACTION_PRIMARY
+                        ]).pipe(
+                            map(() => {
+                                importRequest.importStatus = "RESTART";
+                                return importRequest;
+                            })
+                        );
+                    } else {
+                        const ACTION_REPLACE: DialogAction = {
+                            label: "Replace",
+                            accent: true,
+                            tooltip: "Removes all existing mod files and replaces them with the new files"
+                        };
+                        const ACTION_OVERWRITE: DialogAction = {
+                            label: "Overwrite",
+                            accent: true,
+                            tooltip: "Keeps existing mod files and adds new files, overwriting any existing files"
+                        };
+                        const ACTION_ADD: DialogAction = {
+                            label: "Add",
+                            accent: true,
+                            tooltip: "Keeps existing mod files and only adds new files that do not exist"
+                        };
 
-                    // Determine which merge strategy to use
-                    return this.dialogManager.createDefault(
-                        `"${importRequest.modName}" already exists. Choose a method of resolving file conflicts.`, [
-                            ACTION_REPLACE,
-                            ACTION_OVERWRITE,
-                            ACTION_ADD,
-                            DialogManager.CANCEL_ACTION_PRIMARY
-                        ], { width: "auto", maxWidth: "50vw" }
-                    ).pipe(
-                        switchMap((result) => {
-                            switch (result) {
-                                case ACTION_REPLACE: {
-                                    importRequest.mergeStrategy = "REPLACE";
-                                    break;
+                        // Determine which merge strategy to use
+                        return this.dialogManager.createDefault(
+                            `"${importRequest.modName}" already exists. Choose a method of resolving file conflicts.`, [
+                                ACTION_REPLACE,
+                                ACTION_OVERWRITE,
+                                ACTION_ADD,
+                                DialogManager.CANCEL_ACTION_PRIMARY
+                            ], { width: "auto", maxWidth: "50vw" }
+                        ).pipe(
+                            switchMap((result) => {
+                                switch (result) {
+                                    case ACTION_REPLACE: {
+                                        importRequest.mergeStrategy = "REPLACE";
+                                        break;
+                                    }
+                                    case ACTION_OVERWRITE:{
+                                        importRequest.mergeStrategy = "OVERWRITE";
+                                        break;
+                                    }
+                                    case ACTION_ADD:{
+                                        importRequest.mergeStrategy = "ADD";
+                                        break;
+                                    }
+                                    case DialogManager.CANCEL_ACTION_PRIMARY: {
+                                        importRequest.importStatus = "CANCELED";
+                                        break;
+                                    }
                                 }
-                                case ACTION_OVERWRITE:{
-                                    importRequest.mergeStrategy = "OVERWRITE";
-                                    break;
-                                }
-                                case ACTION_ADD:{
-                                    importRequest.mergeStrategy = "ADD";
-                                    break;
-                                }
-                                case DialogManager.CANCEL_ACTION_PRIMARY: {
-                                    importRequest.importStatus = "CANCELED";
-                                    break;
-                                }
-                            }
 
-                            return of(importRequest);
-                        })
-                    );
+                                return of(importRequest);
+                            })
+                        );
+                    }
                 }
 
                 return of(importRequest);
@@ -780,21 +784,25 @@ export class ProfileManager {
                     return of(undefined);
                 }
 
-                const loadingIndicatorRef = this.appManager.showLoadingIndicator("Importing mod data...");
+                if (importRequest.importStatus === "RESTART") {
+                    return this.addModFromUser(profile, options);
+                } else {
+                    const loadingIndicatorRef = this.appManager.showLoadingIndicator("Importing mod data...");
 
-                // Complete the mod import
-                return ElectronUtils.invoke("profile:completeModImport", { importRequest }).pipe(
-                    switchMap((importResult) => {
-                        if (!!importResult) {
-                            return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.root, importResult.modName, importResult.modRef)).pipe(
-                                map(() => importResult.modRef)
-                            );
-                        } else {
-                            return of(undefined);
-                        }
-                    }),
-                    finalize(() => loadingIndicatorRef.close())
-                );
+                    // Complete the mod import
+                    return ElectronUtils.invoke("profile:completeModImport", { importRequest }).pipe(
+                        switchMap((importResult) => {
+                            if (!!importResult) {
+                                return this.store.dispatch(new ActiveProfileActions.AddMod(importResult.root, importResult.modName, importResult.modRef)).pipe(
+                                    map(() => importResult.modRef)
+                                );
+                            } else {
+                                return of(undefined);
+                            }
+                        }),
+                        finalize(() => loadingIndicatorRef.close())
+                    );
+                }
             })
         ));
     }
@@ -806,20 +814,44 @@ export class ProfileManager {
     public deleteMod(root: boolean, modName: string): Observable<any> {
         return runOnce(this.activeProfile$.pipe(
             take(1),
-            switchMap((activeProfile) => forkJoin([
-                this.store.dispatch(new ActiveProfileActions.DeleteMod(root, modName)),
-                ElectronUtils.invoke("profile:deleteMod", { profile: activeProfile!, modName })
-            ]))
+            switchMap((activeProfile) => {
+                const mod = this.findMod(activeProfile!, root, modName);
+                const modHasError = mod ? this.modHasError(mod) : false;
+
+                return forkJoin([
+                    this.store.dispatch(new ActiveProfileActions.DeleteMod(root, modName)),
+                    ElectronUtils.invoke("profile:deleteMod", { profile: activeProfile!, modName })
+                ]).pipe(
+                    filter(() => modHasError),
+                    // Re-verify profile if deleted mod had a verification error
+                    switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false }))
+                );
+            })
         ));
     }
 
-    public renameMod(root: boolean, modCurName: string, modNewName: string): Observable<any> {
+    public renameMod(root: boolean, modCurName: string, modNewName: string): Observable<unknown> {
         return runOnce(this.activeProfile$.pipe(
             take(1),
-            switchMap((activeProfile) => concat([
-                ElectronUtils.invoke("profile:renameMod", { profile: activeProfile!, modCurName, modNewName }),
-                this.store.dispatch(new ActiveProfileActions.RenameMod(root, modCurName, modNewName))
-            ]).pipe(toArray()))
+            switchMap((activeProfile) => {
+                const newMod = this.findMod(activeProfile!, root, modNewName);
+                if (!!newMod) {
+                    return this.dialogManager.createDefault(`Cannot rename mod to "${modNewName}". A mod with this name already exists.`);
+                } else {
+                    const curMod = this.findMod(activeProfile!, root, modCurName);
+                    const modHasError = curMod ? this.modHasError(curMod) : false;
+
+                    return concat([
+                        ElectronUtils.invoke("profile:renameMod", { profile: activeProfile!, modCurName, modNewName }),
+                        this.store.dispatch(new ActiveProfileActions.RenameMod(root, modCurName, modNewName))
+                    ]).pipe(
+                        toArray(),
+                        filter(() => modHasError),
+                        // Re-verify profile if mod had a verification error
+                        switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false }))
+                    );
+                }
+            })
         ));
     }
 
@@ -1243,6 +1275,15 @@ export class ProfileManager {
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:findPluginFiles", { profile: profile! }))
         ));
+    }
+
+    private findMod(profile: AppBaseProfile, root: boolean, modName: string): ModProfileRef | undefined {
+        const modList = root ? profile.rootMods : profile.mods;
+        return RelativeOrderedMap.get(modList, modName);
+    }
+
+    private modHasError(mod: ModProfileRef): boolean {
+        return !!mod.verificationError?.error;
     }
 
     private createModImportOptionsModal(importRequest: ModImportRequest): Observable<NgForm | void> {

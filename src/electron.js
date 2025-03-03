@@ -8,8 +8,8 @@
  * @typedef {import("./app/models/app-profile").AppProfileForm} AppProfileForm;
  * @typedef {import("./app/models/app-profile").AppProfileModList} AppProfileModList;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResult} AppProfileVerificationResult;
+ * @typedef {import("./app/models/app-profile").AppProfileCollectedVerificationResult} AppProfileCollectedVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResults} AppProfileVerificationResults;
- * @typedef {import("./app/models/app-profile").AppProfileModVerificationResults} AppProfileModVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfilePluginBackupEntry} AppProfilePluginBackupEntry;
  * @typedef {import("./app/models/app-profile").AppProfileDescription} AppProfileDescription;
  * @typedef {import("./app/models/app-profile").AppProfileExternalFiles} AppProfileExternalFiles;
@@ -382,8 +382,8 @@ class ElectronLoader {
 
             const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile));
             const baseProfileResult = profile.baseProfile ? this.verifyProfilePathExists(this.getProfileDir(profile.baseProfile)) : VERIFY_SUCCESS;
-            const modResult = this.verifyProfileModsExist(false, profile);
-            const rootModResult = this.verifyProfileModsExist(true, profile);
+            const modResult = this.verifyProfileMods(false, profile);
+            const rootModResult = this.verifyProfileMods(true, profile);
             const gameModDirResult = "gameModDir" in profile ? this.verifyProfilePathExists(profile.gameModDir) : VERIFY_SUCCESS;
             const gameRootDirResult = "gameRootDir" in profile ? this.verifyProfilePathExists(profile.gameRootDir) : VERIFY_SUCCESS;
             const gameBinaryPathResult = "gameBinaryPath" in profile ? this.verifyProfilePathExists(profile.gameBinaryPath) : VERIFY_SUCCESS;
@@ -454,7 +454,7 @@ class ElectronLoader {
             };
 
             return {
-                ...preparedResult,
+                properties: preparedResult,
                 error: Object.values(preparedResult).some(curResult => curResult.error),
                 found: profileExistsResult.found
             };
@@ -1931,56 +1931,79 @@ class ElectronLoader {
         }
     }
 
-    /** @returns {AppProfileModVerificationResult} */
-    verifyProfileModsExist(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
+    /** @returns {AppProfileCollectedVerificationResult} */
+    verifyProfileMods(/** @type {boolean} */ root, /** @type {AppProfile} */ profile) {
         const modsDir = this.getProfileModsDir(profile);
         const modList = root ? profile.rootMods : profile.mods;
+        const baseProfileModList = root ? profile.baseProfile?.rootMods ?? [] : profile.baseProfile?.mods ?? [];
 
-        let hasMissingError = false;
-        const profileCheckResults = modList.reduce((result, [modName, mod]) => {
+        let hasError = false;
+
+        function recordResult(results, modName, result) {
+            const existingResult = results[modName] ?? {
+                error: false,
+                found: true
+            };
+            existingResult.error ||=  result.error;
+            existingResult.found &&= result.found;
+            
+            if (result.error && result.reason) {
+                existingResult.reason = existingResult.reason ? `${existingResult.reason}; ${result.reason}` : result.reason;
+            }
+            
+            results[modName] = existingResult;
+        }
+
+        let profileCheckResults = modList.reduce((result, [modName, mod]) => {
+            // Check if mods exist on the filesystem
             const modExists = fs.existsSync(path.join(mod.baseProfile
                 ? this.getProfileModsDir(/** @type {AppBaseProfile} */ (profile.baseProfile))
                 : modsDir,
             modName));
-            const modHasError = !modExists;
 
-            hasMissingError ||= modHasError;
-
-            result = Object.assign(result, {
-                [modName]: {
-                    error: modHasError,
-                    found: modExists
-                }
+            recordResult(result, modName, {
+                error: !modExists,
+                found: modExists,
+                reason: "The files for this mod are missing"
             });
 
+            // Check if profile has any mods that conflict with the base profile
+            const modConflictsWithBase = !mod.baseProfile && !!baseProfileModList.find(([baseModName]) => baseModName === modName); 
+
+            recordResult(result, modName, {
+                error: modConflictsWithBase,
+                found: true,
+                reason: `Mod "${modName}" already exists in base profile "${profile.baseProfile?.name}"`
+            });
+
+            hasError ||= !modExists || modConflictsWithBase;
             return result;
         }, {});
 
-        let hasFoundError = false;
+        // Check if any filesystem mods are missing from the profile
         const fsMods = fs.readdirSync(modsDir);
-        const fsCheckResults = fsMods.reduce((result, modName) => {
+        profileCheckResults = fsMods.reduce((result, modName) => {
             const modExistsInProfile = [
                 profile.rootMods,
                 profile.mods
             ].some(modList => modList.find(([profileModName]) => modName === profileModName));
             const modHasError = !modExistsInProfile;
 
-            hasFoundError ||= modHasError;
+            hasError ||= modHasError;
 
-            result = Object.assign(result, {
-                [modName]: {
-                    error: modHasError,
-                    found: true
-                }
+            recordResult(result, modName, {
+                error: modHasError,
+                found: true,
+                reason: "Mod files were found but is missing from profile"
             });
 
             return result;
-        }, {});
+        }, profileCheckResults);
 
         return {
-            error: hasMissingError || hasFoundError,
+            error: hasError,
             found: true,
-            results: { ...profileCheckResults, ...fsCheckResults }
+            results: profileCheckResults
         };
     }
 
@@ -2031,11 +2054,24 @@ class ElectronLoader {
 
     /** @returns {Promise<AppProfileExternalFiles>} */
     async findProfileExternalFiles(/** @type {AppProfile} */ profile) {
-        return {
-            modDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameModDir, true),
-            gameDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameRootDir, false),
-            pluginFiles: await this.findProfileExternalPluginFiles(profile)
-        };
+        if (!!profile.gameModDir && !!profile.gameRootDir) {
+            // Scan game dir for external files
+            return {
+                modDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameModDir, true),
+                gameDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameRootDir, false),
+                pluginFiles: await this.findProfileExternalPluginFiles(profile)
+            };
+        } else {
+            // Use default plugin list from game db
+            const gameDb = this.loadGameDatabase();
+            const gameDetails = gameDb[profile.gameId];
+            const defaultPlugins = (gameDetails?.pinnedPlugins ?? []).map(pinnedPlugin => pinnedPlugin.plugin);
+            return {
+                modDirFiles: [],
+                gameDirFiles: [],
+                pluginFiles: defaultPlugins
+            }
+        }
     }
 
     /** @returns {Promise<Array<string>>} */
@@ -2359,6 +2395,7 @@ class ElectronLoader {
                             existingDataSubdirs.forEach((existingDataSubdir) => {
                                 existingDataSubdir = `${existingDataSubdir}${path.sep}`;
                                 const lowerSubdir = existingDataSubdir.toLowerCase();
+
                                 if (modFile.startsWith(lowerSubdir)) {
                                     modFile = modFile.replace(lowerSubdir, existingDataSubdir);
                                 }

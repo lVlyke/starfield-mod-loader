@@ -75,7 +75,7 @@ export namespace ActiveProfileActions {
 
         constructor(
             public root: boolean,
-            public modVerificationResults: AppProfile.ModVerificationResults
+            public modVerificationResults: AppProfile.CollectedVerificationResult
         ) {}
     }
 

@@ -2,7 +2,7 @@ import { AppProfile } from "./app-profile";
 import { ModProfileRef } from "./mod-profile-ref";
 import { ModInstaller } from "./mod-installer";
 
-export type ModImportStatus = "FAILED" | "PENDING" | "MANUALINSTALL" | "CANCELED";
+export type ModImportStatus = "FAILED" | "PENDING" | "MANUALINSTALL" | "CANCELED" | "RESTART";
 export type ModImportMergeStrategy = "REPLACE" | "OVERWRITE" | "ADD";
 
 export interface ModImportRequest {

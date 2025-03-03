@@ -184,8 +184,20 @@
                 white-space: pre;
             }
 
-            .config-file-name[new-file="true"] {
-                font-style: italic;
+            .config-file-name {
+                display: flex;
+                align-items: center;
+
+                &[new-file="true"] {
+                    font-style: italic;
+                }
+
+                .base-profile-marker {
+                    margin-left: 0.5rem;
+                    font-style: normal;
+                    font-weight: 600;
+                    @include mixins.mat-icon-size(0.95rem);
+                }
             }
 
             .config-file-actions {

@@ -21,7 +21,7 @@ import { LangUtils } from "../../util/lang-utils";
 })
 export class AppProfileVerificationResultsModal extends BaseComponent {
 
-    private static readonly VERIFICATION_ERROR_DESCS: Record<keyof AppProfile.VerificationResults, string> = {
+    private static readonly PROFILE_VERIFICATION_ERROR_DESCS: Record<keyof AppProfile, string> = {
         name: "Invalid profile name",
         gameId: "Invalid Game ID",
         mods: "Invalid or missing mod files",
@@ -49,42 +49,62 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         externalFilesCache: "Invalid external files",
         baseProfile: "Invalid Base Profile",
         customGameActions: "Invalid custom game actions",
-        activeGameAction: "Invalid active game action",
-        error: "Invalid Profile",
-        found: "Invalid Profile"
+        activeGameAction: "Invalid active game action"
     };
 
-    private static readonly BLACKLISTED_ERROR_KEYS: Array<keyof AppProfile.VerificationResults> = [
-        "error",
-        "found"
-    ];
+    private static readonly VERIFICATION_ERROR_DESCS: Record<string, string> = {
+        ...AppProfileVerificationResultsModal.PROFILE_VERIFICATION_ERROR_DESCS
+    };
+
+    private static readonly BLACKLISTED_ERROR_KEYS: Array<string> = [];
 
     protected readonly errors: string[];
 
     constructor(
         cdRef: ChangeDetectorRef,
         protected readonly snackBarRef: MatSnackBarRef<AppProfileVerificationResultsModal>,
-        @Inject(MAT_SNACK_BAR_DATA) verificationResults: AppProfile.VerificationResults
+        @Inject(MAT_SNACK_BAR_DATA) verificationResults: AppProfile.VerificationResultRecord<string>
     ) {
         super({ cdRef });
 
-        this.errors = LangUtils.entries(verificationResults).reduce<string[]>((errors, [propertyKey, verificationResult]) => {
-            const hasError = [
-                propertyKey === "error" && verificationResult,
-                propertyKey === "found" && !verificationResult,
-                typeof verificationResult !== "boolean" && verificationResult.error,
-            ].some(Boolean);
+        this.errors = this.collectErrors(verificationResults);
+    }
 
-            if (hasError && !AppProfileVerificationResultsModal.BLACKLISTED_ERROR_KEYS.includes(propertyKey)) {
-                const errorText = AppProfileVerificationResultsModal.VERIFICATION_ERROR_DESCS[propertyKey];
+    private collectErrors<K extends string>(results: AppProfile.VerificationResultRecord<K>, logOnly: boolean = false): string[] {
+        return LangUtils.entries(results).reduce<string[]>((errors, [propertyKey, verificationResult]) => {
+            if (!AppProfileVerificationResultsModal.BLACKLISTED_ERROR_KEYS.includes(propertyKey)) {
+                const errorText = this.mapVerificationResultToError(propertyKey, verificationResult);
 
-                if (!errors.includes(errorText)) {
-                    log.error(`Profile verification error:`, errorText, verificationResult);
-                    errors.push(errorText);
+                if (errorText && !errors.includes(errorText)) {
+                    log.error(`Profile verification error:`, propertyKey, errorText, verificationResult);
+
+                    if (!logOnly) {
+                        errors.push(errorText);
+                    }
+                }
+
+                if ("results" in verificationResult) {
+                    errors.push(...this.collectErrors(verificationResult.results, true));
                 }
             }
-            
+
             return errors;
         }, []);
+    }
+
+    private mapVerificationResultToError(propertyName: string, result: AppProfile.VerificationResult): string | undefined {
+        if (result.error) {
+            return this.getErrorText(propertyName, result);
+        }
+
+        return undefined;
+    }
+
+    private getErrorText(propertyName: string, result: AppProfile.VerificationResult): string {
+        if (!!result.reason) {
+            return result.reason;
+        } else {
+            return AppProfileVerificationResultsModal.VERIFICATION_ERROR_DESCS[propertyName as keyof AppProfile] ?? "Error";
+        }
     }
 }
