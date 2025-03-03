@@ -73,6 +73,14 @@ export class AppStateBehaviorManager {
             })
         ).subscribe();
 
+        messageHandler.messages$.pipe(
+            filter((message): message is AppMessage.ToggleLogPanel => message.id === "app:toggleLogPanel"),
+            switchMap(() => {
+                this.toggleLogPanel();
+                return EMPTY;
+            })
+        ).subscribe();
+
         // Show a loading indicator when app is syncing mod files to base deployment dir
         this.isDeployInProgress$.pipe(
             distinctUntilChanged()
@@ -122,6 +130,10 @@ export class AppStateBehaviorManager {
 
     public resetModListColumns(): Observable<void> {
         return this.store.dispatch(new AppActions.ResetModListColumns());
+    }
+
+    public toggleLogPanel(): Observable<void> {
+        return this.store.dispatch(new AppActions.ToggleLogPanel());
     }
 
     public loadSettings(): Observable<AppSettingsUserCfg | null> {
@@ -232,7 +244,8 @@ export class AppStateBehaviorManager {
             normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns,
             verifyProfileOnStart: appData.verifyProfileOnStart,
-            steamCompatDataRoot: appData.steamCompatDataRoot
+            steamCompatDataRoot: appData.steamCompatDataRoot,
+            logPanelEnabled: appData.logPanelEnabled
         };
     }
 }

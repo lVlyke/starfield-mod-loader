@@ -145,6 +145,11 @@ class ElectronLoader {
                     colMenuItem.checked = activeModListCols.includes(col);
                 }
             });
+
+            const toggleLogPanelItem = this.menu.getMenuItemById("show-log-panel");
+            if (toggleLogPanelItem) {
+                toggleLogPanelItem.checked = !!appState.logPanelEnabled;
+            }
         });
 
         ipcMain.handle("app:chooseDirectory", async (
@@ -1085,6 +1090,13 @@ class ElectronLoader {
                                 click: () => this.mainWindow.webContents.send("app:toggleModListColumn", { reset: true })
                             }
                         ]
+                    },
+                    {
+                        id: "show-log-panel",
+                        label: "Show Log Panel",
+                        type: "checkbox",
+                        checked: false,
+                        click: () => this.mainWindow.webContents.send("app:toggleLogPanel")
                     },
                     ...this.createDebugMenuOption({
                         type: "separator"

@@ -14,6 +14,12 @@
 
 <span matSnackBarActions>
     @if (errors.length > 0) {
+        @if (!(isLogPanelEnabled$ | async)) {
+            <button mat-button matSnackBarAction (click)="appManager.toggleLogPanel(); snackBarRef.dismissWithAction()">
+                Log
+            </button>
+        }
+
         <button mat-button matSnackBarAction (click)="snackBarRef.dismissWithAction()">
             Close
         </button>

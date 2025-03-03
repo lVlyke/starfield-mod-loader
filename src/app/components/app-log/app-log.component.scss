@@ -1,0 +1,62 @@
+@use "../../../styles/mixins/" as mixins;
+
+:host {
+    font-family: monospace;
+
+    .log-line {
+        $text-indent: 1.5rem;
+        $text-padding: 0.5rem;
+
+        padding: $text-padding;
+        padding-left: $text-indent + $text-padding;
+        text-indent: -$text-indent;
+
+        &:nth-child(odd) {
+            background-color: rgba(#000, 0.1);
+        }
+
+        &[level="warn"] {
+            background-color: rgba(#ff0, 0.1);
+
+            .log-icon {
+                color: rgba(#ff0, 0.25);
+            }
+        }
+
+        &[level="error"] {
+            background-color: rgba(#f00, 0.1);
+
+            .log-icon {
+                color: rgba(#f00, 0.25);
+            }
+        }
+
+        .log-level {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-right: 0.5rem;
+        }
+
+        .log-time {
+            margin-right: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .log-icon {
+            display: inline-flex;
+            align-items: center;
+            text-indent: 0;
+            margin-right: 0.5rem;
+            position: relative;
+            top: 0.25rem;
+
+            &:empty {
+                display: none;
+            }
+
+            mat-icon {
+                @include mixins.mat-icon-size(1.25rem);
+            }
+        }
+    }
+}

@@ -81,6 +81,14 @@ export namespace AppActions {
         ) {}
     }
 
+    export class ToggleLogPanel {
+        public static readonly type = `[app] toggle log panel`;
+
+        constructor(
+            public enabled?: boolean
+        ) {}
+    }
+
     export class ResetModListColumns {
         public static readonly type = `[app] reset mod list columns`;
     }

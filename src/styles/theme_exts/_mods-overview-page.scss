@@ -28,6 +28,10 @@
             }
         }
 
+        #log-pane {
+            border-color: mixins.theme-foreground-color(text, $is-dark);
+        }
+
         mat-card-title.sticky-title {
             background-color: mixins.theme-background-color(card, $is-dark);
         }

@@ -2,10 +2,14 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from "@
 import { MatButtonModule } from "@angular/material/button";
 import { MAT_SNACK_BAR_DATA, MatSnackBarModule, MatSnackBarRef } from "@angular/material/snack-bar";
 import { CommonModule } from "@angular/common";
+import { Store } from "@ngxs/store";
+import { Observable } from "rxjs";
+import { AppState } from "../../state";
 import { log } from "../../util/logger";
+import { LangUtils } from "../../util/lang-utils";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
-import { LangUtils } from "../../util/lang-utils";
+import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
 
 @Component({
     templateUrl: "./profile-verification-results.modal.html",
@@ -58,15 +62,20 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
 
     private static readonly BLACKLISTED_ERROR_KEYS: Array<string> = [];
 
+    public readonly isLogPanelEnabled$: Observable<boolean>;
+
     protected readonly errors: string[];
 
     constructor(
         cdRef: ChangeDetectorRef,
+        store: Store,
         protected readonly snackBarRef: MatSnackBarRef<AppProfileVerificationResultsModal>,
+        protected readonly appManager: AppStateBehaviorManager,
         @Inject(MAT_SNACK_BAR_DATA) verificationResults: AppProfile.VerificationResultRecord<string>
     ) {
         super({ cdRef });
 
+        this.isLogPanelEnabled$ = store.select(AppState.isLogPanelEnabled);
         this.errors = this.collectErrors(verificationResults);
     }
 
@@ -76,7 +85,7 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
                 const errorText = this.mapVerificationResultToError(propertyKey, verificationResult);
 
                 if (errorText && !errors.includes(errorText)) {
-                    log.error(`Profile verification error:`, propertyKey, errorText, verificationResult);
+                    log.error(`Profile verification error:`, `"${propertyKey}"`, errorText);
 
                     if (!logOnly) {
                         errors.push(errorText);

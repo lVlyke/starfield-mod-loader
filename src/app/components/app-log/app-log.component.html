@@ -1,0 +1,15 @@
+
+@for (logLine of logHistory; track $index) {
+    <div class="log-line" [attr.level]="logLine.level">
+        <span class="log-time">{{ logLine.timestamp | date:"mediumTime" }}</span>
+        <span class="log-level">[{{ logLine.level | titlecase }}]</span>
+        <span class="log-icon">
+            @if (logLine.level === "error" || logLine.level === "warn") {
+                <mat-icon>
+                    {{ logLine.level === "error" ? "cancel" : "warning" }}
+                </mat-icon>
+            }
+        </span>
+        <span class="log-text">{{ logLine.text }}</span>
+    </div>
+}

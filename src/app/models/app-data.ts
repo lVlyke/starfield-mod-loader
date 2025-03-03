@@ -13,6 +13,7 @@ export interface AppData {
     modListColumns?: string[];
     deployInProgress?: boolean;
     steamCompatDataRoot?: string;
+    logPanelEnabled?: boolean;
 }
 
 export namespace AppData {

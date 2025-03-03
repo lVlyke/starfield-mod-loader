@@ -193,6 +193,10 @@ export namespace AppMessage {
         };
     }
 
+    export interface ToggleLogPanel extends Base {
+        id: `${Prefix}:toggleLogPanel`;
+    }
+
     export interface CheckLinkSupported extends Base {
         id: `${Prefix}:checkLinkSupported`;
         data: {
@@ -234,6 +238,7 @@ export namespace AppMessage {
                            | FindBestProfileDefaults
                            | ShowAboutInfo
                            | ToggleModListColumn
+                           | ToggleLogPanel
                            | CheckLinkSupported
                            | ResolveResourceUrl;
 
@@ -616,6 +621,7 @@ export namespace AppMessage {
         "app:findBestProfileDefaults",
         "app:showAboutInfo",
         "app:toggleModListColumn",
+        "app:toggleLogPanel",
         "app:checkLinkSupported",
         "app:resolveResourceUrl",
 

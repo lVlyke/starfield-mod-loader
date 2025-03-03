@@ -1,7 +1,10 @@
 @use "../../../styles/mixins" as mixins;
 
 :host {
+    $log-height: 18vh;
+    
     display: flex;
+    flex-direction: column;
     height: 100vh;
     max-height: 100vh;
     align-items: stretch;
@@ -23,6 +26,7 @@
         padding: 1.5rem;
         gap: 1.5rem;
         flex-grow: 1;
+        height: 100vh - $log-height;
 
         .control-card {
             width: 100%;
@@ -360,6 +364,19 @@
                     }
                 }
             }
+        }
+    }
+
+    #log-pane {
+        width: 100%;
+        height: $log-height;
+        display: flex;
+        flex-direction: column-reverse;
+        border-top: 1px solid;
+        overflow-y: auto;
+
+        &[log-panel-active="false"] {
+            display: none;
         }
     }
 

@@ -65,6 +65,11 @@ export class AppState {
     }
 
     @Selector()
+    public static isLogPanelEnabled(state: AppData): boolean {
+        return !!state.logPanelEnabled;
+    }
+
+    @Selector()
     public static getGameDb(state: AppData): GameDatabase {
         return state.gameDb;
     }
@@ -101,6 +106,10 @@ export class AppState {
 
         if (settings.steamCompatDataRoot !== undefined) {
             state.steamCompatDataRoot = settings.steamCompatDataRoot;
+        }
+
+        if (settings.logPanelEnabled !== undefined) {
+            state.logPanelEnabled = settings.logPanelEnabled;
         }
 
         context.setState(state);
@@ -184,6 +193,15 @@ export class AppState {
         const state = _.cloneDeep(context.getState());
 
         delete state.modListColumns;
+
+        context.setState(state);
+    }
+
+    @Action(AppActions.ToggleLogPanel)
+    public toggleLogPanel(context: AppState.Context, { enabled }: AppActions.ToggleLogPanel): void {
+        const state = _.cloneDeep(context.getState());
+
+        state.logPanelEnabled = enabled !== undefined ? enabled : !state.logPanelEnabled;
 
         context.setState(state);
     }

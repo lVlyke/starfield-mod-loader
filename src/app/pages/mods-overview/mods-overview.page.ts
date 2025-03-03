@@ -34,6 +34,7 @@ export class AppModsOverviewPage extends BasePage {
     public readonly activeProfile$: Observable<AppProfile | undefined>;
     public readonly isPluginsEnabled$: Observable<boolean>;
     public readonly isDeployInProgress$: Observable<boolean>;
+    public readonly isLogPanelEnabled$: Observable<boolean>;
     public readonly gameDetails$: Observable<GameDetails | undefined>;
     public readonly isProfileDeployed$: Observable<boolean>;
     public readonly isManageConfigFiles$: Observable<boolean>;
@@ -56,6 +57,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @AsyncState()
     public readonly isDeployInProgress!: boolean;
+
+    @AsyncState()
+    public readonly isLogPanelEnabled!: boolean;
 
     @AsyncState()
     public readonly isManageConfigFiles!: boolean;
@@ -127,6 +131,7 @@ export class AppModsOverviewPage extends BasePage {
         this.activeProfile$ = store.select(AppState.getActiveProfile);
         this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
         this.isDeployInProgress$ = store.select(AppState.isDeployInProgress);
+        this.isLogPanelEnabled$ = store.select(AppState.isLogPanelEnabled);
         this.gameDetails$ = store.select(AppState.getActiveGameDetails);
         this.isProfileDeployed$ = store.select(ActiveProfileState.isDeployed);
         this.isManageConfigFiles$ = store.select(ActiveProfileState.isManageConfigFiles);

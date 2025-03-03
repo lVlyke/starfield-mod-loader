@@ -1,414 +1,420 @@
 
 <!-- Profile Controls-->
-<div id="profile-controls" *ngIf="!!activeProfile">
-    <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
-        <div id="profile-mgmt-controls">
-            <app-game-badge id="profile-game-title" [gameId]="activeProfile.gameId" />
+ @if (!!activeProfile) {
+    <div id="profile-controls">
+        <mat-card id="profile-mod-list" class="control-card mat-elevation-z3">
+            <div id="profile-mgmt-controls">
+                <app-game-badge id="profile-game-title" [gameId]="activeProfile.gameId" />
 
-            <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
-                <mat-label>Current Profile</mat-label>
-                <mat-select #currentProfileSelect
-                            [ngModel]="activeProfile"
-                            [compareWith]="profileDescCompareFn"
-                            (ngModelChange)="profileManager.loadProfile($event, true)">
-                    <mat-select-trigger id="profile-select-trigger">
-                        <span class="profile-name" matColor="primary">
-                            <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: activeProfile }" />
-                        </span>
-                    </mat-select-trigger>
-
-                    @for (profileDesc of profiles; track profileDesc.name) {
-                        <mat-option [value]="profileDesc">
-                            <app-game-badge class="game-title" [gameId]="profileDesc.gameId" />
-
-                            <span class="profile-name">
-                                <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: profileDesc }" />
+                <mat-form-field id="active-profile-form-field" [attr.subscript]="false">
+                    <mat-label>Current Profile</mat-label>
+                    <mat-select #currentProfileSelect
+                                [ngModel]="activeProfile"
+                                [compareWith]="profileDescCompareFn"
+                                (ngModelChange)="profileManager.loadProfile($event, true)">
+                        <mat-select-trigger id="profile-select-trigger">
+                            <span class="profile-name" matColor="primary">
+                                <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: activeProfile }" />
                             </span>
-                        </mat-option>
+                        </mat-select-trigger>
 
-                        <mat-divider />
-                    }
+                        @for (profileDesc of profiles; track profileDesc.name) {
+                            <mat-option [value]="profileDesc">
+                                <app-game-badge class="game-title" [gameId]="profileDesc.gameId" />
 
-                    <ng-template #profileNameDecorated let-profileDesc>
-                        {{ profileDesc.name }}
-                        <mat-icon *ngIf="profileDesc.rootPathOverride"
-                                  class="profile-icon external-icon"
-                                  color="accent"
-                                  [matTooltip]="profileDesc.rootPathOverride">
-                            link
-                        </mat-icon>
-                        <mat-icon *ngIf="profileDesc.deployed"
-                                  class="profile-icon deployed-icon"
-                                  color="primary"
-                                  matTooltip="Profile is active">
-                            play_circle
-                        </mat-icon>
-                    </ng-template>
-                </mat-select>
-            </mat-form-field>
+                                <span class="profile-name">
+                                    <ng-container *ngTemplateOutlet="profileNameDecorated; context:{ $implicit: profileDesc }" />
+                                </span>
+                            </mat-option>
 
-            <span id="profile-mgmt-buttons" class="select-header-buttons">
-                <button mat-icon-button
-                        id="profile-mgmt-button"
-                        color="primary"
-                        matTooltip="Manage Profiles"
-                        (click)="showProfileMgmtMenu($event); $event.stopPropagation()">
-                    <mat-icon>person</mat-icon>
-                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                </button>
-            </span>
-        </div>
+                            <mat-divider />
+                        }
 
-        <!-- Mod Lists -->
-        <mat-card-content class="mod-list-content">
-            <div class="mod-list-actions-bar">
-                <span id="mod-list-actions">
-                    <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
-                        <mat-icon>add</mat-icon>
+                        <ng-template #profileNameDecorated let-profileDesc>
+                            {{ profileDesc.name }}
+                            <mat-icon *ngIf="profileDesc.rootPathOverride"
+                                    class="profile-icon external-icon"
+                                    color="accent"
+                                    [matTooltip]="profileDesc.rootPathOverride">
+                                link
+                            </mat-icon>
+                            <mat-icon *ngIf="profileDesc.deployed"
+                                    class="profile-icon deployed-icon"
+                                    color="primary"
+                                    matTooltip="Profile is active">
+                                play_circle
+                            </mat-icon>
+                        </ng-template>
+                    </mat-select>
+                </mat-form-field>
+
+                <span id="profile-mgmt-buttons" class="select-header-buttons">
+                    <button mat-icon-button
+                            id="profile-mgmt-button"
+                            color="primary"
+                            matTooltip="Manage Profiles"
+                            (click)="showProfileMgmtMenu($event); $event.stopPropagation()">
+                        <mat-icon>person</mat-icon>
                         <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                    </button>
-
-                    <button mat-icon-button color="accent" matTooltip="Explore Profile Mod Files" (click)="showProfileModsDirInFileExplorer()">
-                        <mat-icon>folder_open</mat-icon>
-                    </button>
-
-                    <button mat-icon-button color="accent" matTooltip="Verify Profile" (click)="profileManager.verifyActiveProfile()">
-                        <mat-icon>find_replace</mat-icon>
-                    </button>
-
-                    <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileWizard(activeProfile)">
-                        <mat-icon>settings</mat-icon>
                     </button>
                 </span>
             </div>
 
-            <ng-container *ngIf="activeProfile.rootMods.length > 0">
-                <mat-card-title class="sticky-title">Root Mods</mat-card-title>
+            <!-- Mod Lists -->
+            <mat-card-content class="mod-list-content">
+                <div class="mod-list-actions-bar">
+                    <span id="mod-list-actions">
+                        <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
+                            <mat-icon>add</mat-icon>
+                            <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                        </button>
 
-                <app-profile-mod-list [profile]="activeProfile"
-                                    [root]="true"
-                                    (modChange)="registerModUpdate(true, $event.name, $event.modRef)"
-                                    (modOrderChange)="reorderMods(true, $event)" />
-            </ng-container>
+                        <button mat-icon-button color="accent" matTooltip="Explore Profile Mod Files" (click)="showProfileModsDirInFileExplorer()">
+                            <mat-icon>folder_open</mat-icon>
+                        </button>
 
-            <ng-container *ngIf="activeProfile.mods.length > 0; else emptyModListHint">
-                <mat-card-title class="sticky-title">Mods</mat-card-title>
+                        <button mat-icon-button color="accent" matTooltip="Verify Profile" (click)="profileManager.verifyActiveProfile()">
+                            <mat-icon>find_replace</mat-icon>
+                        </button>
 
-                <app-profile-mod-list [profile]="activeProfile"
-                                    [root]="false"
-                                    (modChange)="registerModUpdate(false, $event.name, $event.modRef)"
-                                    (modOrderChange)="reorderMods(false, $event)" />
-            </ng-container>
-            
-            <ng-template #emptyModListHint>
-                <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
-            </ng-template>
-        </mat-card-content>
-    </mat-card>
+                        <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileWizard(activeProfile)">
+                            <mat-icon>settings</mat-icon>
+                        </button>
+                    </span>
+                </div>
 
-    <!-- Data actions -->
-    <div id="right-pane-actions">
-        <mat-card *ngIf="activeDataAction" id="plugin-actions">
-            <mat-card-header class="tool-header">
-                <mat-card-title>
-                    <!-- Action selector -->
-                    <mat-form-field id="data-actions-picker" [attr.subscript]="false">
-                        <mat-select id="data-actions-type" [(ngModel)]="_activeDataAction">
-                            <mat-select-trigger>
-                                <span id="data-actions-type-trigger">{{ activeDataAction | titlecase }}</span>
-                            </mat-select-trigger>
-                            <mat-option [disabled]="!profileHasPlugins" value="plugins">
-                                Plugins
-                            </mat-option>
-                            <mat-option [disabled]="!activeProfile.manageConfigFiles" value="config">
-                                Config
-                            </mat-option>
-                        </mat-select>
-                    </mat-form-field>
-                </mat-card-title>
+                <ng-container *ngIf="activeProfile.rootMods.length > 0">
+                    <mat-card-title class="sticky-title">Root Mods</mat-card-title>
 
-                @switch (activeDataAction) {
-                    @case ("plugins") {
-                        <!-- Plugin List Controls -->
-                        <span id="plugin-list-actions" class="select-header-buttons">
-                            <button mat-icon-button
-                                    color="accent"
-                                    matTooltip="Restore Plugin Backup"
-                                    (click)="showImportPluginBackupMenu($event)">
-                                <mat-icon>history</mat-icon>
-                                <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                            </button>
-        
-                            <button mat-icon-button
-                                    color="accent"
-                                    matTooltip="Create Plugin Backup" 
-                                    (click)="showExportPluginBackupMenu()">
-                                <mat-icon>file_copy</mat-icon>
-                            </button>
-        
-                            <button mat-icon-button
-                                    color="accent"
-                                    matTooltip="Export Plugin List"
-                                    (click)="profileManager.exportPluginList(activeProfile)">
-                                <mat-icon>ios_share</mat-icon>
-                            </button>
-                        </span>
-                    }
-                    @case ("config") {
-                        <!-- Config Editor Controls -->
-                        <span class="select-header-buttons">
-                            <button mat-icon-button
-                                    color="accent"
-                                    matTooltip="Open Profile Config Folder"
-                                    (click)="profileManager.showProfileConfigDirInFileExplorer()">
-                                <mat-icon>folder_open</mat-icon>
-                            </button>
-                        </span>
-                    }
-                }
-            </mat-card-header>
-            <mat-card-content [attr.action-type]="activeDataAction">
-                @switch (activeDataAction) {
-                    @case ("plugins") {
-                        <!-- Plugin List -->
-                        <app-profile-plugin-list
-                            [profile]="activeProfile"
-                            (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
-                            (pluginOrderChange)="profileManager.reorderPlugins($event)"
-                            (pluginExternalManagementChange)="toggleExternalPluginManagement()"
-                            (pluginTypeChange)="profileManager.promotePluginType($event[0], $event[1])" />
-                    }
-                    @case ("config") {
-                        <!-- Config File Editor -->
-                        <ng-container *ngIf="gameDetails?.gameConfigFiles as configFiles">
-                            @let lastUpdateTime = configFileUpdate$ | async;
-                            @let profileConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
-                            @let baseProfileConfigData = activeProfile!.baseProfile | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
-                            @let resolvedConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:null:true | async;
+                    <app-profile-mod-list [profile]="activeProfile"
+                                        [root]="true"
+                                        (modChange)="registerModUpdate(true, $event.name, $event.modRef)"
+                                        (modOrderChange)="reorderMods(true, $event)" />
+                </ng-container>
 
-                            <!-- File selector -->
-                            <mat-form-field [attr.subscript]="false">
-                                <mat-select #activeConfigFileModel="ngModel"
-                                            [ngModel]="(configFiles | keyvalue)[0].key"
-                                            (ngModelChange)="configFileDataModel.reset()">
-                                    <mat-select-trigger>
-                                        <span class="config-file-name"
-                                              [attr.new-file]="profileConfigData === undefined">
-                                            {{ activeConfigFileModel.value }}
+                <ng-container *ngIf="activeProfile.mods.length > 0; else emptyModListHint">
+                    <mat-card-title class="sticky-title">Mods</mat-card-title>
 
-                                            @if (!!baseProfileConfigData && !profileConfigData) {
-                                                <mat-icon color="accent"
-                                                          class="base-profile-marker"
-                                                          matTooltip="Inherited from {{activeProfile!.baseProfile!.name}}">
-                                                    arrow_outward
-                                                </mat-icon>
-                                            }
-                                        </span>
-                                        <span *ngIf="configFileDataModel.dirty" matColor="accent">*</span>
-                                    </mat-select-trigger>
-                                    <mat-option *ngFor="let configFile of configFiles | keyvalue" [value]="configFile.key">
-                                        {{ configFile.key }}
-                                    </mat-option>
-                                </mat-select>
-                            </mat-form-field>
-    
-                            <!-- File editor -->
-                            <textarea #configFileDataModel="ngModel"
-                                        class="config-file-editor"
-                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                                        [disabled]="!activeConfigFileModel.value"
-                                        [ngModel]="resolvedConfigData">
-                            </textarea>
-
-                            <!-- File actions -->
-                            <div class="config-file-actions">
-                                <button *ngIf="profileConfigData !== undefined"
-                                        mat-icon-button
-                                        matTooltip="Open in external file editor"
-                                        matColor="accent"
-                                        (click)="openConfigFile(activeConfigFileModel.value)">
-                                    <mat-icon>file_open</mat-icon>
-                                </button>
-
-                                <button mat-icon-button
-                                        matTooltip="Reload file contents"
-                                        matColor="accent"
-                                        (click)="reloadConfigFile(activeConfigFileModel.value, configFileDataModel.control)">
-                                    <mat-icon>sync</mat-icon>
-                                </button>
-
-                                <button mat-flat-button
-                                        class="config-save-button"
-                                        color="accent"
-                                        (click)="updateConfigFile(activeConfigFileModel.value, configFileDataModel.value); configFileDataModel.control.markAsPristine()">
-                                    Save
-                                </button>
-                            </div>
-                        </ng-container>
-                    }
-                }
+                    <app-profile-mod-list [profile]="activeProfile"
+                                        [root]="false"
+                                        (modChange)="registerModUpdate(false, $event.name, $event.modRef)"
+                                        (modOrderChange)="reorderMods(false, $event)" />
+                </ng-container>
+                
+                <ng-template #emptyModListHint>
+                    <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
+                </ng-template>
             </mat-card-content>
         </mat-card>
-    
-        <!-- Actions -->
-        <mat-expansion-panel #profileActionsPanel
-                             *ngIf="activeProfile | appIsFullProfile"
-                             id="profile-actions"
-                             class="control-card mat-elevation-z3"
-                             [expanded]="true"
-                             [hideToggle]="!activeDataAction"
-                             [disabled]="!activeDataAction"
-                             [attr.fixed]="activeDataAction ? null : true">
-            <mat-expansion-panel-header>
-                <mat-panel-title *ngIf="profileActionsPanel.expanded">Actions</mat-panel-title>
 
-                <mat-panel-description *ngIf="!profileActionsPanel.expanded">
-                    <span>
-                        <button id="mod-activate-button-compact"
-                                class="mat-elevation-z3"
-                                mat-stroked-button
-                                [matTooltip]="isProfileDeployed ? 'Deactivate Profile' : 'Activate Profile'"
-                                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
-                                
-                            @if (isDeployInProgress) {
-                                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
-                            } @else {
-                                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
-                                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
-                                </mat-icon>
-                            }
-        
-                            @if ((activeProfile | appProfileActiveModCount) > 0) {
-                                ({{ activeProfile | appProfileActiveModCount }})
-                            }
-                        </button>
+        <!-- Data actions -->
+        <div id="right-pane-actions">
+            <mat-card *ngIf="activeDataAction" id="plugin-actions">
+                <mat-card-header class="tool-header">
+                    <mat-card-title>
+                        <!-- Action selector -->
+                        <mat-form-field id="data-actions-picker" [attr.subscript]="false">
+                            <mat-select id="data-actions-type" [(ngModel)]="_activeDataAction">
+                                <mat-select-trigger>
+                                    <span id="data-actions-type-trigger">{{ activeDataAction | titlecase }}</span>
+                                </mat-select-trigger>
+                                <mat-option [disabled]="!profileHasPlugins" value="plugins">
+                                    Plugins
+                                </mat-option>
+                                <mat-option [disabled]="!activeProfile.manageConfigFiles" value="config">
+                                    Config
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </mat-card-title>
 
-                        <button id="mod-refresh-button-compact"
-                                class="mat-elevation-z3 no-label"
-                                mat-stroked-button
-                                [disabled]="!isProfileDeployed"
-                                (click)="profileManager.refreshDeployedMods(); $event.stopPropagation()">
-                            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
-                        </button>
-                    </span>
-
-                    <span>
-                        <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
-
-                        <button id="game-action-button-compact"
-                                class="mat-elevation-z3"
-                                mat-stroked-button
-                                matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
-                                [matTooltipDisabled]="isProfileDeployed"
-                                (click)="profileManager.runGameAction(); $event.stopPropagation()">
-                            <mat-icon color="accent">play_circle</mat-icon>
-        
-                            {{ (activeProfile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
-                        </button>
-                    </span>
-                </mat-panel-description>
-            </mat-expansion-panel-header>
-    
-            <ng-template matExpansionPanelContent>
-                <div id="profile-actions-panel-content">
-                    <div id="primary-actions" class="actions primary-actions">
-                        <button id="mod-activate-button"
-                                class="mat-elevation-z3"
-                                mat-stroked-button
-                                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed)">
-                            @if (isDeployInProgress) {
-                                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
-                            } @else {
-                                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
-                                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
-                                </mat-icon>
-                            }
-        
-                            {{ isProfileDeployed ? "Deactivate Profile" : "Activate Profile" }}
-
-                            @if ((activeProfile | appProfileActiveModCount) > 0) {
-                                ({{ activeProfile | appProfileActiveModCount }})
-                            }
-                        </button>
-        
-                        <button id="mod-refresh-button"
-                                class="mat-elevation-z3"
-                                mat-stroked-button
-                                [disabled]="!isProfileDeployed"
-                                (click)="profileManager.refreshDeployedMods()">
-                            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
-                            
-                            Refresh Files
-                        </button>
-                    </div>
-        
-                    <div id="secondary-actions" class="actions secondary-actions">
-                        <button id="profile-dir-view-button"
-                                mat-stroked-button
-                                (click)="profileManager.showProfileBaseDirInFileExplorer()">
-                            <mat-icon>folder_shared</mat-icon>
-                            
-                            Profile Folder
-                        </button>
-
-                        <button id="game-dir-view-button"
-                                mat-stroked-button
-                                (click)="profileManager.showGameRootDirInFileExplorer()">
-                            <mat-icon>source</mat-icon>
-                            
-                            Game Folder
-                        </button>
-        
-                        <button id="mod-dir-view-button"
-                                mat-stroked-button
-                                (click)="profileManager.showGameModDirInFileExplorer()">
-                            <mat-icon>drive_file_move</mat-icon>
-                            
-                            Data Folder
-                        </button>
-        
-                        @if (!activeProfile.manageConfigFiles) {
-                            <button *ngIf="gameDetails | appGameConfigFilesFound$ | async"
-                                    mat-stroked-button
-                                    id="game-config-button"
-                                    (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
-                                <mat-icon>description</mat-icon>
-                                Config Files&nbsp;&nbsp;
-                                <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
-                            </button>
+                    @switch (activeDataAction) {
+                        @case ("plugins") {
+                            <!-- Plugin List Controls -->
+                            <span id="plugin-list-actions" class="select-header-buttons">
+                                <button mat-icon-button
+                                        color="accent"
+                                        matTooltip="Restore Plugin Backup"
+                                        (click)="showImportPluginBackupMenu($event)">
+                                    <mat-icon>history</mat-icon>
+                                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                                </button>
+            
+                                <button mat-icon-button
+                                        color="accent"
+                                        matTooltip="Create Plugin Backup" 
+                                        (click)="showExportPluginBackupMenu()">
+                                    <mat-icon>file_copy</mat-icon>
+                                </button>
+            
+                                <button mat-icon-button
+                                        color="accent"
+                                        matTooltip="Export Plugin List"
+                                        (click)="profileManager.exportPluginList(activeProfile)">
+                                    <mat-icon>ios_share</mat-icon>
+                                </button>
+                            </span>
                         }
-                    </div>
+                        @case ("config") {
+                            <!-- Config Editor Controls -->
+                            <span class="select-header-buttons">
+                                <button mat-icon-button
+                                        color="accent"
+                                        matTooltip="Open Profile Config Folder"
+                                        (click)="profileManager.showProfileConfigDirInFileExplorer()">
+                                    <mat-icon>folder_open</mat-icon>
+                                </button>
+                            </span>
+                        }
+                    }
+                </mat-card-header>
+                <mat-card-content [attr.action-type]="activeDataAction">
+                    @switch (activeDataAction) {
+                        @case ("plugins") {
+                            <!-- Plugin List -->
+                            <app-profile-plugin-list
+                                [profile]="activeProfile"
+                                (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
+                                (pluginOrderChange)="profileManager.reorderPlugins($event)"
+                                (pluginExternalManagementChange)="toggleExternalPluginManagement()"
+                                (pluginTypeChange)="profileManager.promotePluginType($event[0], $event[1])" />
+                        }
+                        @case ("config") {
+                            <!-- Config File Editor -->
+                            <ng-container *ngIf="gameDetails?.gameConfigFiles as configFiles">
+                                @let lastUpdateTime = configFileUpdate$ | async;
+                                @let profileConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
+                                @let baseProfileConfigData = activeProfile!.baseProfile | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateTime | async;
+                                @let resolvedConfigData = activeProfile! | appProfileConfigFile$:activeConfigFileModel.value:null:true | async;
+
+                                <!-- File selector -->
+                                <mat-form-field [attr.subscript]="false">
+                                    <mat-select #activeConfigFileModel="ngModel"
+                                                [ngModel]="(configFiles | keyvalue)[0].key"
+                                                (ngModelChange)="configFileDataModel.reset()">
+                                        <mat-select-trigger>
+                                            <span class="config-file-name"
+                                                [attr.new-file]="profileConfigData === undefined">
+                                                {{ activeConfigFileModel.value }}
+
+                                                @if (!!baseProfileConfigData && !profileConfigData) {
+                                                    <mat-icon color="accent"
+                                                            class="base-profile-marker"
+                                                            matTooltip="Inherited from {{activeProfile!.baseProfile!.name}}">
+                                                        arrow_outward
+                                                    </mat-icon>
+                                                }
+                                            </span>
+                                            <span *ngIf="configFileDataModel.dirty" matColor="accent">*</span>
+                                        </mat-select-trigger>
+                                        <mat-option *ngFor="let configFile of configFiles | keyvalue" [value]="configFile.key">
+                                            {{ configFile.key }}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
         
-                    <div class="spacer"></div>
+                                <!-- File editor -->
+                                <textarea #configFileDataModel="ngModel"
+                                            class="config-file-editor"
+                                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                            [disabled]="!activeConfigFileModel.value"
+                                            [ngModel]="resolvedConfigData">
+                                </textarea>
+
+                                <!-- File actions -->
+                                <div class="config-file-actions">
+                                    <button *ngIf="profileConfigData !== undefined"
+                                            mat-icon-button
+                                            matTooltip="Open in external file editor"
+                                            matColor="accent"
+                                            (click)="openConfigFile(activeConfigFileModel.value)">
+                                        <mat-icon>file_open</mat-icon>
+                                    </button>
+
+                                    <button mat-icon-button
+                                            matTooltip="Reload file contents"
+                                            matColor="accent"
+                                            (click)="reloadConfigFile(activeConfigFileModel.value, configFileDataModel.control)">
+                                        <mat-icon>sync</mat-icon>
+                                    </button>
+
+                                    <button mat-flat-button
+                                            class="config-save-button"
+                                            color="accent"
+                                            (click)="updateConfigFile(activeConfigFileModel.value, configFileDataModel.value); configFileDataModel.control.markAsPristine()">
+                                        Save
+                                    </button>
+                                </div>
+                            </ng-container>
+                        }
+                    }
+                </mat-card-content>
+            </mat-card>
         
-                    <div id="game-info">
-                        <div id="mod-status" [attr.mods-activated]="isProfileDeployed">
-                            <ng-container *ngTemplateOutlet="profileDeploymentStatusText" />
-                        </div>
-                    </div>
-        
-                    <div id="game-actions" class="actions">
-                        <span id="game-action-button-wrapper">
-                            <button id="game-action-button"
+            <!-- Actions -->
+            <mat-expansion-panel #profileActionsPanel
+                                *ngIf="activeProfile | appIsFullProfile"
+                                id="profile-actions"
+                                class="control-card mat-elevation-z3"
+                                [expanded]="true"
+                                [hideToggle]="!activeDataAction"
+                                [disabled]="!activeDataAction"
+                                [attr.fixed]="activeDataAction ? null : true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title *ngIf="profileActionsPanel.expanded">Actions</mat-panel-title>
+
+                    <mat-panel-description *ngIf="!profileActionsPanel.expanded">
+                        <span>
+                            <button id="mod-activate-button-compact"
                                     class="mat-elevation-z3"
                                     mat-stroked-button
-                                    (click)="profileManager.runGameAction()">
+                                    [matTooltip]="isProfileDeployed ? 'Deactivate Profile' : 'Activate Profile'"
+                                    (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
+                                    
+                                @if (isDeployInProgress) {
+                                    <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+                                } @else {
+                                    <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                        {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                                    </mat-icon>
+                                }
+            
+                                @if ((activeProfile | appProfileActiveModCount) > 0) {
+                                    ({{ activeProfile | appProfileActiveModCount }})
+                                }
+                            </button>
+
+                            <button id="mod-refresh-button-compact"
+                                    class="mat-elevation-z3 no-label"
+                                    mat-stroked-button
+                                    [disabled]="!isProfileDeployed"
+                                    (click)="profileManager.refreshDeployedMods(); $event.stopPropagation()">
+                                <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
+                            </button>
+                        </span>
+
+                        <span>
+                            <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
+
+                            <button id="game-action-button-compact"
+                                    class="mat-elevation-z3"
+                                    mat-stroked-button
+                                    matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
+                                    [matTooltipDisabled]="isProfileDeployed"
+                                    (click)="profileManager.runGameAction(); $event.stopPropagation()">
                                 <mat-icon color="accent">play_circle</mat-icon>
             
                                 {{ (activeProfile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
                             </button>
-                            <button id="game-action-menu-button"
+                        </span>
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+        
+                <ng-template matExpansionPanelContent>
+                    <div id="profile-actions-panel-content">
+                        <div id="primary-actions" class="actions primary-actions">
+                            <button id="mod-activate-button"
                                     class="mat-elevation-z3"
                                     mat-stroked-button
-                                    (click)="showGameActionsMenu($event)">
-                                <mat-icon>arrow_drop_down</mat-icon>
+                                    (click)="profileManager.updateActiveModDeployment(!isProfileDeployed)">
+                                @if (isDeployInProgress) {
+                                    <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+                                } @else {
+                                    <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                                        {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                                    </mat-icon>
+                                }
+            
+                                {{ isProfileDeployed ? "Deactivate Profile" : "Activate Profile" }}
+
+                                @if ((activeProfile | appProfileActiveModCount) > 0) {
+                                    ({{ activeProfile | appProfileActiveModCount }})
+                                }
                             </button>
-                        </span>
+            
+                            <button id="mod-refresh-button"
+                                    class="mat-elevation-z3"
+                                    mat-stroked-button
+                                    [disabled]="!isProfileDeployed"
+                                    (click)="profileManager.refreshDeployedMods()">
+                                <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
+                                
+                                Refresh Files
+                            </button>
+                        </div>
+            
+                        <div id="secondary-actions" class="actions secondary-actions">
+                            <button id="profile-dir-view-button"
+                                    mat-stroked-button
+                                    (click)="profileManager.showProfileBaseDirInFileExplorer()">
+                                <mat-icon>folder_shared</mat-icon>
+                                
+                                Profile Folder
+                            </button>
+
+                            <button id="game-dir-view-button"
+                                    mat-stroked-button
+                                    (click)="profileManager.showGameRootDirInFileExplorer()">
+                                <mat-icon>source</mat-icon>
+                                
+                                Game Folder
+                            </button>
+            
+                            <button id="mod-dir-view-button"
+                                    mat-stroked-button
+                                    (click)="profileManager.showGameModDirInFileExplorer()">
+                                <mat-icon>drive_file_move</mat-icon>
+                                
+                                Data Folder
+                            </button>
+            
+                            @if (!activeProfile.manageConfigFiles) {
+                                <button *ngIf="gameDetails | appGameConfigFilesFound$ | async"
+                                        mat-stroked-button
+                                        id="game-config-button"
+                                        (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
+                                    <mat-icon>description</mat-icon>
+                                    Config Files&nbsp;&nbsp;
+                                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                                </button>
+                            }
+                        </div>
+            
+                        <div class="spacer"></div>
+            
+                        <div id="game-info">
+                            <div id="mod-status" [attr.mods-activated]="isProfileDeployed">
+                                <ng-container *ngTemplateOutlet="profileDeploymentStatusText" />
+                            </div>
+                        </div>
+            
+                        <div id="game-actions" class="actions">
+                            <span id="game-action-button-wrapper">
+                                <button id="game-action-button"
+                                        class="mat-elevation-z3"
+                                        mat-stroked-button
+                                        (click)="profileManager.runGameAction()">
+                                    <mat-icon color="accent">play_circle</mat-icon>
+                
+                                    {{ (activeProfile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
+                                </button>
+                                <button id="game-action-menu-button"
+                                        class="mat-elevation-z3"
+                                        mat-stroked-button
+                                        (click)="showGameActionsMenu($event)">
+                                    <mat-icon>arrow_drop_down</mat-icon>
+                                </button>
+                            </span>
+                        </div>
                     </div>
-                </div>
-            </ng-template>
-        </mat-expansion-panel>
+                </ng-template>
+            </mat-expansion-panel>
+        </div>
     </div>
+}
+
+<div id="log-pane" class="mat-app-background" [attr.log-panel-active]="isLogPanelEnabled">
+    <app-log />
 </div>
 
 <!-- Add mod menu popup -->

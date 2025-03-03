@@ -7,4 +7,5 @@ export interface AppSettingsUserCfg {
     modListColumns?: string[];
     verifyProfileOnStart: boolean;
     steamCompatDataRoot?: string;
+    logPanelEnabled?: boolean;
 }
