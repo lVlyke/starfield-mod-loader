@@ -8,11 +8,12 @@ A cross-platform mod manager for Starfield and other games.
 
 * **Add**, **re-order**, **rename**, **disable** and **remove** your mods and plugins
 * **Multiple profiles** enable quick switching between different games and mod loadouts
+* **Base profiles** allow for creating a base set of mods that can be dynamically extended by other profiles
 * **Root mod** support enables management of ENBs, script extenders, and other injectors
 * **Cross-platform**: Native clients for Windows and Linux (including Steam Deck)
-* Support for **Steam**, **UWP (Game Pass)** and other versions of games
-* Per-profile config files and archive invalidation
+* Per-profile management of config files, save files, and archive invalidation
 * Support for FOMOD installers
+* Support for **Steam**, **UWP (Game Pass)** and other versions of games
 
 # Releases
 
@@ -40,8 +41,13 @@ To install Starfield Mod Loader, simply download the latest release from the [re
 > * **Profiles**
 >   * [**Create a profile**](#create-a-profile)
 >   * [**Config file management**](#configini-file-management)
+>   * [**Save file management**](#save-file-management)
 >   * [**Link mode**](#link-mode)
 >   * [**Archive invalidation**](#archive-invalidation)
+>   * [**Base profile**](#base-profile)
+>   * [**Profile path overrides**](#profile-path-overrides)
+>   * [**Steam compat symlinks (Linux)**](#linux-steam-compat-symlinks)
+> * [**Base profiles**](#base-profiles)
 > * **Mods**
 >   * [**Adding mods**](#add-some-mods)
 >   * [**FOMOD installers**](#fomod-installers)
@@ -56,10 +62,12 @@ To install Starfield Mod Loader, simply download the latest release from the [re
 >   * [**Backup/restore load order**](#backuprestore-plugin-order)
 > * [**Config file management**](#config-file-management)
 > * [**App settings**](#app-settings)
+>   * [**Mod file path case normalization (Linux)**](#normalize-mod-file-path)
 > * [**Launching games**](#launch-the-game)
+>   * [**Custom actions**](#custom-actions)
 > * [**Troubleshooting**](#troubleshooting)
 
-**Note:** This guide refers specifically to Starfield, but most of the information also applies to other games.
+**Note:** This guide refers specifically to Starfield in some places, but most of the information also applies to other games.
 
 To enable mods in Starfield, add the following lines to the `StarfieldCustom.ini` file in your `Documents/My Games/Starfield` folder if not already present:
 
@@ -73,29 +81,35 @@ sResourceDataDirsFinal=
 
 To add and manage mods you must first create a profile. Upon first launching the app you will be shown a form to create a new profile.
 
-The **Mod Base Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` folder or the game's installation folder (required for SFSE mods).
+The **Game Root Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install the game.
+
+The **Game Data Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` folder or the game's installation folder (required for SFSE mods).
 
 **Note:** If you are using the game's `Data` folder, make sure you rename or delete `Documents/My Games/Starfield/Data` if it exists, otherwise your mods will not be detected by the game.
 
-The **Game Base Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install the game.
-
 The **Game Executable** path should point to `Starfield.exe` (or `sfse_loader.exe` if using SFSE), which should be in the game base directory from the prior step. **Note:** You may get an error from Windows Explorer when selecting the UWP version of `Starfield.exe` that says "You don't have permission to open this file". If this happens, simply copy the path of the file and manually paste it into the input field without using the file explorer.
 
-The **Plugin List Path** is the location of the `plugins.txt` file for the game. For Starfield, this is located at `<User_Directory>/AppData/Local/Starfield/plugins.txt`.
+The **Game Plugin List Path** is the location of the `plugins.txt` file for the game. For Starfield, this is located at `<User_Directory>/AppData/Local/Starfield/plugins.txt`.
 
 ### Config/INI file management
 
-If the **Manage Config/INI Files** option is enabled, new config files will be created for the profile. When enabled, you must also define the **Config Files Directory**. For Starfield, this is located at `<User_Directory>/Documents/My Games/Starfield` by default, but may be different depending on your OS settings.
+If the **Manage Config/INI Files** option is enabled, new config files will be created for the profile. When enabled, you must also define the **Game Config Files Directory**. For Starfield, this is located at `<User_Directory>/Documents/My Games/Starfield` by default, but may be different depending on your OS settings.
 
-Upon first enabling the option you will be prompted to copy the existing config files from the **Config Files Directory** to the profile's config files.
+Upon first enabling the option you will be prompted to copy the existing config files from the **Game Config Files Directory** to the profile's config files.
 
-**NOTE:** When activating mods, the profile's config files will be copied to the **Config Files Directory**. If any existing config files are in the **Config Files Directory** when mods are activated, they will be moved to a `.sml.bak` folder during activation. The files moved to `.sml.bak` will be restored back to their original location upon deactivating mods.
+**NOTE:** When activating mods, the profile's config files will be copied to the **Game Config Files Directory**. If any existing config files are in the **Game Config Files Directory** when mods are activated, they will be moved to a `.sml.bak` folder during activation. The files moved to `.sml.bak` will be restored back to their original location upon deactivating mods.
+
+### Save file management
+
+If the **Manage Save Files** option is enabled, any created save games while this profile is deployed will be tied only to that profile. When enabled, you must also define the **Game Saves Directory**. For Starfield, this is located at `<User_Directory>/Documents/My Games/Starfield/Saves` by default, but may be different depending on your OS settings.
 
 ### Link mode
 
-When **Link Mode** is enabled, "links" to the mod files will be used instead of copying the files when activating mods. This is significantly faster and uses less disk space. This setting is recommended to be enabled when possible.
+When **Link Mode** is enabled, file links to the mod files will be used instead of copying the files when activating mods. This is significantly faster and uses less disk space. This setting is recommended to be enabled when possible.
 
-**NOTE:** This setting can only be enabled if Starfield Mod Loader is located on the same disk/partition as the game itself.
+Link mode can also be separately enabled for config files and save files. To enable/disable link mode for config or save files, click the icon to the left of **Game Config Files Directory** or **Game Saves Directory**.
+
+**NOTE:** Link mode can only be enabled if the profile is located on the same disk/partition as the game itself.
 
 ### Archive invalidation
 
@@ -103,11 +117,61 @@ Certain games require a feature called **Archive Invalidation** to properly load
 
 **NOTE:** It is recommended to also enable the "Manage Config/INI Files" option. However if it is disabled, and existing config files can be located, archive invalidation can still be enabled.
 
+### Base profile
+
+You can optionally pick a base profile to inherit from. By default only base profiles from the current game are shown, but you can select any base profile by checkng **Show all profiles**.
+
+See [this section](#base-profiles) for more information about base profiles.
+
+### Profile path overrides
+
+You can choose to override any of the profile paths to point to other directories. Each profile path override will be explained below.
+
+#### Profile Root Path
+
+By default, profiles are stored in the `profiles` directory of Starfield Mod Loader. Overriding this path will allow you to store the profile at an alternative location. This can be useful if your game is installed on a different drive and you want to co-locate the profile to the same drive as the game to enable Link mode.
+
+#### Profile mods path
+
+Overriding this path will allow you to store the profile's mods at an alternative location.
+
+#### Profile saves path
+
+Overriding this path will allow you to store the profile's save files at an alternative location. This is useful if you are syncing save files between multiple PCs or profiles.
+
+#### Profile config path
+
+Overriding this path will allow you to store the profile's config files at an alternative location. This is useful if you are syncing config files between multiple PCs or profiles.
+
+#### Profile backups path
+
+Overriding this path will allow you to store the profile's backup files at an alternative location.
+
+### (Linux) Steam Compat Symlinks
+
+When running a script extender such as SFSE via Steam/Proton, Steam will automatically create a new virtual C drive for it that is different from the virtual C drive used for the game itself. This means that when you go to launch the script extender, your config/INI and save files will not be loaded, and instead new ones will be created on the new virtual C drive.
+
+To avoid having two separate copies of these files, symlinks can be created on the virtual C drive for the script extender that point to the correct directory on the original game's virtual C drive. This allows both virtual C drives to use the same directory for reading config and save files.
+
+Starfield Mod Loader can automate this behavior by enabling **Manage Steam Compat Symlinks** for the profile.
+
+You will first need to figure out the new virtual C drive directory for the script extender, which will normally be located in `~/.local/share/Steam/steamapps/compatdata`. You will see a number of directories in here with numerical IDs. One of these directories corresponds to the game ID that Steam assigned to the script extender. To determine which game ID is the correct one, you can look at the folder's "Date modified" timestamp to figure out which virtual drive directories were created recently. Assuming you added the script extender to Steam recently, the directory should have a Date modified field that matches when it was added to Steam.
+
+Once you have found the custom game ID, enter it as the **Custom Steam Game ID** for the profile. The necessary symlinks will now be created automatically when the profile is deployed.
+
 ### Creating additional profiles
 
 You can create additional profiles at any time by pressing the **Create Profile** button above the **Mod List** section or by selecting **Profile > Add New Profile** from the the menu bar.
 
 **Tip:** You can change the app theme at any time under **File > Preferences**.
+
+## Base profiles
+
+Base profiles are a special kind of profile that can be extended by other profiles. Mods and plugins in a base profile are added and managed as normal, but cannot directly be deployed. Instead, other profiles can extend a base profile and will automatically inherit mods, plugins, and config files from the base profile.
+
+This allows for defining a common set of mods that can be used and extended by other profiles. One way this can be useful is for easily deploying a common set of mods between multiple PCs while also allowing for adding mods or config settings that may only be used on certain machines, such as high-res texture packs or specific compatability patches only needed for some devices.
+
+Game directories are not defined for base profiles, allowing extending profiles to point to different game installation locations as needed.
 
 ## Add some mods
 
@@ -151,9 +215,11 @@ To add a root mod, click the **+** icon in the **Mod List** section and select *
 
 ## Managing your mods
 
-Mods you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. To rename or delete a mod, right click it and select the appropriate option.
+Mods you have added will appear in your mods list with the load order of that mod shown to the right of its name. You can modify the load order of a mod by dragging and dropping it in the list. Unchecking a mod will disable it and make it inactive. Mods inherited from a base profile cannot be re-ordered or enabled/disabled.
 
-You can customize which columns of the mods list are visible under the **View > Mod List Columns** section of the app menu bar.
+You can right click individual mods to bring up additional options, such as renaming or deleting.
+
+**Tip:** You can customize which columns of the mods list are visible under the **View > Mod List Columns** section of the app menu bar.
 
 ### External files
 
@@ -161,7 +227,9 @@ Existing game files and other files that have been manually copied to the **Mod 
 
 ## Game plugins
 
-Once at least one mod with a plugin has been installed, you will see your plugins listed along with their load order. Plugins can be individually disabled or re-ordered by dragging and dropping them. You can right click individual plugins to bring up additional options.
+Once at least one mod with a plugin has been installed, you will see your plugins listed along with their load order. Plugins can be individually disabled or re-ordered by dragging and dropping them. Plugins inherited from a base profile cannot be re-ordered or enabled/disabled.
+
+You can right click individual plugins to bring up additional options.
 
 ### Plugin type promotion
 
@@ -183,7 +251,7 @@ If profile-managed config/INI files are disabled, you will see an option in the 
 
 ## Activate your mods
 
-To enable mods in the game you must first activate them. Press the **Activate Mods** button in the **Actions** section and your mods will be deployed to the **Mod Base Directory**.
+To enable mods in the game you must first deploy the profile. Press the **Activate Mods** button in the **Actions** section to deploy the current profile.
 
 Mods will now remain active until you press the **Deactivate Mods** button, even if you close the app or restart your PC.
 
@@ -191,13 +259,37 @@ Mods will now remain active until you press the **Deactivate Mods** button, even
 
 ## App settings
 
-App settings can be changed via **File > Preferences** from the menu bar.
+App settings can be changed via **File > Preferences** from the menu bar. The following settings are available:
 
-**Tip (Linux):** It is recommended to enable the **Normalize path case** setting when using Linux with a case-sensitive file system. See [here](#normalizePathCase) for more info.
+### Normalize mod file path
+
+Some mods may use different casing for their files/folders (i.e. `Interface` vs `interface`) and this can cause issues on case-sensitive file systems, which are often used on Linux. When this setting is enabled, Starfield Mod Loader will automatically convert all activated mod files and folders to the correct case to avoid this issue.
+
+It is recommended to enable the **Normalize mod file path** setting when using Linux with a case-sensitive file system.
+
+### Verify active profile on app startup
+
+Whether or not the active profile should be verified upon starting Starfield Mod Loader. This is recommended to be enabled, but can be disabled if verification takes too long.
+
+### Enable game plugins
+
+Whether or not plugin management is enabled. Only disable this if you do not want plugins to be managed.
+
+### (Linux) Steam compat data root
+
+The path to Steam's compatdata directory. By default this is located at `~/.local/share/Steam/steamapps/compatdata`, but if it is located at a different location you can define it here. See [this section](#linux-steam-compat-symlinks) for more information.
+
+### App theme
+
+The app theme to use.
 
 ## Launch the game
 
-You can either click the **Start Game** button or simply launch the game directly through Steam, Game Pass, etc. Your mods should now be active!
+You can either click the **Start Game** button or simply launch the game directly through Steam, Game Pass, etc. The game should launch with your mods enabled!
+
+### Custom actions
+
+Additional actions can be added by clicking the dropdown arrow to the right of the **Start Game** button and clicking **New Action**. Set the **Name** for your action and the **Action** to perform. **Action** can be a program or script along with any needed options. You can now select this action by clicking the dropdown arrow.
 
 # Troubleshooting
 
@@ -231,39 +323,19 @@ sPhotoModeFolder=Photos
 
 If you get a warning about symlinks not being enabled when creating or editing a profile, you need to enable symlink permissions.
 
-To enable symlinks in Windows, you can either A) run Starfield Mod Loader as administrator (not recommended) or B) enable Windows Developer Mode. To enable Developer Mode, open the Windows "Settings" app, go to "For developers", and then enable "Developer Mode". Once enabled, Starfield Mod Loader should now be able to use symlinks.
+To enable symlinks in Windows, you can either A) enable Windows Developer Mode by going the Windows "Settings" app, select "For developers", and then enable "Developer Mode", or B) run Starfield Mod Loader as administrator (not recommended). Once enabled, Starfield Mod Loader should now be able to use symlinks.
 
 ### The app sits on the "Verifying Profile..." loading screen for a long time during startup
 
 This can happen when very large profiles are activated. If profile verification is taking too long, you can disable verification on app startup via the menu bar under **File > Preferences**.
 
-### **(Linux)** Some mods are not loading/strange behavior when loading some mods <a name="normalizePathCase"></a>
+### **(Linux)** Some mods are not loading/strange behavior when loading some mods
 
-Some mods may use different casing for their files/folders (i.e. `Interface` vs `interface`) and this can cause issues on case-sensitive file systems, which are often used on Linux. To prevent this issue, you can enable the **Normalize path case** option under **File > Preferences**. When this setting is enabled, Starfield Mod Loader will automatically convert all activated mod files and folders to lowercase when appropriate.
+This can be fixed by enabling **Normalize mod file path** for the app. See [this section](#normalize-mod-file-path) for more information.
 
-### **(Linux)** Mods are not loading when using SFSE
+### **(Linux)** Mods are not loading when using a script extender like SFSE
 
-When running SFSE via Steam/Proton, Steam will create a new virtual C drive for SFSE that's different from the virtual C drive used for Starfield. This means that when running SFSE, your `StarfieldCustom.ini` and `StarfieldPrefs.ini` files will not be loaded, and instead new ones will be created on the new virtual C drive.
-
-To avoid having two separate copies of these files, the easiest solution is to create a symlink on the new virtual C drive to the `Documents/My Games/Starfield` directory on the original Starfield virtual C drive. This way, both virtual C drives will point to the same `Documents/My Games/Starfield` directory.
-
-You will first need to figure out the new virtual C drive directory for SFSE, which will be located in `~/.local/share/Steam/steamapps/compatdata`. You will see a number of directories in here with numerical IDs. One of these directories corresponds to the game ID that Steam assigned to SFSE. To determine which game ID is the correct one, you can look at the folder's "Date modified" timestamp to figure out which virtual drive directories were created recently. Assuming you added SFSE recently, it should have a Date modified field that matches when SFSE was added.
-
-Once you have figured out the game ID for SFSE, navigate to `<sfse_game_id>/pfx/drive_c/users/steamuser/Documents/My Games`. Delete the existing `Starfield` directory inside of this directory and then open a terminal at this directory and run the following command:
-
-```sh
-# Starfield's game ID is 1716740
-ln -s "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield" "./Starfield"
-```
-
-This will create a symlink to Starfield's `Documents/My Games/Starfield` directory, ensuring that SFSE is using the same ini files as the base game.
-
-You must also create a symlink in `<sfse_game_id>/pfx/drive_c/users/steamuser/AppData/Local`:
-
-```sh
-# Create a symlink to `/AppData/Local/Starfield`
-ln -s "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield" "./Starfield"
-```
+This can be fixed by enabling **Manage Steam Compat Symlinks** for the profile. See [this section](#linux-steam-compat-symlinks) for more information.
 
 ## Report an issue
 

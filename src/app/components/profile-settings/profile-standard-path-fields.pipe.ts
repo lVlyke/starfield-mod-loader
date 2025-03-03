@@ -42,8 +42,8 @@ function STANDARD_FIELDS({
 }: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {
     return [
         {
-            formId: "gameModDir",
-            title: "Game Data Directory",
+            formId: "gameRootDir",
+            title: "Game Root Directory",
             path: true, 
             required: true,
             linkable: true,
@@ -53,8 +53,8 @@ function STANDARD_FIELDS({
             } : undefined
         },
         {
-            formId: "gameRootDir",
-            title: "Game Root Directory",
+            formId: "gameModDir",
+            title: "Game Data Directory",
             path: true, 
             required: true,
             linkable: true,

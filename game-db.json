@@ -203,11 +203,11 @@
         "bkgColor": "#be6326",
         "fgColor": "#ffffff",
         "modDirs": [
-            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
             "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Data",
-            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data",
-            "~/.local/share/Steam/steamapps/common/Starfield/Data"
+            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
+            "~/.local/share/Steam/steamapps/common/Starfield/Data",
+            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data"
         ],
         "rootDirs": [
             "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
