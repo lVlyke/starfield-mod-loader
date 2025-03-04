@@ -19,7 +19,8 @@ interface LogEntry {
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppLogComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppLogComponent extends BaseComponent {
 

@@ -2,15 +2,13 @@
     <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let modEntry" class="mod-enabled">
-            <ng-container *ngIf="modEntry !== 'manual'; else manualModsTemplate">
+            @if (modEntry !== "manual") {
                 <mat-checkbox [checked]="modEntry.modRef.enabled"
                               [disabled]="!!modEntry.modRef.baseProfile || !!modEntry.modRef.verificationError"
                               (change)="modChange$.emit(assign({}, modEntry, { modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) }))" />
-            </ng-container>
-
-            <ng-template #manualModsTemplate>
+            } @else {
                 <mat-checkbox [checked]="true" [disabled]="true" />
-            </ng-template>
+            }
         </td>
     </ng-container>
 
@@ -19,19 +17,23 @@
         <td mat-cell *matCellDef="let modEntry" class="mod-title">
             @if (modEntry !== 'manual') {
                 <div class="mod-title-sections">
+                    @let baseProfile = modEntry.modRef.baseProfile;
+
                     <span>{{ modEntry.name }}</span>
 
-                    <span *ngIf="modEntry.modRef.baseProfile as baseProfile"
-                          class="mod-base-profile-marker"
-                          matTooltip="Managed by {{baseProfile}}">
-                        <mat-icon class="mod-base-profile-icon" color="accent">arrow_outward</mat-icon>
-                    </span>
+                    @if (!!baseProfile) {
+                        <span class="mod-base-profile-marker"
+                            matTooltip="Managed by {{baseProfile}}">
+                            <mat-icon class="mod-base-profile-icon" color="accent">arrow_outward</mat-icon>
+                        </span>
+                    }
                             
-                    <mat-icon *ngIf="!!modEntry.modRef.verificationError?.error"
-                                class="mod-verification-error-icon"
+                    @if (!!modEntry.modRef.verificationError?.error) {
+                        <mat-icon class="mod-verification-error-icon"
                                 [matTooltip]="modEntry.modRef.verificationError.reason ?? 'This mod has a verification error'">
-                        error
-                    </mat-icon>
+                            error
+                        </mat-icon>
+                    }
                 </div>
             } @else {
                 <span class="manual-mod-text">
@@ -52,18 +54,18 @@
     <ng-container matColumnDef="updatedDate">
         <th mat-header-cell *matHeaderCellDef>Last Updated</th>
         <td mat-cell *matCellDef="let modEntry" class="mod-last-updated">
-            <ng-container *ngIf="modEntry !== 'manual'">
-                <div *ngIf="modEntry.modRef.updatedDate">{{ modEntry.modRef.updatedDate | date }}</div>
-            </ng-container>
+            @if (modEntry !== "manual" && !!modEntry.modRef.updatedDate) {
+                <div>{{ modEntry.modRef.updatedDate | date }}</div>
+            }
         </td>
     </ng-container>
 
     <ng-container matColumnDef="order">
         <th mat-header-cell *matHeaderCellDef>Load Order</th>
         <td mat-cell *matCellDef="let modEntry" class="mod-load-order">
-            <ng-container *ngIf="modEntry !== 'manual'">
+            @if (modEntry !== "manual") {
                 <div>{{ modEntry.order ?? "--" }}</div>
-            </ng-container>
+            }
         </td>
     </ng-container>
 

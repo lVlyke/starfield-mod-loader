@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
 @Pipe({
-    name: "appFlatten"
+    name: "appFlatten",
+    standalone: false
 })
 export class AppFlattenPipe implements PipeTransform {
 

@@ -107,7 +107,8 @@ function STANDARD_FIELDS({
 }
 
 @Pipe({
-    name: "appProfileSettingsStandardPathFields"
+    name: "appProfileSettingsStandardPathFields",
+    standalone: false
 })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 

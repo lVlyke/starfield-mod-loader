@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
 @Pipe({
-    name: "appHex"
+    name: "appHex",
+    standalone: false
 })
 export class AppHexPipe implements PipeTransform {
 

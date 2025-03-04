@@ -19,15 +19,12 @@ import { AppPreferencesComponent, AppPreferencesComponentModule } from "../../co
     providers: [
         ComponentState.create(AppPreferencesModal),
     ],
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,
-
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
-        
         AppPreferencesComponentModule
     ]
 })

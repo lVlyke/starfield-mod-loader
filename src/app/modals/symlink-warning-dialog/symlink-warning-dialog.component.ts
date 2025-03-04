@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Inject, InjectionToken, Output } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
@@ -9,9 +9,7 @@ import { AppDialogActionsComponentModule } from "../../components/dialog-actions
     templateUrl: "./symlink-warning-dialog.component.html",
     styleUrls: ["./symlink-warning-dialog.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
-    CommonModule,
     MatCardModule,
     MatButtonModule,
     AppDialogActionsComponentModule

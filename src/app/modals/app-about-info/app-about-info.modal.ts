@@ -15,7 +15,6 @@ export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutI
     templateUrl: "./app-about-info.modal.html",
     styleUrls: ["./app-about-info.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         CommonModule,
         MatCardModule,

@@ -14,7 +14,8 @@ import { AppDialogs } from "../../services/app-dialogs";
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppModActionsComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppModActionsComponent extends BaseComponent {
 

@@ -3,7 +3,8 @@ import { Observable } from "rxjs";
 import { filterDefined } from "../core/operators";
 
 @Pipe({
-    name: "appFilterDefined$"
+    name: "appFilterDefined$",
+    standalone: false
 })
 export class AppFilterDefinedPipe implements PipeTransform {
 

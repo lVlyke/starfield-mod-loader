@@ -1,24 +1,28 @@
-<mat-card *ngIf="!!preferences">
-    <mat-card-header>
-        <mat-card-title>App Preferences</mat-card-title>
-    </mat-card-header>
+@if (!!preferences) {
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>App Preferences</mat-card-title>
+        </mat-card-header>
 
-    <mat-card-content>
-        <mat-divider />
-        <app-preferences [preferences]="preferences" />
-    </mat-card-content>
+        <mat-card-content>
+            <mat-divider />
+            <app-preferences [preferences]="preferences" />
+        </mat-card-content>
 
-    <mat-card-actions *ngIf="!!preferencesComponent">
-        <button mat-raised-button
-                type="submit"
-                form="preferences-form"
-                color="primary"
-                [disabled]="(preferencesComponent.form.statusChanges | async) !== 'VALID'">
-                Save
-        </button>
+        @if (!!preferencesComponent) {
+            <mat-card-actions>
+                <button mat-raised-button
+                        type="submit"
+                        form="preferences-form"
+                        color="primary"
+                        [disabled]="(preferencesComponent.form.statusChanges | async) !== 'VALID'">
+                        Save
+                </button>
 
-        <button mat-raised-button (click)="overlayRef.close()">
-            Cancel
-        </button>
-    </mat-card-actions>
-</mat-card>
+                <button mat-raised-button (click)="overlayRef.close()">
+                    Cancel
+                </button>
+            </mat-card-actions>
+        }
+    </mat-card>
+}

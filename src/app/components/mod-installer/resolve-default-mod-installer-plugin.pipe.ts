@@ -3,7 +3,8 @@ import { AppModInstaller } from "./mod-installer.types";
 import { ModInstaller } from "../../models/mod-installer";
 
 @Pipe({
-    name: "appResolveDefaultModInstallerPlugin"
+    name: "appResolveDefaultModInstallerPlugin",
+    standalone: false
 })
 export class AppResolveDefaultModInstallerPluginPipe implements PipeTransform {
 

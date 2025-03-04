@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, Component, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/core";
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, provideAppInitializer, inject } from "@angular/core";
 import { RouterModule } from "@angular/router";
 import { AsyncState, ComponentState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -8,19 +8,7 @@ import { Observable } from "rxjs";
 import { BaseComponent } from "./core/base-component";
 import { AppState } from "./state";
 import { AppTheme } from "./models/app-theme";
-
-import { ProfileManager } from "./services/profile-manager";
-import { AppMessageHandler } from "./services/app-message-handler";
-import { AppStateBehaviorManager } from "./services/app-state-behavior-manager";
-
-const STARTUP_SERVICES = [
-    AppMessageHandler,
-    AppStateBehaviorManager,
-    ProfileManager
-];
-
 @Component({
-    standalone: true,
     selector: "app-root",
     templateUrl: "./app.component.html",
     styleUrls: ["./app.component.scss"],
@@ -31,13 +19,6 @@ const STARTUP_SERVICES = [
         NgxMaterialThemingModule
     ],
     providers: [
-        // Startup services:
-        {
-            provide: APP_INITIALIZER,
-            useFactory: APP_INITIALIZER_FACTORY,
-            deps: STARTUP_SERVICES,
-            multi: true
-        },
         ComponentState.create(AppComponent)
     ]
 })
@@ -57,8 +38,3 @@ export class AppComponent extends BaseComponent {
         this.theme$ = store.select(AppState.getTheme);
     }
 }
-
-export function APP_INITIALIZER_FACTORY() {
-    return function () {};
-  }
-  

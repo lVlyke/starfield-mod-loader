@@ -15,12 +15,16 @@
                     [required]="true"
                     [disabled]="!createMode || !!initialProfile.gameId"
                     [ngModel]="initialProfile.gameId ?? GameId.STARFIELD">
-            <mat-select-trigger *ngIf="formModel$ | async as formModel">
-                <app-game-badge [gameId]="formModel.gameId!" />
-            </mat-select-trigger>
-            <mat-option *ngFor="let gameId of gameIds" [value]="gameId">
-                <app-game-badge [gameId]="gameId" />
-            </mat-option>
+            @if (!!formModel) {
+                <mat-select-trigger>
+                    <app-game-badge [gameId]="formModel.gameId!" />
+                </mat-select-trigger>
+            }
+            @for (gameId of gameIds; track gameId) {
+                <mat-option [value]="gameId">
+                    <app-game-badge [gameId]="gameId" />
+                </mat-option>
+            }
         </mat-select>
     </mat-form-field>
 
@@ -34,30 +38,37 @@
                 [disabled]="!createMode"
                 [readonly]="!createMode"
                 [ngModel]="initialProfile.name">
-        <mat-hint *ngIf="(nameModel.control.statusChanges | async) && nameModel.hasError('invalidProfileName')" [attr.matWarn]="true">
-            Profile already exists
-        </mat-hint>
+        @if ((nameModel.control.statusChanges | async) && nameModel.hasError("invalidProfileName")) {
+            <mat-hint [attr.matWarn]="true">
+                Profile already exists
+            </mat-hint>
+        }
     </mat-form-field>
 
-    <mat-form-field *ngIf="!baseProfileMode" appearance="fill">
-        <mat-label>Base Profile</mat-label>
-        <mat-select #baseProfileModel="ngModel"
-                    name="baseProfile"
-                    [ngModel]="initialProfile.baseProfile?.name">
-            <mat-select-trigger>{{ baseProfileModel.value }}</mat-select-trigger>
-            @for (profileDesc of appProfileDescs; track profileDesc.name) {
-                <mat-option *ngIf="profileDesc.name !== formModel.name && (showAllBaseProfiles.checked || profileDesc.gameId === formModel.gameId || profileDesc.gameId === '$none')"
-                            [value]="profileDesc.name">
-                    <app-game-badge *ngIf="showAllBaseProfiles.checked" [gameId]="profileDesc.gameId" />
-                    {{ profileDesc.name }}
-                </mat-option>
-            }
-        </mat-select>
+    @if (!baseProfileMode) {
+        <mat-form-field appearance="fill">
+            <mat-label>Base Profile</mat-label>
+            <mat-select #baseProfileModel="ngModel"
+                        name="baseProfile"
+                        [ngModel]="initialProfile.baseProfile?.name">
+                <mat-select-trigger>{{ baseProfileModel.value }}</mat-select-trigger>
+                @for (profileDesc of appProfileDescs; track profileDesc.name) {
+                    @if (profileDesc.name !== formModel.name && (showAllBaseProfiles.checked || profileDesc.gameId === formModel.gameId || profileDesc.gameId === '$none')) {
+                        <mat-option [value]="profileDesc.name">
+                            @if (showAllBaseProfiles.checked) {
+                                <app-game-badge [gameId]="profileDesc.gameId" />
+                            }
+                            {{ profileDesc.name }}
+                        </mat-option>
+                    }
+                }
+            </mat-select>
 
-        <div matSuffix class="base-profile-select-all-charm" (click)="$event.stopPropagation()">
-            <mat-checkbox #showAllBaseProfiles>Show all profiles</mat-checkbox>
-        </div>
-    </mat-form-field>
+            <div matSuffix class="base-profile-select-all-charm" (click)="$event.stopPropagation()">
+                <mat-checkbox #showAllBaseProfiles>Show all profiles</mat-checkbox>
+            </div>
+        </mat-form-field>
+    }
 
     @let stdFieldInput = { formModel, form, baseProfileMode, modLinkModeSupported, configLinkModeSupported };
     @for (fieldEntry of stdFieldInput | appProfileSettingsStandardPathFields; track fieldEntry.formId) {
@@ -65,7 +76,12 @@
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
                     {{ fieldEntry.groupTitle }}
-                    <mat-icon *ngIf="fieldEntry.hint" class="tooltip-icon" [matTooltip]="fieldEntry.hint">help</mat-icon>
+                    @if (fieldEntry.hint) {
+                        <mat-icon class="tooltip-icon"
+                                  [matTooltip]="fieldEntry.hint">
+                            help
+                        </mat-icon>
+                    }
                 </mat-expansion-panel-header>
             
                 @for (fieldInfo of fieldEntry.fields; track fieldInfo.formId) {
@@ -80,16 +96,17 @@
             <mat-form-field appearance="fill">
                 <mat-label>{{ fieldInfo.title }}</mat-label>
 
-                <button *ngIf="fieldInfo.linkable"
-                        mat-icon-button 
-                        matPrefix
-                        type="button"
-                        [attr.editable]="fieldInfo.linkFn"
-                        [disabledInteractive]="!fieldInfo.linkFn"
-                        [color]="fieldInfo.linked ? 'accent' : null"
-                        (click)="fieldInfo.linkFn ? fieldInfo.linkFn(fieldInfo) : null; $event.stopPropagation()">
-                    <mat-icon>{{ fieldInfo.linked ? "link" : "link_off" }}</mat-icon>
-                </button>
+                @if (fieldInfo.linkable) {
+                    <button mat-icon-button 
+                            matPrefix
+                            type="button"
+                            [attr.editable]="fieldInfo.linkFn"
+                            [disabledInteractive]="!fieldInfo.linkFn"
+                            [color]="fieldInfo.linked ? 'accent' : null"
+                            (click)="fieldInfo.linkFn ? fieldInfo.linkFn(fieldInfo) : null; $event.stopPropagation()">
+                        <mat-icon>{{ fieldInfo.linked ? "link" : "link_off" }}</mat-icon>
+                    </button>
+                }
 
                 <input #fieldModel="ngModel"
                     matInput
@@ -99,16 +116,18 @@
                     [ngModel]="$any(initialProfile)[fieldInfo.formId]"
                     cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === fieldModel.name">
         
-                <button *ngIf="$any(defaultPaths)?.[fieldInfo.formId] as defaultPath"
-                        mat-icon-button 
-                        matSuffix
-                        type="button"
-                        color="accent"
-                        matTooltip="Reset to Default Value"
-                        [attr.hidden]="!fieldInfo.path || null"
-                        (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
-                    <mat-icon>refresh</mat-icon>
-                </button>
+                    @let defaultPath = $any(defaultPaths)?.[fieldInfo.formId];
+                    @if (!!defaultPath) {
+                        <button mat-icon-button 
+                                matSuffix
+                                type="button"
+                                color="accent"
+                                matTooltip="Reset to Default Value"
+                                [attr.hidden]="!fieldInfo.path || null"
+                                (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
+                            <mat-icon>refresh</mat-icon>
+                        </button>
+                    }
         
                 <button mat-icon-button 
                         matSuffix
@@ -120,33 +139,44 @@
                     <mat-icon>folder</mat-icon>
                 </button>
 
-                <mat-icon *ngIf="fieldInfo.hint" matSuffix [matTooltip]="fieldInfo.hint">help</mat-icon>
+                @if (fieldInfo.hint) {
+                    <mat-icon matSuffix
+                              [matTooltip]="fieldInfo.hint">
+                        help
+                    </mat-icon>
+                }
 
-                <mat-error *ngIf="fieldModel.errors?.['invalidProfileRoot']">
-                    Invalid directory
-                </mat-error>
+                @if (fieldModel.errors?.["invalidProfileRoot"]) {
+                    <mat-error>
+                        Invalid directory
+                    </mat-error>
+                }
             </mat-form-field>
         </ng-template>
     }
 
-    <div *ngIf="!baseProfileMode">
-        <mat-checkbox name="modLinkMode"
-                      [disabled]="!modLinkModeSupported"
-                      [ngModel]="modLinkModeSupported ? (initialProfile.modLinkMode ?? true) : false">
-            Link Mode
-        </mat-checkbox>
+    @if (!baseProfileMode) {
+        <div>
+            <mat-checkbox name="modLinkMode"
+                        [disabled]="!modLinkModeSupported"
+                        [ngModel]="modLinkModeSupported ? (initialProfile.modLinkMode ?? true) : false">
+                Link Mode
+            </mat-checkbox>
 
-        <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
-    </div>
+            <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
+        </div>
+    }
 
-    <div *ngIf="!baseProfileMode && formModel.manageConfigFiles">
-        <mat-checkbox name="configLinkMode"
-                      [attr.app-hidden]="true"
-                      [disabled]="!configLinkModeSupported"
-                      [ngModel]="configLinkModeSupported ? (initialProfile.configLinkMode ?? true) : false">
-            Config Link Mode
-        </mat-checkbox>
-    </div>
+    @if (!baseProfileMode && formModel.manageConfigFiles) {
+        <div>
+            <mat-checkbox name="configLinkMode"
+                        [attr.app-hidden]="true"
+                        [disabled]="!configLinkModeSupported"
+                        [ngModel]="configLinkModeSupported ? (initialProfile.configLinkMode ?? true) : false">
+                Config Link Mode
+            </mat-checkbox>
+        </div>
+    }
 
     <div>
         <mat-checkbox name="manageConfigFiles" [ngModel]="initialProfile.manageConfigFiles">
@@ -155,34 +185,44 @@
         </mat-checkbox>
     </div>
 
-    <div *ngIf="!baseProfileMode">
-        <mat-checkbox name="manageSaveFiles"
-                      [disabled]="!manageSavesSupported"
-                      [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
-            Manage Save Files
-            <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
-        </mat-checkbox>
-    </div>
+    @if (!baseProfileMode) {
+        <div>
+            <mat-checkbox name="manageSaveFiles"
+                        [disabled]="!manageSavesSupported"
+                        [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
+                Manage Save Files
+                <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
+            </mat-checkbox>
+        </div>
+    }
 
-    <div *ngIf="!baseProfileMode && manageSteamCompatSymlinksSupported">
-        <mat-checkbox name="manageSteamCompatSymlinks"
-                      [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
-            Manage Steam Compat Symlinks
-            <mat-icon class="tooltip-icon" matTooltip="Automatically create symlinks that synchronize game data for your custom Steam game entry.">help</mat-icon>
-        </mat-checkbox>
-    </div>
+    @if (!baseProfileMode && manageSteamCompatSymlinksSupported) {
+        <div>
+            <mat-checkbox name="manageSteamCompatSymlinks"
+                        [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
+                Manage Steam Compat Symlinks
+                <mat-icon class="tooltip-icon" matTooltip="Automatically create symlinks that synchronize game data for your custom Steam game entry.">help</mat-icon>
+            </mat-checkbox>
+        </div>
+    }
 
     @if (!baseProfileMode) {
-        <ng-container *ngIf="gameDb[formModel.gameId!] as gameDetails">
-            <div *ngIf="gameDetails.archiveInvalidation">
+        @let gameDetails = gameDb[formModel.gameId!];
+        @if (gameDetails?.archiveInvalidation) {
+            <div>
                 <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
                             [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
                             (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
                     Archive Invalidation
                 </mat-checkbox>
 
-                <mat-icon *ngIf="createMode" class="tooltip-icon" matTooltip="This setting can only be modified after the profile has been created.">help</mat-icon>
+                @if (createMode) {
+                    <mat-icon class="tooltip-icon"
+                              matTooltip="This setting can only be modified after the profile has been created.">
+                        help
+                    </mat-icon>
+                }
             </div>
-        </ng-container>
+        }
     }
 </form>

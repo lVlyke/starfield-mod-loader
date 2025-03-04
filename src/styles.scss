@@ -1,20 +1,12 @@
-@use "@angular/material" as mat;
-@use "@lithiumjs/ngx-material-theming" as mat-theming;
-@use "styles/layout";
-
-// Declare core Material theming styles
-@include mat.core();
-@include mat-theming.m2-all-static-component-dimensions();
-
-// Declare layout styles
-@include layout.declare();
+// Load core styles
+@forward "styles/core";
 
 // Load normalize.css
-@import "normalize.css/normalize";
+@forward "normalize.css/normalize";
 
 // Load fonts
-@import "styles/fonts";
+@forward "styles/fonts";
 
 // Load default and dark themes
-@import "styles/themes/default";
-@import "styles/themes/dark";
+@forward "styles/themes/default";
+@forward "styles/themes/dark";

@@ -20,15 +20,12 @@ import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-help
     providers: [
         ComponentState.create(AppProfileSettingsModal),
     ],
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,
-
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
-        
         AppProfileSettingsComponentModule
     ]
 })

@@ -18,7 +18,8 @@ import { GameId } from "../../models/game-id";
         "[style.background-color]": "gameDetails?.bkgColor ?? null",
         "[style.color]": "gameDetails?.fgColor ?? null",
         "[class.high-contrast]": "gameDetails?.fgColor === '#ffffff'"
-    }
+    },
+    standalone: false
 })
 export class AppGameBadgeComponent extends BaseComponent {
 

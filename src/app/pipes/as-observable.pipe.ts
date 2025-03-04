@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from "@angular/core";
 import { Observable, of } from "rxjs";
 
 @Pipe({
-    name: "appAsObservable"
+    name: "appAsObservable",
+    standalone: false
 })
 export class AppAsObservablePipe implements PipeTransform {
 

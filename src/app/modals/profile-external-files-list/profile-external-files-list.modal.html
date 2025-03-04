@@ -5,9 +5,9 @@
 
     <mat-card-content>
         <div class="external-files">
-            <div *ngFor="let file of fileList">
-                {{ file }}
-            </div>
+            @for (file of fileList; track file) {
+                <div>{{ file }}</div>
+            }
         </div>
     </mat-card-content>
 

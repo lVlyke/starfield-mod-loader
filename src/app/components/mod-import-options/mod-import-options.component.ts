@@ -39,7 +39,8 @@ type FileTreeNodeRecord = Record<string, FileTreeNode>;
             provide: NG_VALUE_ACCESSOR,
             useExisting: AppModImportOptionsComponent
         }
-    ]
+    ],
+    standalone: false
 })
 export class AppModImportOptionsComponent extends BaseComponent implements ControlValueAccessor {
 

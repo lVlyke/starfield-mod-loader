@@ -24,18 +24,14 @@ import { AppExternalUrlComponentModule } from "../../components/external-url";
     providers: [
         ComponentState.create(AppModInstallerModal),
     ],
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,
-
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
         MatIconModule,
-
         AppPipesModule,
-        
         AppModInstallerComponentModule,
         AppExternalUrlComponentModule
     ]

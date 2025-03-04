@@ -1,4 +1,4 @@
-import { enableProdMode } from "@angular/core";
+import { enableProdMode, inject, provideAppInitializer } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { provideRouter } from "@angular/router";
@@ -10,6 +10,9 @@ import { AppComponent } from "./app/app.component";
 import { appStates } from "./app/state";
 import { log } from "./app/util/logger";
 
+import { ProfileManager } from "./app/services/profile-manager";
+import { AppMessageHandler } from "./app/services/app-message-handler";
+import { AppStateBehaviorManager } from "./app/services/app-state-behavior-manager";
 
 if (environment.production) {
     enableProdMode();
@@ -23,6 +26,12 @@ bootstrapApplication(AppComponent, {
             { developmentMode: !environment.production },
             withNgxsReduxDevtoolsPlugin({ disabled: environment.production })
         ),
+        provideAppInitializer(() => {
+            // Startup services:
+            inject(AppMessageHandler);
+            inject(AppStateBehaviorManager);
+            inject(ProfileManager);
+        }),
         provideRouter(APP_ROUTES)
     ]
 }).catch(err => log.error(err));

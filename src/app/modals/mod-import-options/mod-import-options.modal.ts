@@ -19,15 +19,12 @@ import { ModImportRequest } from "../../models/mod-import-status";
     providers: [
         ComponentState.create(AppModImportOptionsModal),
     ],
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,
-
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
-        
         AppModImportOptionsComponentModule
     ]
 })

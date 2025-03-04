@@ -1,6 +1,7 @@
 
 <form #modImportForm="ngForm" id="mod-import-form" (ngSubmit)="onFormSubmit$.next(modImportForm)">
-    <ng-container *ngIf="!!importRequest">
+    @if (!!importRequest) {
+
         <mat-form-field appearance="fill">
             <mat-label>Mod Name</mat-label>
             <input matInput
@@ -37,14 +38,13 @@
 
                     <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node }" />
 
-                    <a *ngIf="!isRootDirNode(node)"
-                        mat-button
-                        class="path-info-badge root-dir-action root-dir-select-action"
-                        (click)="setModRootSubdir(node.fullPath)">
-                        &lt;set data dir&gt;
-                    </a>
-
-                    <ng-container *ngIf="isRootDirNode(node)">
+                    @if (!isRootDirNode(node)) {
+                        <a mat-button
+                            class="path-info-badge root-dir-action root-dir-select-action"
+                            (click)="setModRootSubdir(node.fullPath)">
+                            &lt;set data dir&gt;
+                        </a>
+                    } @else {
                         <span class="path-info-badge root-dir-marker"
                             matColor="primary"
                             matTooltip="Only files inside this directory will be added">
@@ -57,11 +57,11 @@
                                 (click)="setModRootSubdir('')">
                             close
                         </mat-icon>
-                    </ng-container>
+                    }
                 </mat-tree-node>
             </mat-tree>
         </div>
-    </ng-container>
+    }
 </form>
 
 <!-- File tree node template -->

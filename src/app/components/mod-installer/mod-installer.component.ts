@@ -40,7 +40,8 @@ import { AppDialogs } from "../../services/app-dialogs";
     ],
     host: {
         "[attr.compact-view]": "compactView"
-    }
+    },
+    standalone: false
 })
 export class AppModInstallerComponent extends BaseComponent {
 

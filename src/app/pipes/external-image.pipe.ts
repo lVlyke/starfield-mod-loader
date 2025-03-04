@@ -4,7 +4,8 @@ import { ExternalFile } from "../models/external-file";
 import { AppStateBehaviorManager } from "../services/app-state-behavior-manager";
 
 @Pipe({
-    name: "appExternalImage$"
+    name: "appExternalImage$",
+    standalone: false
 })
 export class AppExternalImagePipe implements PipeTransform {
 

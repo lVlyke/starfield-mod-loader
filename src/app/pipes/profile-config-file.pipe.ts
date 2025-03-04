@@ -4,7 +4,8 @@ import { ElectronUtils } from "../util/electron-utils";
 import { AppBaseProfile } from "../models/app-profile";
 
 @Pipe({
-    name: "appProfileConfigFile$"
+    name: "appProfileConfigFile$",
+    standalone: false
 })
 export class AppProfileConfigFilePipe implements PipeTransform {
 

@@ -31,7 +31,8 @@ type PluginDataSourceEntry = PluginListEntry;
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppProfilePluginListComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppProfilePluginListComponent extends BaseComponent {
 

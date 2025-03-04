@@ -8,7 +8,7 @@ import {
     Output
 } from "@angular/core";
 import { ComponentState } from "@lithiumjs/angular";
-import { CommonModule } from "@angular/common";
+
 import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -28,9 +28,7 @@ export const NEW_PATH_TOKEN = new InjectionToken<string>("NEW_PATH");
     providers: [
         ComponentState.create(AppProfileFolderMoveDialog)
     ],
-    standalone: true,
     imports: [
-    CommonModule,
     FormsModule,
     MatCardModule,
     MatButtonModule,

@@ -15,7 +15,8 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppPreferencesComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppPreferencesComponent extends BaseComponent {
 

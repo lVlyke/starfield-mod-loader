@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from "@angular/core";
 import { AppProfile } from "../models/app-profile";
 
 @Pipe({
-    name: "appProfileActiveModCount"
+    name: "appProfileActiveModCount",
+    standalone: false
 })
 export class AppProfileActiveModCountPipe implements PipeTransform {
 

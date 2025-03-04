@@ -8,7 +8,8 @@ import { DialogAction } from "../../services/dialog-manager.types";
     templateUrl: "./dialog-actions.component.html",
     styleUrls: ["./dialog-actions.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppDialogActionsComponent)]
+    providers: [ComponentState.create(AppDialogActionsComponent)],
+    standalone: false
 })
 export class AppDialogActionsComponent extends BaseComponent {
 

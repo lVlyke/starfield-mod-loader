@@ -27,7 +27,8 @@ import { GameAction } from "../../models/game-action";
     templateUrl: "./mods-overview.page.html",
     styleUrls: ["./mods-overview.page.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppModsOverviewPage)]
+    providers: [ComponentState.create(AppModsOverviewPage)],
+    standalone: false
 })
 export class AppModsOverviewPage extends BasePage {
 

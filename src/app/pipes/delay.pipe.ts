@@ -3,7 +3,8 @@ import { Observable } from "rxjs";
 import { delay } from "rxjs/operators";
 
 @Pipe({
-    name: "appDelay$"
+    name: "appDelay$",
+    standalone: false
 })
 export class AppDelayPipe implements PipeTransform {
 

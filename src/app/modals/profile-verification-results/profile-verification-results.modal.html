@@ -7,9 +7,11 @@
         }
     </div>
 
-    <div *ngFor="let error of errors" matColor="warn" class="verification-error">
-        {{ error }}
-    </div>
+    @for (error of errors; track error) {
+        <div matColor="warn" class="verification-error">
+            {{ error }}
+        </div>
+    }
 </span>
 
 <span matSnackBarActions>

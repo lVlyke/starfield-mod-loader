@@ -29,7 +29,8 @@ type ModListDataSource = Array<ModListEntry | "manual">;
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppProfileModListComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppProfileModListComponent extends BaseComponent {
 

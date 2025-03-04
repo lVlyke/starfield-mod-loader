@@ -1,0 +1,11 @@
+@use "@angular/material" as mat;
+@use "@lithiumjs/ngx-material-theming" as mat-theming;
+@use "layout";
+
+// Declare core Material theming styles
+@include mat.elevation-classes();
+@include mat.app-background();
+@include mat-theming.m2-all-static-component-dimensions();
+
+// Declare layout styles
+@include layout.declare();

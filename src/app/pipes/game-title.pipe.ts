@@ -7,7 +7,8 @@ import { GameDatabase } from "../models/game-database";
 import { AppState } from "../state";
 
 @Pipe({
-    name: "appGameTitle$"
+    name: "appGameTitle$",
+    standalone: false
 })
 export class AppGameTitlePipe implements PipeTransform {
 

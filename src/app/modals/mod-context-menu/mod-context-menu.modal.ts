@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { MatCardModule } from "@angular/material/card";
 import { BasePage } from "../../core/base-page";
 import { ComponentState, DeclareState } from "@lithiumjs/angular";
@@ -14,12 +14,10 @@ import { AppModActionsComponentModule } from "../../components/mod-actions/mod-a
     providers: [
         ComponentState.create(AppModContextMenuModal)
     ],
-    standalone: true,
     imports: [
-        CommonModule,
-        MatCardModule,
-        AppModActionsComponentModule
-    ]
+    MatCardModule,
+    AppModActionsComponentModule
+]
 })
 export class AppModContextMenuModal extends BasePage {
 

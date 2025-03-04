@@ -4,7 +4,8 @@ import { AppMessage, AppMessageData, AppMessageResult } from "../models/app-mess
 import { ElectronUtils } from "../util/electron-utils";
 
 @Pipe({
-    name: "appSendElectronMsg$"
+    name: "appSendElectronMsg$",
+    standalone: false
 })
 export class AppSendElectronMsgPipe implements PipeTransform {
 

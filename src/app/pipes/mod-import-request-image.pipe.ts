@@ -5,7 +5,8 @@ import { ModImportRequest } from "../models/mod-import-status";
 import { AppStateBehaviorManager } from "../services/app-state-behavior-manager";
 
 @Pipe({
-    name: "appModImportRequestImage$"
+    name: "appModImportRequestImage$",
+    standalone: false
 })
 export class AppModImportRequestImagePipe implements PipeTransform {
 

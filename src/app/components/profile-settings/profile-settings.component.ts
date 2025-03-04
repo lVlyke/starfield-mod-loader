@@ -25,7 +25,8 @@ import { AppDialogs } from "../../services/app-dialogs";
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         ComponentState.create(AppProfileSettingsComponent),
-    ]
+    ],
+    standalone: false
 })
 export class AppProfileSettingsComponent extends BaseComponent {
 

@@ -12,7 +12,8 @@ import { AppResource } from "src/app/models/app-resource";
     templateUrl: "./external-url.component.html",
     styleUrls: ["./external-url.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppExternalUrlComponent)]
+    providers: [ComponentState.create(AppExternalUrlComponent)],
+    standalone: false
 })
 export class AppExternalUrlComponent extends BaseComponent {
 

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { ComponentState } from "@lithiumjs/angular";
@@ -13,13 +13,10 @@ export const FILE_LIST_TOKEN = new InjectionToken<string[]>("FILE_LIST");
     templateUrl: "./profile-external-files-list.modal.html",
     styleUrls: ["./profile-external-files-list.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
-        CommonModule,
-
-        MatCardModule,
-        MatButtonModule
-    ],
+    MatCardModule,
+    MatButtonModule
+],
     providers: [ComponentState.create(AppProfileExternalFilesListModal)]
 })
 export class AppProfileExternalFilesListModal extends BaseComponent {

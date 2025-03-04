@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Inject, InjectionToken, Optional, Output } from "@angular/core";
 import { ComponentState } from "@lithiumjs/angular";
-import { CommonModule } from "@angular/common";
+
 import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatFormFieldModule } from "@angular/material/form-field";
@@ -18,9 +18,7 @@ export const MOD_CUR_NAME_TOKEN = new InjectionToken<string>("MOD_CUR_NAME");
     providers: [
         ComponentState.create(AppModRenameDialog)
     ],
-    standalone: true,
     imports: [
-    CommonModule,
     FormsModule,
     MatCardModule,
     MatFormFieldModule,

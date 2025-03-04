@@ -15,10 +15,8 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
     templateUrl: "./profile-verification-results.modal.html",
     styleUrls: ["./profile-verification-results.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         CommonModule,
-
         MatButtonModule,
         MatSnackBarModule
     ]

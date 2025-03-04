@@ -16,7 +16,8 @@ import { BaseComponent } from "../../core/base-component";
             useExisting: forwardRef(() => AppValueCheckboxComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class AppValueCheckboxComponent<T> extends BaseComponent implements ControlValueAccessor {
 

@@ -16,17 +16,21 @@
                               [remedyMode]="remedyMode" />
     </mat-card-content>
 
-    <mat-card-actions *ngIf="!!profileSettingsComponent">
-        <button mat-raised-button
-                type="submit"
-                form="profile-form"
-                color="primary"
-                [disabled]="(profileSettingsComponent.onFormStatusChange$ | async) !== 'VALID'">
-                {{ createMode ? "Create" : "Save" }}
-        </button>
+    @if (!!profileSettingsComponent) {
+        <mat-card-actions>
+            <button mat-raised-button
+                    type="submit"
+                    form="profile-form"
+                    color="primary"
+                    [disabled]="(profileSettingsComponent.onFormStatusChange$ | async) !== 'VALID'">
+                    {{ createMode ? "Create" : "Save" }}
+            </button>
 
-        <button *ngIf="!remedyMode" mat-raised-button (click)="overlayRef.close()">
-            Cancel
-        </button>
-    </mat-card-actions>
+            @if (!remedyMode) {
+                <button mat-raised-button (click)="overlayRef.close()">
+                    Cancel
+                </button>
+            }
+        </mat-card-actions>
+    }
 </mat-card>

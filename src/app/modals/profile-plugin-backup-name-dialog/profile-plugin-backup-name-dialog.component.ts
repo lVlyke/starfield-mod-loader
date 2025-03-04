@@ -10,7 +10,7 @@ import {
     Output
 } from "@angular/core";
 import { ComponentState } from "@lithiumjs/angular";
-import { CommonModule, formatDate } from "@angular/common";
+import { formatDate } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatFormFieldModule } from "@angular/material/form-field";
@@ -28,9 +28,7 @@ export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN")
     providers: [
         ComponentState.create(AppProfilePluginBackupNameDialog)
     ],
-    standalone: true,
     imports: [
-    CommonModule,
     FormsModule,
     MatCardModule,
     MatFormFieldModule,

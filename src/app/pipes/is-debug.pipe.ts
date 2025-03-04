@@ -3,7 +3,8 @@ import { environment } from "../../environments/environment";
 
 @Pipe({
     name: "appIsDebug",
-    pure: false
+    pure: false,
+    standalone: false
 })
 export class AppIsDebugPipe implements PipeTransform {
 

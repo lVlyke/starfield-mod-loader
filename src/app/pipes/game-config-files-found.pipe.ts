@@ -4,7 +4,8 @@ import { ElectronUtils } from "../util/electron-utils";
 import { GameDetails } from "../models/game-details";
 
 @Pipe({
-    name: "appGameConfigFilesFound$"
+    name: "appGameConfigFilesFound$",
+    standalone: false
 })
 export class AppGameConfigFilesFoundPipe implements PipeTransform {
 
