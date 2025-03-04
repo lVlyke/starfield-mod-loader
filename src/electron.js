@@ -2290,7 +2290,8 @@ class ElectronLoader {
                     return;
                 }
 
-                if (profile.modLinkMode) {
+                const linkMode = this.#checkLinkSupported(srcFilePath, [destFilePath]);
+                if (linkMode) {
                     fs.mkdirpSync(path.dirname(destFilePath));
                     fs.linkSync(srcFilePath, destFilePath);
                 } else {
