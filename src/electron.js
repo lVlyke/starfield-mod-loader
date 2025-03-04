@@ -800,9 +800,11 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:runGameAction">} */ { profile, gameAction }
         ) => {
+            profile.gameRootDir = this.#expandPath(profile.gameRootDir);
+
             // If game binary path is relative, use the `gameRootDir` as the binary dir
             if (!path.isAbsolute(profile.gameBinaryPath)) {
-                profile.gameBinaryPath = path.join(profile.gameRootDir, profile.gameBinaryPath);
+                profile.gameBinaryPath = path.join(profile.gameRootDir, this.#expandPath(profile.gameBinaryPath));
             }
 
             // Substitute variables for profile
@@ -810,7 +812,7 @@ class ElectronLoader {
             
             // Run the action
             try {
-                exec(gameActionCmd, { cwd: profile.gameBinaryPath });
+                exec(gameActionCmd, { cwd: profile.gameRootDir });
             } catch(error) {
                 throw new Error(error.toString());
             }
