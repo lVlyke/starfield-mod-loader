@@ -413,6 +413,7 @@
     </div>
 }
 
+<!-- Log panel -->
 <div id="log-pane" class="mat-app-background" [attr.log-panel-active]="isLogPanelEnabled">
     <app-log />
 </div>
@@ -472,7 +473,7 @@
                 </button>
 
                 <button mat-list-item (click)="exportActiveProfile(); showProfileMgmtMenuRef?.close()">
-                    <mat-icon matListIcon color="primary">person_remove</mat-icon>
+                    <mat-icon matListIcon color="accent">person_remove</mat-icon>
                     <span matLine>Export Profile</span>
                 </button>
 
@@ -552,13 +553,20 @@
                 @let gameActions = [profileManager.LAUNCH_GAME_ACTION].concat(activeProfile!.customGameActions ?? []);
 
                 @for (gameAction of gameActions; track $index) {
-                    <button mat-list-item (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
+                    <button mat-list-item class="game-action" (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
                         <mat-icon matListIcon color="accent">play_circle</mat-icon>
 
                         <span class="game-action-name">{{ gameAction.name }}</span>
 
                         @if ($index > 0) {
                             <button mat-icon-button
+                                    matTooltip="Edit"
+                                    (click)="editCustomGameActionByIndex($index - 1, gameAction); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                                <mat-icon color="primary">edit</mat-icon>
+                            </button>
+
+                            <button mat-icon-button
+                                    matTooltip="Delete"
                                     (click)="removeCustomGameActionByIndex($index - 1); gameActionsMenuRef?.close(); $event.stopPropagation()">
                                 <mat-icon color="warn">delete</mat-icon>
                             </button>

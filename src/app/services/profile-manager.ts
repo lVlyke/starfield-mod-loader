@@ -93,6 +93,33 @@ export class ProfileManager {
         ).subscribe();
 
         messageHandler.messages$.pipe(
+            filter(message => message.id === "app:copyProfile"),
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([, activeProfile]) => this.copyProfileFromUser(activeProfile!).pipe(
+                catchError((err) => (log.error("Failed to copy profile: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "app:exportProfile"),
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([, activeProfile]) => this.exportProfileFromUser(activeProfile!).pipe(
+                catchError((err) => (log.error("Failed to export profile: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "app:deleteProfile"),
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([, activeProfile]) => this.deleteProfileFromUser(activeProfile!).pipe(
+                catchError((err) => (log.error("Failed to delete profile: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
             filter((message): message is AppMessage.BeginModAdd => message.id === "profile:beginModAdd"),
             withLatestFrom(this.activeProfile$),
             filter(([, activeProfile]) => !!activeProfile),
@@ -533,12 +560,32 @@ export class ProfileManager {
         ));
     }
 
+    public exportProfileFromUser(profile: AppProfile): Observable<any> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to export this profile?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filterTrue(),
+            switchMap(() => this.exportProfile(profile))
+        ));
+    }
+
     public deleteProfile(profile: AppProfile): Observable<any> {
         const loadingIndicator = this.appManager.showLoadingIndicator("Deleting Profile...");
 
         return runOnce(ElectronUtils.invoke("app:deleteProfile", { profile }).pipe(
             switchMap(() => this.removeProfile(profile)),
             tap(() => loadingIndicator.close()),
+        ));
+    }
+
+    public deleteProfileFromUser(profile: AppProfile): Observable<any> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to delete this profile?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filterTrue(),
+            switchMap(() => this.deleteProfile(profile))
         ));
     }
 
@@ -585,7 +632,7 @@ export class ProfileManager {
                     if (profileToCopy.name !== newProfile.rootPathOverride) {
                         const loadingIndicator = this.appManager.showLoadingIndicator("Copying Profile...");
 
-                        return ElectronUtils.invoke("app:copyProfileData", {
+                        return ElectronUtils.invoke("app:copyProfile", {
                             srcProfile: profileToCopy,
                             destProfile: newProfile
                         }).pipe(
@@ -1026,6 +1073,10 @@ export class ProfileManager {
 
     public addCustomGameAction(gameAction: GameAction): Observable<unknown> {
         return this.store.dispatch(new ActiveProfileActions.AddCustomGameAction(gameAction));
+    }
+
+    public editCustomGameActionByIndex(index: number, gameAction: GameAction): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.EditCustomGameAction(index, gameAction));
     }
 
     public removeCustomGameActionByIndex(index: number): Observable<unknown> {

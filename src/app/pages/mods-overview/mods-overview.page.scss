@@ -346,6 +346,8 @@
                     &#game-action-button {
                         border-top-right-radius: 0;
                         border-bottom-right-radius: 0;
+                        max-width: 30rem;
+                        overflow: hidden;
                     }
 
                     &#game-action-menu-button {
@@ -429,6 +431,16 @@
         text-overflow: ellipsis;
         text-wrap: nowrap;
         overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        align-content: center;
+    }
+
+    @at-root .game-actions-popup {
+
+        mat-card-content, mat-action-list {
+            padding: 0;
+        }
     }
 }
 
@@ -444,8 +456,12 @@
     }
 }
 
-.game-action-name {
+.game-action {
     @at-root .game-actions-popup &, :host & {
-        flex-grow: 1;
+
+        .game-action-name {
+            flex-grow: 1;
+            margin-right: 1rem;
+        }
     }
 }

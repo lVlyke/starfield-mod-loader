@@ -328,6 +328,19 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
+    @Action(ActiveProfileActions.EditCustomGameAction)
+    public editCustomGameAction(context: ActiveProfileState.Context, { gameActionIndex, gameAction }: ActiveProfileActions.EditCustomGameAction): void {
+        const state = _.cloneDeep(context.getState()!);
+
+        if (state.customGameActions && gameActionIndex < state.customGameActions.length) {
+            state.customGameActions[gameActionIndex] = gameAction;
+        } else {
+            log.error("Tried to edit game action at invalid index", gameActionIndex);
+        }
+
+        context.setState(state);
+    }
+
     @Action(ActiveProfileActions.RemoveCustomGameAction)
     public removeCustomGameAction(context: ActiveProfileState.Context, { gameActionIndex }: ActiveProfileActions.RemoveCustomGameAction): void {
         const state = _.cloneDeep(context.getState()!);

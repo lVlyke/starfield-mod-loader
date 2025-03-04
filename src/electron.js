@@ -87,11 +87,9 @@ class ElectronLoader {
     constructor() {
         log.initialize();
         
-        if (DEBUG_MODE) {
-            log.transports.console.level = "debug";
-        }
-
-        log.transports.file.level = DEBUG_MODE ? "info" : "debug";
+        log.transports.ipc.level = DEBUG_MODE ? "debug" : "info";
+        log.transports.console.level = DEBUG_MODE ? "debug" : "info";
+        log.transports.file.level = DEBUG_MODE ? "debug" : "info";
         log.transports.file.resolvePathFn = () => "app.log";
 
         this.menu = this.createMenu();
@@ -331,9 +329,9 @@ class ElectronLoader {
             return this.deleteProfile(profile);
         });
 
-        ipcMain.handle("app:copyProfileData", async (
+        ipcMain.handle("app:copyProfile", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"app:copyProfileData">} */ { srcProfile, destProfile }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:copyProfile">} */ { srcProfile, destProfile }
         ) => {
             function shouldCopyDir(srcPath, destPath) {
                 return fs.existsSync(srcPath) && (!fs.existsSync(destPath) || fs.realpathSync(srcPath) !== fs.realpathSync(destPath));
@@ -812,7 +810,7 @@ class ElectronLoader {
             
             // Run the action
             try {
-                exec(gameActionCmd);
+                exec(gameActionCmd, { cwd: profile.gameBinaryPath });
             } catch(error) {
                 throw new Error(error.toString());
             }
@@ -1016,6 +1014,18 @@ class ElectronLoader {
                     {
                         label: "Import Profile",
                         click: () => this.mainWindow.webContents.send("app:importProfile")
+                    },
+                    {
+                        label: "Copy Profile",
+                        click: () => this.mainWindow.webContents.send("app:copyProfile")
+                    },
+                    {
+                        label: "Export Profile",
+                        click: () => this.mainWindow.webContents.send("app:exportProfile")
+                    },
+                    {
+                        label: "Delete Profile",
+                        click: () => this.mainWindow.webContents.send("app:deleteProfile")
                     },
                     {
                         type: "separator"

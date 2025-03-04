@@ -153,7 +153,7 @@ export namespace AppMessage {
     }
 
     export interface CopyProfileData extends Base {
-        id: `${Prefix}:copyProfileData`;
+        id: `${Prefix}:copyProfile`;
         data: {
             srcProfile: AppProfile;
             destProfile: AppProfile;
@@ -614,7 +614,7 @@ export namespace AppMessage {
         "app:loadProfile",
         "app:loadExternalProfile",
         "app:saveProfile",
-        "app:copyProfileData",
+        "app:copyProfile",
         "app:verifyProfile",
         "app:showPreferences",
         "app:loadGameDatabase",

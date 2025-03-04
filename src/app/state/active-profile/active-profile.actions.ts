@@ -137,6 +137,15 @@ export namespace ActiveProfileActions {
         ) {}
     }
 
+    export class EditCustomGameAction {
+        public static readonly type = `[activeProfile] edit custom game action`;
+
+        constructor(
+            public gameActionIndex: number,
+            public gameAction: GameAction
+        ) {}
+    }
+
     export class RemoveCustomGameAction {
         public static readonly type = `[activeProfile] remove custom game action`;
 

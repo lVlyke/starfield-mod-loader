@@ -131,6 +131,8 @@ You can choose to override any of the profile paths to point to other directorie
 
 By default, profiles are stored in the `profiles` directory of Starfield Mod Loader. Overriding this path will allow you to store the profile at an alternative location. This can be useful if your game is installed on a different drive and you want to co-locate the profile to the same drive as the game to enable Link mode.
 
+A profile with an overridden root path is called an **external profile**. Existing external profiles can also be added or imported by selecting **Profiles -> Add External Profile** or **Profiles -> Import Profile**.
+
 #### Profile mods path
 
 Overriding this path will allow you to store the profile's mods at an alternative location.

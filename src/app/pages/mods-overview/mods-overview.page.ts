@@ -20,6 +20,7 @@ import { AppDialogs } from "../../services/app-dialogs";
 import { ActiveProfileState } from "../../state/active-profile/active-profile.state";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { LangUtils } from "../../util/lang-utils";
+import { GameAction } from "../../models/game-action";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -306,21 +307,11 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected exportActiveProfile(): void {
-        this.dialogs.showDefault("Are you sure you want to export this profile?", [
-            DialogManager.YES_ACTION,
-            DialogManager.NO_ACTION_PRIMARY
-        ]).pipe(
-            filterTrue()
-        ).subscribe(() => this.profileManager.exportProfile(this.activeProfile!));
+        this.profileManager.exportProfileFromUser(this.activeProfile!);
     }
 
     protected deleteActiveProfile(): void {
-        this.dialogs.showDefault("Are you sure you want to delete this profile?", [
-            DialogManager.YES_ACTION,
-            DialogManager.NO_ACTION_PRIMARY
-        ]).pipe(
-            filterTrue()
-        ).subscribe(() => this.profileManager.deleteProfile(this.activeProfile!));
+        this.profileManager.deleteProfileFromUser(this.activeProfile!);
     }
 
     protected addCustomGameAction(): void {
@@ -329,13 +320,19 @@ export class AppModsOverviewPage extends BasePage {
         ).subscribe(gameAction => this.profileManager.addCustomGameAction(gameAction));
     }
 
+    protected editCustomGameActionByIndex(index: number, gameAction: GameAction): void {
+        this.dialogs.showAddCustomGameActionDialog({ ...gameAction }).pipe(
+            filterDefined()
+        ).subscribe(gameAction => this.profileManager.editCustomGameActionByIndex(index, gameAction));
+    }
+
     protected removeCustomGameActionByIndex(index: number): void {
         this.dialogs.showDefault("Are you sure you want to delete this action?", [
             DialogManager.YES_ACTION,
             DialogManager.NO_ACTION_PRIMARY
         ]).pipe(
             filterTrue()
-        ).subscribe(() => this.profileManager.removeCustomGameActionByIndex(index - 1));
+        ).subscribe(() => this.profileManager.removeCustomGameActionByIndex(index));
     }
 
     protected resolveBackupName(backupEntry: AppProfile.PluginBackupEntry): string {
