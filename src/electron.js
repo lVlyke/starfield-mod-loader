@@ -454,7 +454,9 @@ class ElectronLoader {
                 deployed: VERIFY_SUCCESS,
                 baseProfile: baseProfileResult,
                 customGameActions: VERIFY_SUCCESS, // TODO
-                activeGameAction: VERIFY_SUCCESS // TODO
+                activeGameAction: VERIFY_SUCCESS, // TODO
+                rootModSections: VERIFY_SUCCESS, // TODO
+                modSections: VERIFY_SUCCESS // TODO
             };
 
             return {

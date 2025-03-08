@@ -1,10 +1,10 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, Injector } from "@angular/core";
-import { CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
+import { moveItemInArray } from "@angular/cdk/drag-drop";
 import { Store } from "@ngxs/store";
 import { Observable, combineLatest } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
-import { AsyncState, ComponentState, ComponentStateRef, ManagedSubject } from "@lithiumjs/angular";
+import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
 import { ThemeContainer } from "@lithiumjs/ngx-material-theming";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
@@ -13,14 +13,34 @@ import { AppModContextMenuModal } from "../../modals/mod-context-menu";
 import { AppState } from "../../state";
 import { AppData } from "../../models/app-data";
 import { AppProfileExternalFilesListModal, FILE_LIST_TOKEN } from "../../modals/profile-external-files-list";
+import { ModSection } from "../../models/mod-section";
+import { RelativeOrderedMap } from "../../util/relative-ordered-map";
+import { AppModSectionContextMenuModal } from "../../modals/mod-section-context-menu";
 
-type ModListEntry = {
+type ModListEntryType = "manual" | "mod" | "section";
+
+interface IModListEntry {
+    type: ModListEntryType;
+    order?: number;
+}
+
+interface ManualModListEntry extends IModListEntry {
+    type: "manual";
+}
+
+interface StandardModListEntry extends IModListEntry {
+    type: "mod";
     name: string;
     modRef: ModProfileRef;
-    order: number | undefined;
-};
+}
 
-type ModListDataSource = Array<ModListEntry | "manual">;
+interface SectionModListEntry extends IModListEntry {
+    type: "section";
+    section: ModSection;
+}
+
+type ModListEntry = ManualModListEntry | StandardModListEntry | SectionModListEntry;
+type ModListDataSource = Array<ModListEntry>;
 
 @Component({
     selector: "app-profile-mod-list",
@@ -37,14 +57,16 @@ export class AppProfileModListComponent extends BaseComponent {
     public readonly assign = Object.assign;
     public readonly defaultColumns = AppData.DEFAULT_MOD_LIST_COLUMNS;
     public readonly defaultColumnOrder = AppData.DEFAULT_MOD_LIST_COLUMN_ORDER;
-    public readonly showModContextMenu$ = new ManagedSubject<[MouseEvent, ModListEntry]>(this);
     public readonly modListColumns$: Observable<string[] | undefined>;
 
     @Output("modChange")
-    public readonly modChange$ = new EventEmitter<ModListEntry>;
+    public readonly modChange$ = new EventEmitter<StandardModListEntry>;
 
     @Output("modOrderChange")
     public readonly modOrderChange$ = new EventEmitter<string[]>;
+
+    @Output("sectionIndexChange")
+    public readonly sectionIndexChange$ = new EventEmitter<[ModSection, number | undefined]>;
 
     @AsyncState()
     public readonly modListColumns!: string[] | undefined;
@@ -58,16 +80,15 @@ export class AppProfileModListComponent extends BaseComponent {
     @Input()
     public showManualMods: boolean = true;
 
-    protected modEntries: ModListEntry[] = [];
     protected displayedColumns: string[] = [];
     protected externalModFiles: string[] = [];
     protected modListDataSource: ModListDataSource = [];
 
     constructor(
-        injector: Injector,
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileModListComponent>,
         store: Store,
+        private injector: Injector,
         private readonly overlayHelpers: OverlayHelpers,
         protected readonly themeContainer: ThemeContainer
     ) {
@@ -83,29 +104,50 @@ export class AppProfileModListComponent extends BaseComponent {
             this.externalModFiles = (root
                 ? profile.externalFilesCache?.gameDirFiles
                 : profile.externalFilesCache?.modDirFiles) ?? [];
-
-            // Create list entries
-            let modIndex = 0;
             const modsList = root ? profile.rootMods : profile.mods;
-            this.modEntries = modsList.map<ModListEntry>(([name, modRef]) => {
-                if (modRef.enabled) {
-                    modIndex++;
-                }
-                
-                return {
-                    name,
-                    modRef,
-                    order: modRef.enabled ? modIndex : undefined
-                };
-            });
-            
+            const sectionsList = root ? profile.rootModSections : profile.modSections;
             const modListDataSource: ModListDataSource = [];
+
             // Show manual mods entry if requested
             if (showManualMods && !!this.externalModFiles.length) {
-                modListDataSource.push("manual");
+                modListDataSource.push({ type: "manual" });
             }
+            
+            let modOrder = 0;
+            // Add entries for mods and sections
+            modListDataSource.push(...modsList.reduce((modEntries, [name, modRef], modIndex) => {
+                if (modRef.enabled) {
+                    modOrder++;
+                }
 
-            modListDataSource.push(...this.modEntries);
+                // Check if a Section starts here
+                const sections = sectionsList?.filter(section => {
+                    return ((section.modIndexBefore === undefined) && modIndex === 0 || section.modIndexBefore === modIndex);
+                }) ?? [];
+                const sectionEntries: SectionModListEntry[] = sections.map(section => ({
+                    type: "section",
+                    section,
+                    order: undefined
+                }));
+
+                // Add all top-level sections
+                modEntries = modEntries.concat(sectionEntries.filter(({ section }) => section.modIndexBefore === undefined));
+
+                const modEntry: StandardModListEntry = {
+                    type: "mod",
+                    name,
+                    modRef,
+                    order: modRef.enabled ? modOrder : undefined
+                };
+                
+                modEntries.push(modEntry);
+
+                // Add all relevant sections
+                modEntries = modEntries.concat(sectionEntries.filter(({ section }) => section.modIndexBefore !== undefined));
+
+                return modEntries;
+            }, [] as ModListEntry[]));
+
             this.modListDataSource = modListDataSource;
         });
 
@@ -117,31 +159,99 @@ export class AppProfileModListComponent extends BaseComponent {
                 col => cols.includes(col)
             );
         });
-
-        this.showModContextMenu$.subscribe(([event, modEntry]) => {
-            const modContextMenuRef = overlayHelpers.createAttached(AppModContextMenuModal, {
-                x: event.clientX,
-                y: event.clientY
-            }, OverlayHelpers.ConnectionPositions.contextMenu, {
-                injector,
-                managed: false
-            });
-
-            modContextMenuRef.component.instance.root = this.root;
-            modContextMenuRef.component.instance.modName = modEntry.name;
-            modContextMenuRef.component.instance.modRef = modEntry.modRef;
-
-            event.stopPropagation();
-            event.preventDefault();
-        });
     }
 
-    protected dropReorder(event: CdkDragDrop<unknown>): void {
-        const modOrder = this.modEntries.map(({ name }) => name);
-        const firstIndex = this.modListDataSource[0] === "manual" ? 1 : 0;
+    protected isManualEntry(entry: ModListEntry): entry is ManualModListEntry {
+        return entry.type === "manual";
+    }
 
-        moveItemInArray(modOrder, event.previousIndex - firstIndex, event.currentIndex - firstIndex);
-        this.modOrderChange$.emit(modOrder);
+    protected isModEntry(entry: ModListEntry): entry is StandardModListEntry {
+        return entry.type === "mod";
+    }
+
+    protected isSectionEntry(entry: ModListEntry): entry is SectionModListEntry {
+        return entry.type === "section";
+    }
+
+    protected dropReorder(previousIndex: number, currentIndex: number): void {
+        const entryBeingMoved = this.modListDataSource[previousIndex];
+        const moveDir = currentIndex < previousIndex ? -1 : 1;
+
+        if (this.isModEntry(entryBeingMoved)) {
+            // Adjust any Section indicies as needed
+            for (let i = currentIndex; i != previousIndex; i -= moveDir) {
+                const curEntry = this.modListDataSource[i];
+                if (this.isSectionEntry(curEntry)) {
+                    this.dropReorder(i, i - moveDir);
+                }
+            }
+
+            // Swap the mods
+            const modListData = this.modListDataSource.slice();
+            moveItemInArray(modListData, previousIndex, currentIndex);
+
+            // Calculate the new mod order
+            const modOrder = modListData
+                .filter(entry => this.isModEntry(entry))
+                .map(({ name }) => name);
+            this.modOrderChange$.emit(modOrder);
+        } else if (this.isSectionEntry(entryBeingMoved)) {
+            let startIndex = currentIndex;
+            if (moveDir < 0) {
+                startIndex += moveDir;
+            }
+
+            // Calculate the new modIndexBefore for this Section
+            let modIndexBefore = undefined;
+            for (let i = startIndex; i > 0; --i) {
+                const curEntry = this.modListDataSource[i];
+                if (this.isModEntry(curEntry)) {
+                    const modsList = this.root ? this.profile.rootMods : this.profile.mods;
+                    modIndexBefore = RelativeOrderedMap.indexOf(modsList, curEntry.name);
+                    break;
+                }
+
+                // TODO - Check for SectionEntry swaps and swap the index of the sections wrt. each other
+            }
+            this.sectionIndexChange$.emit([entryBeingMoved.section, modIndexBefore]);
+        }
+    }
+
+    protected showEntryContextMenu(event: MouseEvent, listEntry: ModListEntry): void {
+        const modalAnchor = {
+            x: event.clientX,
+            y: event.clientY
+        };
+        const modalConfig = {
+            injector: this.injector,
+            managed: false
+        };
+
+        if (this.isModEntry(listEntry)) {
+            const modContextMenuRef = this.overlayHelpers.createAttached(
+                AppModContextMenuModal,
+                modalAnchor,
+                OverlayHelpers.ConnectionPositions.contextMenu,
+                modalConfig
+            );
+
+            modContextMenuRef.component.instance.root = this.root;
+            modContextMenuRef.component.instance.modName = listEntry.name;
+            modContextMenuRef.component.instance.modRef = listEntry.modRef;
+        } else if (this.isSectionEntry(listEntry)) {
+            const sectionContextMenuRef = this.overlayHelpers.createAttached(
+                AppModSectionContextMenuModal,
+                modalAnchor,
+                OverlayHelpers.ConnectionPositions.contextMenu,
+                modalConfig
+            );
+
+            sectionContextMenuRef.component.instance.root = this.root;
+            sectionContextMenuRef.component.instance.section = listEntry.section;
+        }
+
+        event.stopPropagation();
+        event.preventDefault();
     }
 
     protected showExternalFileList(): void {

@@ -91,18 +91,20 @@
 
                     <app-profile-mod-list [profile]="activeProfile"
                                         [root]="true"
-                                        (modChange)="registerModUpdate(true, $event.name, $event.modRef)"
-                                        (modOrderChange)="reorderMods(true, $event)" />
+                                        (modChange)="registerModUpdate(true, $event.name, $event.modRef!)"
+                                        (modOrderChange)="reorderMods(true, $event)"
+                                        (sectionIndexChange)="this.profileManager.reorderModSection($event[0], true, $event[1])" />
                 
-}
+                }
 
                 @if (activeProfile.mods.length > 0) {
                     <mat-card-title class="sticky-title">Mods</mat-card-title>
 
                     <app-profile-mod-list [profile]="activeProfile"
                                         [root]="false"
-                                        (modChange)="registerModUpdate(false, $event.name, $event.modRef)"
-                                        (modOrderChange)="reorderMods(false, $event)" />
+                                        (modChange)="registerModUpdate(false, $event.name, $event.modRef!)"
+                                        (modOrderChange)="reorderMods(false, $event)"
+                                        (sectionIndexChange)="this.profileManager.reorderModSection($event[0], false, $event[1])" />
                 } @else {
                     <i class="empty-mod-list-hint">Click the <mat-icon color="accent">add</mat-icon> icon above to add a mod.</i>
                 }
@@ -474,6 +476,11 @@
                     <span matLine>Import Mod</span>
                 </button>
 
+                <button mat-list-item (click)="profileManager.addModSectionFromUser(false); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="accent">list</mat-icon>
+                    <span matLine>Add Mod Section</span>
+                </button>
+
                 <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!, { root: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="primary">archive</mat-icon>
                     <span matLine>Add Root Mod</span>
@@ -482,6 +489,11 @@
                 <button mat-list-item (click)="profileManager.addModFromUser(activeProfile!, { root: true, externalImport: true }); addModMenuRef?.close()">
                     <mat-icon matListIcon color="primary">folder</mat-icon>
                     <span matLine>Import Root Mod</span>
+                </button>
+
+                <button mat-list-item (click)="profileManager.addModSectionFromUser(true); addModMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">list</mat-icon>
+                    <span matLine>Add Root Mod Section</span>
                 </button>
             </mat-action-list>
         </mat-card-content>

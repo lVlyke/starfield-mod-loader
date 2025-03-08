@@ -3,6 +3,7 @@ import { AppProfile } from "../../models/app-profile";
 import { BasicAction } from "../basic-action";
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { GameAction } from "../../models/game-action";
+import { ModSection } from "../../models/mod-section";
 
 export namespace ActiveProfileActions {
 
@@ -152,5 +153,59 @@ export namespace ActiveProfileActions {
         constructor(
             public gameActionIndex: number
         ) {}
+    }
+
+    export class MoveModToSection {
+        public static readonly type = `[activeProfile] move mod to section`;
+
+        constructor(
+            public root: boolean,
+            public modName: string,
+            public section?: ModSection,
+            public toTop?: boolean
+        ) {}
+    }
+
+    export class UpdateModSection {
+        public static readonly type = `[activeProfile] update mod section`;
+
+        constructor(
+            public root: boolean,
+            public newSection: ModSection,
+            public oldSection?: ModSection
+        ) {}
+    }
+
+    export class ReorderModSection {
+        public static readonly type = `[activeProfile] reorder mod section`;
+
+        constructor(
+            public root: boolean,
+            public section: ModSection,
+            public modIndexBefore?: number
+        ) {}
+    }
+
+    export class DeleteModSection {
+        public static readonly type = `[activeProfile] delete mod section`;
+
+        constructor(
+            public root: boolean,
+            public section: ModSection
+        ) {}
+    }
+
+    export class UpdateModsInSection {
+        public static readonly type = `[activeProfile] update mods in section`;
+
+        constructor(
+            public root: boolean,
+            public section: ModSection,
+            public enabled: boolean
+        ) {}
+    }
+
+    export class ReconcileModSections {
+        public static readonly type = `[activeProfile] reconcile mod sections`;
     }
 }

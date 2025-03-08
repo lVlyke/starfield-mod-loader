@@ -48,6 +48,7 @@ import { AppMessage } from "../models/app-message";
 import { AppProfileVerificationResultsModal } from "../modals/profile-verification-results";
 import { log } from "../util/logger";
 import { RelativeOrderedMap } from "../util/relative-ordered-map";
+import { ModSection } from "../models/mod-section";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
@@ -968,6 +969,59 @@ export class ProfileManager {
         ));
     }
 
+    public moveModToSection(root: boolean, modName: string, section: ModSection): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.MoveModToSection(root, modName, section));
+    }
+
+    public moveModToTopOfSection(root: boolean, modName: string): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.MoveModToSection(root, modName, undefined, true));
+    }
+
+    public moveModToBottomOfSection(root: boolean, modName: string): Observable<void> {
+        return this.store.dispatch(new ActiveProfileActions.MoveModToSection(root, modName, undefined, false));
+    }
+
+    public addModSectionFromUser(root: boolean): Observable<unknown> {
+        return this.updateModSectionFromUser(root, undefined);
+    }
+
+    public updateModSectionFromUser(root: boolean, section?: ModSection): Observable<unknown> {
+        return runOnce(this.dialogs.showAddModSectionDialog(section ? { ...section } : undefined).pipe(
+            switchMap((newSection) => {
+                if (newSection) {
+                    return this.store.dispatch(new ActiveProfileActions.UpdateModSection(root, newSection, section));
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public reorderModSection(section: ModSection, root: boolean, modIndexBefore?: number): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.ReorderModSection(root, section, modIndexBefore));
+    }
+
+    public deleteModSection(root: boolean, section: ModSection): Observable<any> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap((activeProfile) => {
+                const baseSection = activeProfile!.baseProfile
+                    ? this.findModSection(activeProfile!.baseProfile, root, section.name)
+                    : undefined;
+
+                if (!!baseSection) {
+                    return this.dialogManager.createDefault(`Cannot delete mod section "${section.name}". This section is inherited from base profile "${activeProfile!.baseProfile!.name}".`);
+                } else {
+                    return this.store.dispatch(new ActiveProfileActions.DeleteModSection(root, section));
+                }
+            })
+        ));
+    }
+
+    public updateModsInSection(root: boolean, section: ModSection, enabled: boolean): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.UpdateModsInSection(root, section, enabled))
+    }
+
     public readModFilePaths(modName: string, normalizePaths?: boolean): Observable<string[]> {
         return this.activeProfile$.pipe(
             take(1),
@@ -1317,7 +1371,8 @@ export class ProfileManager {
 
     private reconcileActiveModList(): Observable<void> {
         return runOnce(this.findProfileModFiles().pipe(
-            switchMap(mods => this.store.dispatch(new ActiveProfileActions.ReconcileModList(mods)))
+            switchMap(mods => this.store.dispatch(new ActiveProfileActions.ReconcileModList(mods))),
+            switchMap(() => this.store.dispatch(new ActiveProfileActions.ReconcileModSections())),
         ));
     }
 
@@ -1350,6 +1405,11 @@ export class ProfileManager {
     private findMod(profile: AppBaseProfile, root: boolean, modName: string): ModProfileRef | undefined {
         const modList = root ? profile.rootMods : profile.mods;
         return RelativeOrderedMap.get(modList, modName);
+    }
+
+    private findModSection(profile: AppBaseProfile, root: boolean, sectionName: string): ModSection | undefined {
+        const sectionList = root ? profile.rootModSections : profile.modSections;
+        return _.find(sectionList, { name: sectionName });
     }
 
     private modHasError(mod: ModProfileRef): boolean {

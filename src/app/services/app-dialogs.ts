@@ -9,6 +9,8 @@ import { AppProfilePluginBackupNameDialog } from "../modals/profile-plugin-backu
 import { AppProfileFolderMoveDialog, NEW_PATH_TOKEN, OLD_PATH_TOKEN } from "../modals/profile-folder-move-dialog";
 import { AppSymlinkWarningDialog } from "../modals/symlink-warning-dialog";
 import { AppCustomGameActionDialog, GAME_ACTION_TOKEN } from "../modals/custom-game-action-dialog";
+import { ModSection } from "../models/mod-section";
+import { AppModSectionDialog, MOD_SECTION_TOKEN } from "../modals/mod-section-dialog";
 
 @Injectable({ providedIn: "root" })
 export class AppDialogs {
@@ -106,6 +108,22 @@ export class AppDialogs {
             panelClass: "mat-app-background"
         }, injectionTokens).pipe(
             map(result => result.action === DialogManager.OK_ACTION_PRIMARY ? result.modalInstance.gameAction : undefined)
+        );
+    }
+
+    public showAddModSectionDialog(section?: ModSection): Observable<ModSection | undefined> {
+        const injectionTokens: OverlayHelpers.InjetorTokens = [];
+        if (section) {
+            injectionTokens.push([MOD_SECTION_TOKEN, section]);
+        }
+
+        return this.dialogManager.create(AppModSectionDialog, [DialogManager.OK_ACTION_PRIMARY, DialogManager.CANCEL_ACTION], {
+            withModalInstance: true,
+            hasBackdrop: true,
+            maxWidth: "55%",
+            panelClass: "mat-app-background"
+        }, injectionTokens).pipe(
+            map(result => result.action === DialogManager.OK_ACTION_PRIMARY ? result.modalInstance.modSection : undefined)
         );
     }
 }

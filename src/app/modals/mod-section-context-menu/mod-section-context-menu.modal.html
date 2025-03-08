@@ -1,0 +1,7 @@
+<mat-card #menuCard class="mat-elevation-z6">
+    <mat-card-content>
+        @if (!!section) {
+            <app-mod-section-actions [root]="root" [section]="section" (actionSelect)="overlayRef.close()" />
+        }
+    </mat-card-content>
+</mat-card>

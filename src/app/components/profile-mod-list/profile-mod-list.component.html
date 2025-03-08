@@ -1,41 +1,23 @@
-<table mat-table [dataSource]="modListDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event)">
+<table mat-table [dataSource]="modListDataSource" cdkDropList (cdkDropListDropped)="dropReorder($event.previousIndex, $event.currentIndex)">
     <ng-container matColumnDef="enabled">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let modEntry" class="mod-enabled">
-            @if (modEntry !== "manual") {
-                <mat-checkbox [checked]="modEntry.modRef.enabled"
-                              [disabled]="!!modEntry.modRef.baseProfile || !!modEntry.modRef.verificationError"
-                              (change)="modChange$.emit(assign({}, modEntry, { modRef: assign({}, modEntry.modRef, { enabled: $event.checked }) }))" />
-            } @else {
+        <td mat-cell *matCellDef="let listEntry" class="mod-enabled">
+            @if (isManualEntry(listEntry)) {
                 <mat-checkbox [checked]="true" [disabled]="true" />
+            } @else if (isSectionEntry(listEntry)) {
+                <mat-icon color="primary" class="section-icon">{{ listEntry.section.iconName ?? "list" }}</mat-icon>
+            } @else if (isModEntry(listEntry)) {
+                <mat-checkbox [checked]="listEntry.modRef.enabled"
+                              [disabled]="!!listEntry.modRef.baseProfile || !!listEntry.modRef.verificationError"
+                              (change)="modChange$.emit(assign({}, listEntry, { modRef: assign({}, listEntry.modRef, { enabled: $event.checked }) }))" />
             }
         </td>
     </ng-container>
 
     <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Mod Name</th>
-        <td mat-cell *matCellDef="let modEntry" class="mod-title">
-            @if (modEntry !== 'manual') {
-                <div class="mod-title-sections">
-                    @let baseProfile = modEntry.modRef.baseProfile;
-
-                    <span>{{ modEntry.name }}</span>
-
-                    @if (!!baseProfile) {
-                        <span class="mod-base-profile-marker"
-                            matTooltip="Managed by {{baseProfile}}">
-                            <mat-icon class="mod-base-profile-icon" color="accent">arrow_outward</mat-icon>
-                        </span>
-                    }
-                            
-                    @if (!!modEntry.modRef.verificationError?.error) {
-                        <mat-icon class="mod-verification-error-icon"
-                                [matTooltip]="modEntry.modRef.verificationError.reason ?? 'This mod has a verification error'">
-                            error
-                        </mat-icon>
-                    }
-                </div>
-            } @else {
+        <td mat-cell *matCellDef="let listEntry" class="mod-title">
+            @if (isManualEntry(listEntry)) {
                 <span class="manual-mod-text">
                     <span>[External files]</span>
                     <span class="manual-files-count">
@@ -47,24 +29,48 @@
                         help
                     </mat-icon>
                 </span>
+            } @else if (isSectionEntry(listEntry)) {
+                <div class="mod-section-title">
+                    {{ listEntry.section.name }}
+                </div>
+            } @else if (isModEntry(listEntry)) {
+                <div class="mod-title-sections">
+                    @let baseProfile = listEntry.modRef.baseProfile;
+
+                    <span>{{ listEntry.name }}</span>
+
+                    @if (!!baseProfile) {
+                        <span class="mod-base-profile-marker"
+                            matTooltip="Managed by {{baseProfile}}">
+                            <mat-icon class="mod-base-profile-icon" color="accent">arrow_outward</mat-icon>
+                        </span>
+                    }
+                            
+                    @if (!!listEntry.modRef.verificationError?.error) {
+                        <mat-icon class="mod-verification-error-icon"
+                                [matTooltip]="listEntry.modRef.verificationError?.reason ?? 'This mod has a verification error'">
+                            error
+                        </mat-icon>
+                    }
+                </div>
             }
         </td>
     </ng-container>
 
     <ng-container matColumnDef="updatedDate">
         <th mat-header-cell *matHeaderCellDef>Last Updated</th>
-        <td mat-cell *matCellDef="let modEntry" class="mod-last-updated">
-            @if (modEntry !== "manual" && !!modEntry.modRef.updatedDate) {
-                <div>{{ modEntry.modRef.updatedDate | date }}</div>
+        <td mat-cell *matCellDef="let listEntry" class="mod-last-updated">
+            @if (isModEntry(listEntry) && !!listEntry.modRef.updatedDate) {
+                <div>{{ listEntry.modRef.updatedDate | date }}</div>
             }
         </td>
     </ng-container>
 
     <ng-container matColumnDef="order">
         <th mat-header-cell *matHeaderCellDef>Load Order</th>
-        <td mat-cell *matCellDef="let modEntry" class="mod-load-order">
-            @if (modEntry !== "manual") {
-                <div>{{ modEntry.order ?? "--" }}</div>
+        <td mat-cell *matCellDef="let listEntry" class="mod-load-order">
+            @if (isModEntry(listEntry)) {
+                <div>{{ listEntry.order ?? "--" }}</div>
             }
         </td>
     </ng-container>
@@ -73,12 +79,13 @@
         mat-header-row
         [attr.app-hidden]="!modListColumns?.length"></tr>
 
-    <tr *matRowDef="let modEntry; columns: displayedColumns;"
+    <tr *matRowDef="let listEntry; columns: displayedColumns;"
         mat-row
         cdkDrag
-        [cdkDragDisabled]="modEntry === 'manual' || !!modEntry.modRef.baseProfile"
+        [cdkDragDisabled]="isManualEntry(listEntry) || (isModEntry(listEntry) && !!listEntry.modRef.baseProfile)"
         [attr.li-theme]="themeContainer.theme"
-        [attr.external-files]="modEntry === 'manual'"
-        [class.mod-unverified]="modEntry !== 'manual' && !!modEntry.modRef.verificationError"
-        (contextmenu)="modEntry !== 'manual' ? showModContextMenu$.next([$event, modEntry]) : null"></tr>
+        [attr.external-files]="isManualEntry(listEntry)"
+        [class.mod-unverified]="isModEntry(listEntry) && !!listEntry.modRef.verificationError"
+        [class.mod-section]="isSectionEntry(listEntry)"
+        (contextmenu)="showEntryContextMenu($event, listEntry)"></tr>
 </table>

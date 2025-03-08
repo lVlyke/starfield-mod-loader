@@ -3,6 +3,7 @@ import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { GameId } from "./game-id";
 import { RelativeOrderedMap } from "../util/relative-ordered-map";
 import { GameAction } from "./game-action";
+import { ModSection } from "./mod-section";
 
 export interface AppBaseProfile {
     name: string;
@@ -17,6 +18,8 @@ export interface AppBaseProfile {
     savesPathOverride?: string;
     backupsPathOverride?: string;
     deployed?: boolean;
+    rootModSections?: ModSection[];
+    modSections?: ModSection[];
 }
 
 export interface AppProfile extends AppBaseProfile {

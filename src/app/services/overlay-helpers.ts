@@ -315,5 +315,18 @@ export namespace OverlayHelpers {
                 overlayY: "bottom"
             })
         ];
+
+        export const nestedContextMenu = [
+            OverlayHelpers.fromDefaultConnectionPosition({
+                originX: "end",
+                originY: "top",
+                overlayX: "start"
+            }),
+            OverlayHelpers.fromDefaultConnectionPosition({
+                originX: "start",
+                originY: "top",
+                overlayX: "end"
+            })
+        ];
     }
 }

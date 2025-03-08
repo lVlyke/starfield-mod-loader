@@ -51,7 +51,9 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         externalFilesCache: "Invalid external files",
         baseProfile: "Invalid Base Profile",
         customGameActions: "Invalid custom game actions",
-        activeGameAction: "Invalid active game action"
+        activeGameAction: "Invalid active game action",
+        rootModSections: "Invalid root mod section",
+        modSections: "Invalid mod section"
     };
 
     private static readonly VERIFICATION_ERROR_DESCS: Record<string, string> = {

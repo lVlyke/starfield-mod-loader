@@ -1,26 +1,21 @@
 import { NgModule } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { PortalModule } from "@angular/cdk/portal";
-import { MatCardModule } from "@angular/material/card";
 import { MatListModule } from "@angular/material/list";
 import { MatIconModule } from "@angular/material/icon";
-import { AppModActionsComponent } from "./mod-actions.component";
+import { AppModSectionActionsComponent } from "./mod-section-actions.component";
 
 @NgModule({
     declarations: [
-        AppModActionsComponent
+        AppModSectionActionsComponent
     ],
     imports: [
         CommonModule,
 
-        PortalModule,
-
-        MatCardModule,
         MatListModule,
         MatIconModule
     ],
     exports: [
-        AppModActionsComponent
+        AppModSectionActionsComponent
     ]
 })
-export class AppModActionsComponentModule { }
+export class AppModSectionActionsComponentModule { }

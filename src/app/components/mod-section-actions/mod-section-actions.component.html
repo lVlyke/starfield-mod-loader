@@ -1,0 +1,22 @@
+
+<mat-action-list>
+    <button mat-list-item (click)="renameSection()">
+        <mat-icon matListIcon>abc</mat-icon>
+        <span matLine>Rename Section</span>
+    </button>
+
+    <button mat-list-item (click)="updateMods(true)">
+        <mat-icon matListIcon>check_box</mat-icon>
+        <span matLine>Enable Section</span>
+    </button>
+
+    <button mat-list-item (click)="updateMods(false)">
+        <mat-icon matListIcon>check_box_outline_blank</mat-icon>
+        <span matLine>Disable Section</span>
+    </button>
+
+    <button mat-list-item (click)="deleteSection()">
+        <mat-icon matListIcon color="warn">delete</mat-icon>
+        <span matLine matColor="warn">Delete Section</span>
+    </button>
+</mat-action-list>

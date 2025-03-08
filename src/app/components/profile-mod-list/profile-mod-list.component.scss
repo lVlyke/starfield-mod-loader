@@ -12,6 +12,13 @@
             cursor: pointer;
         }
 
+        &.mod-section {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            height: 4rem;
+        }
+
         &.mod-unverified {
             font-style: italic;
         }
@@ -24,13 +31,18 @@
             padding: 0;
         }
 
-         > th {
+        > th {
             font-size: 0.9em;
             opacity: 0.8;
-         }
+        }
 
         > .mod-title {
             font-size: 1rem;
+
+            .mod-section-title {
+                font-size: var(--mat-card-title-text-size, var(--mat-sys-title-large-size));
+                font-weight: var(--mat-card-title-text-weight, var(--mat-sys-title-large-weight));
+            }
 
             .mod-title-sections {
                 display: flex;
@@ -84,6 +96,12 @@
 
         > .mod-enabled {
             width: 3rem;
+
+            > .section-icon {
+                @include mixins.mat-icon-size(2rem);
+                margin-top: 0.5rem;
+                margin-left: 0.25rem;
+            }
         }
 
         > .mod-last-updated {

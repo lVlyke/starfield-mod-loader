@@ -1,0 +1,37 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>Mod Section</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+        <form id="modSectionForm">
+            <mat-form-field>
+                <mat-label>Name</mat-label>
+                <input matInput
+                    type="text"
+                    name="modSectionName"
+                    [(ngModel)]="modSection.name"
+                    [required]="true">
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+                <mat-label>Icon</mat-label>
+                <mat-select name="modSectionIconName" [(ngModel)]="modSection.iconName">
+                    <mat-select-trigger>
+                        <mat-icon color="primary">{{ modSection.iconName || "list" }}</mat-icon>
+                    </mat-select-trigger>
+
+                    @for (iconName of iconNames; track iconName) {
+                        <mat-option [value]="iconName">
+                            <mat-icon color="primary">{{ iconName }}</mat-icon>
+                        </mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <app-dialog-actions [actions]="actions" (actionSelected)="actionSelected$.emit($event)" />
+    </mat-card-actions>
+</mat-card>

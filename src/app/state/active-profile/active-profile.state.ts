@@ -8,6 +8,8 @@ import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { GameAction } from "../../models/game-action";
 import { RelativeOrderedMap } from "../../util/relative-ordered-map";
 import { log } from "../../util/logger";
+import { LangUtils } from "../../util/lang-utils";
+import { ModSection } from "../../models/mod-section";
 
 @State<ActiveProfileState.Model>({
     name: "activeProfile",
@@ -318,6 +320,176 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
+    @Action(ActiveProfileActions.MoveModToSection)
+    public moveModToSection(
+        context: ActiveProfileState.Context,
+        { root, modName, section, toTop }: ActiveProfileActions.MoveModToSection
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+        const modList = root ? state.rootMods : state.mods;
+        const modSections = (root ? state.rootModSections : state.modSections) ?? [];
+        const modIndex = RelativeOrderedMap.indexOf(modList, modName);
+
+        if (modIndex === undefined) {
+            return;
+        }
+
+        if (!section) {
+            // Find the current Section
+            modSections.forEach((curSection) => {
+                if (curSection.modIndexBefore !== undefined && curSection.modIndexBefore < modIndex) {
+                    if (!section || modIndex - curSection.modIndexBefore < modIndex - section.modIndexBefore!) {
+                        section = curSection;
+                    }
+                }
+            });
+        }
+
+        const [modRef] = modList.splice(modIndex, 1);
+
+        if (toTop) {
+            let topIndex = 0;
+            if (section) {
+                topIndex = section.modIndexBefore !== undefined ? section.modIndexBefore + 1 : 0;
+            }
+
+            // Move mod to top of section
+            modList.splice(topIndex, 0, modRef);
+        } else {
+            // Get next section
+            section = section ? this._getNextModSection(state, root, section) : undefined;
+
+            let bottomIndex = modList.length;
+            if (section) {
+                bottomIndex = section.modIndexBefore ?? 0;
+            }
+
+            // Move mod to bottom of section
+            modList.splice(bottomIndex, 0, modRef);
+        }
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.ReconcileModSections)
+    public reconcileModSections(
+        context: ActiveProfileState.Context,
+        {}: ActiveProfileActions.ReconcileModSections
+    ): void {
+        const SECTION_LIST_KEYS = ["rootModSections", "modSections"] as const;
+        const MOD_LIST_KEYS = ["rootMods", "mods"] as const;
+        const state = _.cloneDeep(context.getState()!);
+
+        if (!!state.baseProfile) {
+            SECTION_LIST_KEYS.forEach((listKey, listKeyIndex) => {
+                const modListKey = MOD_LIST_KEYS[listKeyIndex];
+                const profileSections = state[listKey] ?? [];
+                const profileMods = state[modListKey] ?? [];
+                const baseProfileSections = state.baseProfile![listKey] ?? [];
+                const baseProfileMods = state.baseProfile![modListKey] ?? [];
+
+                // Start with a copy of the profile's section list
+                const mergedProfileSections = profileSections.slice();
+
+                // Merge in the base profile's sections accounting for shifted indices in this profile's list
+                baseProfileSections.forEach((baseSection) => {
+                    const existingSection = _.find(mergedProfileSections, { name: baseSection.name });
+                    if (!existingSection) {
+                        // Update the section index based on the new index of the mod in this profile
+                        let modIndexBefore = baseSection.modIndexBefore;
+                        if (modIndexBefore !== undefined) {
+                            const baseModBefore = baseProfileMods[modIndexBefore];
+                            if (!!baseModBefore) {
+                                modIndexBefore = RelativeOrderedMap.indexOf(profileMods, baseModBefore[0]);
+                            }
+                        }
+
+                        mergedProfileSections.push({
+                            ...baseSection,
+                            modIndexBefore
+                        });
+                    }
+                });
+
+                state[listKey] = mergedProfileSections;
+            });
+        }
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.UpdateModSection)
+    public updateModSection(
+        context: ActiveProfileState.Context,
+        { oldSection, newSection, root }: ActiveProfileActions.UpdateModSection
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+        state.rootModSections ??= [];
+        state.modSections ??= [];
+        const modSections = root ? state.rootModSections! : state.modSections!;
+        const existingSection = _.find(modSections, { name: (oldSection ?? newSection).name });
+
+        if (existingSection) {
+            Object.assign(existingSection, newSection);
+        } else {
+            modSections.push(newSection);
+        }
+
+        context.setState(state);
+    }
+
+    @Action(ActiveProfileActions.ReorderModSection)
+    public reorderModSection(
+        context: ActiveProfileState.Context,
+        { section, root, modIndexBefore }: ActiveProfileActions.ReorderModSection
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+        const modSections = (root ? state.rootModSections : state.modSections) ?? [];
+        const existingSection = modSections.find(curSection => LangUtils.isEqual(section, curSection));
+
+        if (!!existingSection) {
+            existingSection.modIndexBefore = modIndexBefore;
+            context.setState(state);
+        }
+    }
+
+    @Action(ActiveProfileActions.DeleteModSection)
+    public deleteModSection(
+        context: ActiveProfileState.Context,
+        { section, root }: ActiveProfileActions.DeleteModSection
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+        const modSections = (root ? state.rootModSections : state.modSections) ?? [];
+        const existingSectionIndex = modSections.findIndex(curSection => LangUtils.isEqual(section, curSection));
+
+        if (existingSectionIndex !== undefined) {
+            modSections.splice(existingSectionIndex, 1);
+            context.setState(state);
+        }
+    }
+
+    @Action(ActiveProfileActions.UpdateModsInSection)
+    public updateModsInSection(
+        context: ActiveProfileState.Context,
+        { section, root, enabled }: ActiveProfileActions.UpdateModsInSection
+    ): void {
+        const state = _.cloneDeep(context.getState()!);
+        const modList = root ? state.rootMods : state.mods;
+        const startIndex = section.modIndexBefore !== undefined ? section.modIndexBefore + 1 : 0;
+        const nextSection = this._getNextModSection(state, root, section);
+
+        // Update the enablement of all mods in this section
+        const endIndex = nextSection?.modIndexBefore ?? modList.length - 1;
+        for (let i = startIndex; i < endIndex + 1; ++i) {
+            const curModRef = modList[i][1];
+            if (!curModRef.baseProfile) {
+                curModRef.enabled = enabled;
+            }
+        }
+
+        context.setState(state);
+    }
+
     @Action(ActiveProfileActions.AddCustomGameAction)
     public addCustomGameAction(context: ActiveProfileState.Context, { gameAction }: ActiveProfileActions.AddCustomGameAction): void {
         const state = _.cloneDeep(context.getState()!);
@@ -377,6 +549,27 @@ export class ActiveProfileState {
     @Action(ActiveProfileActions.setActiveGameAction)
     public setActiveGameAction(context: ActiveProfileState.Context, state: ActiveProfileActions.ActiveGameActionAction): void {
         context.patchState(state);
+    }
+
+    private _getNextModSection(
+        state: AppProfile,
+        root: boolean,
+        section: ModSection
+    ): ModSection | undefined {
+        const modSections = (root ? state.rootModSections : state.modSections) ?? [];
+        const startIndex = section.modIndexBefore !== undefined ? section.modIndexBefore + 1 : 0;
+
+        // Find the next chronological Section
+        let nextSection: ModSection | undefined;
+        modSections.forEach((curSection) => {
+            if (curSection.modIndexBefore !== undefined && curSection.modIndexBefore > startIndex) {
+                if (!nextSection || curSection.modIndexBefore < nextSection.modIndexBefore!) {
+                    nextSection = curSection;
+                }
+            }
+        });
+
+        return nextSection;
     }
 
     private _updateModVerifications(
