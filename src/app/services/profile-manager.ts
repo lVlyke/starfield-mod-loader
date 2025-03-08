@@ -454,6 +454,18 @@ export class ProfileManager {
         );
     }
 
+    public readSaveFiles(profile: AppProfile): Observable<AppProfile.Save[]> {
+        return runOnce(
+            ElectronUtils.invoke("profile:readSaveFiles", { profile })
+        );
+    }
+
+    public deleteSaveFile(profile: AppProfile, save: AppProfile.Save): Observable<unknown> {
+        return runOnce(
+            ElectronUtils.invoke("profile:deleteSaveFile", { profile, save })
+        );
+    }
+
     public verifyActiveProfile(options: {
         showSuccessMessage?: boolean;
         showErrorMessage?: boolean;
@@ -1133,6 +1145,13 @@ export class ProfileManager {
         return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigDirInFileExplorer", { profile: profile! })
+        )));
+    }
+
+    public showProfileSaveDirInFileExplorer(): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileSaveDirInFileExplorer", { profile: profile! })
         )));
     }
 

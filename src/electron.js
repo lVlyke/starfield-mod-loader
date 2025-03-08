@@ -14,6 +14,7 @@
  * @typedef {import("./app/models/app-profile").AppProfileDescription} AppProfileDescription;
  * @typedef {import("./app/models/app-profile").AppProfileExternalFiles} AppProfileExternalFiles;
  * @typedef {import("./app/models/app-profile").AppProfileDefaultablePaths} AppProfileDefaultablePaths;
+ * @typedef {import("./app/models/app-profile").AppProfileSave} AppProfileSave;
  * @typedef {import("./app/models/mod-import-status").ModImportStatus} ModImportStatus;
  * @typedef {import("./app/models/mod-import-status").ModImportRequest} ModImportRequest;
  * @typedef {import("./app/models/mod-import-status").ModImportResult} ModImportResult;
@@ -787,6 +788,17 @@ class ElectronLoader {
             }
         });
 
+        ipcMain.handle("profile:showProfileSaveDirInFileExplorer", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileSaveDirInFileExplorer">} */ { profile }
+        ) => {
+            const profileSaveDir = path.resolve(this.getProfileSaveDir(profile));
+
+            if (fs.existsSync(profileSaveDir)) {
+                shell.openPath(profileSaveDir);
+            }
+        });
+
         ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
@@ -884,11 +896,25 @@ class ElectronLoader {
             return this.readProfileConfigFile(profile, fileName, loadDefaults);
         });
 
+        ipcMain.handle("profile:readSaveFiles", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readSaveFiles">} */ { profile }
+        ) => {
+            return this.readProfileSaveFiles(profile);
+        });
+
         ipcMain.handle("profile:updateConfigFile", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:updateConfigFile">} */ { profile, fileName, data }
         ) => {
             this.updateProfileConfigFile(profile, fileName, data);
+        });
+
+        ipcMain.handle("profile:deleteSaveFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteSaveFile">} */ { profile, save }
+        ) => {
+            return this.deleteProfileSaveFile(profile, save);
         });
 
         ipcMain.handle("profile:resolveGameBinaryVersion", (
@@ -1407,6 +1433,31 @@ class ElectronLoader {
         return fs.readFileSync(profileConfigFilePath, "utf8");
     }
 
+    /** @returns {AppProfileSave[]} */
+    readProfileSaveFiles(
+        /** @type {AppProfile} */ profile
+    ) {
+        const profileSaveDir = this.getProfileSaveDir(profile);
+        
+        if (!fs.existsSync(profileSaveDir)) {
+            return [];
+        }
+
+        const gameDb = this.loadGameDatabase();
+        const gameDetails = gameDb[profile.gameId];
+        const gameSaveFormats = gameDetails?.saveFormats ?? [];
+        const saveFiles = fs.readdirSync(profileSaveDir)
+            .filter(saveFileName => gameSaveFormats.some((saveFormat) => {
+                return saveFileName.toLowerCase().endsWith(`.${saveFormat.toLowerCase()}`);
+            }))
+            .map((saveFileName) => ({
+                name: path.parse(saveFileName).name,
+                date: fs.statSync(path.join(profileSaveDir, saveFileName)).mtime
+            }));
+        
+        return _.orderBy(saveFiles, "date", "desc");
+    }
+
     /** @returns {void} */
     updateProfileConfigFile(/** @type {AppProfile} */ profile, /** @type {string} */ fileName, /** @type {string | undefined} */ data) {
         const profileConfigDir = this.getProfileConfigDir(profile);
@@ -1414,6 +1465,36 @@ class ElectronLoader {
         
         fs.mkdirpSync(profileConfigDir);
         fs.writeFileSync(profileConfigFilePath, data ?? "", "utf8");
+    }
+
+    /** @returns {boolean} */
+    deleteProfileSaveFile(
+        /** @type {AppProfile} */ profile,
+        /** @type {AppProfileSave} */ save
+    ) {
+        const profileSaveDir = this.getProfileSaveDir(profile);
+        
+        if (!fs.existsSync(profileSaveDir)) {
+            return false;
+        }
+
+        const saveFiles = fs.readdirSync(profileSaveDir);
+        let result = false;
+        for (const saveFile of saveFiles) {
+            const saveFileName = path.parse(saveFile).name;
+            if (saveFileName === save.name) {
+                try {
+                    fs.rmSync(path.join(profileSaveDir, saveFile));
+                    result = true;
+                } catch (err) {
+                    log.error(`Failed to delete save file "${saveFile}": `, err);
+                    return false;
+                }
+            }
+        }
+
+        log.info(`Deleted save file "${save.name}".`);
+        return result;
     }
 
     /** @returns {AppProfile} */

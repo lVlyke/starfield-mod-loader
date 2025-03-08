@@ -40,6 +40,7 @@
         "gameBinary": ["Oblivion.exe", "obse_loader.exe"],
         "pluginListType": "Gamebryo",
         "pluginFormats": ["esm", "esp"],
+        "saveFormats": ["ess"],
         "pinnedPlugins": [
             {
                 "plugin": "Oblivion.esm",
@@ -100,6 +101,7 @@
         "gameBinary": ["Fallout4.exe", "f4se_loader.exe"],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
+        "saveFormats": ["fos"],
         "pinnedPlugins": [
             {
                 "plugin": "Fallout4.esm",
@@ -160,6 +162,7 @@
         "gameBinary": ["FalloutNV.exe", "nvse_loader.exe"],
         "pluginListType": "Gamebryo",
         "pluginFormats": ["esm", "esp"],
+        "saveFormats": ["fos"],
         "pinnedPlugins": [
             {
                 "plugin": "FalloutNV.esm",
@@ -230,6 +233,7 @@
         "gameBinary": ["Starfield.exe", "sfse_loader.exe"],
         "pluginListType": "CreationEngine",
         "pluginFormats": ["esm", "esl", "esp"],
+        "saveFormats": ["sfs"],
         "pinnedPlugins": [
             {
                 "plugin": "Starfield.esm",

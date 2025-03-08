@@ -19,6 +19,7 @@ import { AppProfilePluginListComponentModule } from "../../components/profile-pl
 import { AppGameBadgeComponentModule } from "../../components/game-badge/game-badge.module";
 import { AppPipesModule } from "../../pipes";
 import { AppLogComponentModule } from "../../components/app-log";
+import { AppProfileSaveListComponent } from "../../components/profile-save-list";
 
 const routes: Routes = [
     {
@@ -57,7 +58,9 @@ const routes: Routes = [
         AppProfileModListComponentModule,
         AppProfilePluginListComponentModule,
         AppGameBadgeComponentModule,
-        AppLogComponentModule
+        AppLogComponentModule,
+
+        AppProfileSaveListComponent
     ],
     providers: []
 })

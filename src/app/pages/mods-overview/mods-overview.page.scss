@@ -118,11 +118,13 @@
         }
 
         #right-pane-actions {
+            $right-pane-max-width: 34vw;
+
             flex: 1 1 content;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            max-width: 34%;
+            max-width: $right-pane-max-width;
 
             &:empty {
                 display: none;
@@ -163,13 +165,18 @@
                     flex-direction: column;
                     height: 100%;
                     padding: 0;
+                    overflow-y: hidden;
 
                     &[action-type="plugins"] {
                         overflow-y: auto;
                     }
+
+                    &[action-type="config"], &[action-type="saves"] {
+                        width: $right-pane-max-width;
+                    }
                 }
 
-                app-profile-plugin-list {
+                #plugins-list {
                     padding: 16px;
                 }
             }

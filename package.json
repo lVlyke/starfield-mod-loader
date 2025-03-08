@@ -39,6 +39,7 @@
     "@angular/router": "^19.2.0",
     "@lithiumjs/angular": "^8.0.1",
     "@lithiumjs/ngx-material-theming": "^0.13.1",
+    "@lithiumjs/ngx-virtual-scroll": "^0.3.3",
     "@ngxs/store": "^19.0.0",
     "7zip-bin": "^5.2.0",
     "detect-file-encoding-and-language": "^2.4.0",

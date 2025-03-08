@@ -12,6 +12,7 @@ import { AppFilterDefinedPipe } from "./filter-defined.pipe";
 import { AppAsObservablePipe } from "./as-observable.pipe";
 import { AppIsDebugPipe } from "./is-debug.pipe";
 import { AppProfileConfigFilePipe } from "./profile-config-file.pipe";
+import { AppProfileSaveFilesPipe } from "./profile-save-files.pipe";
 import { AppHexPipe } from "./hex.pipe";
 import { AppGameConfigFilesFoundPipe } from "./game-config-files-found.pipe";
 import { AppIsFullProfilePipe } from "./is-full-profile.pipe";
@@ -29,6 +30,7 @@ const PIPES = [
     AppAsObservablePipe,
     AppIsDebugPipe,
     AppProfileConfigFilePipe,
+    AppProfileSaveFilesPipe,
     AppHexPipe,
     AppGameConfigFilesFoundPipe,
     AppIsFullProfilePipe

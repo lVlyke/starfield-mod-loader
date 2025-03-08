@@ -21,6 +21,7 @@ import { ActiveProfileState } from "../../state/active-profile/active-profile.st
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { LangUtils } from "../../util/lang-utils";
 import { GameAction } from "../../models/game-action";
+import { AppProfileSaveListComponent } from "../../components/profile-save-list";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -89,6 +90,9 @@ export class AppModsOverviewPage extends BasePage {
 
     @ViewChild("profileActionsPanel")
     protected readonly profileActionsPanel!: MatExpansionPanel;
+
+    @ViewChild("profileSavesList", { read: AppProfileSaveListComponent })
+    protected readonly profileSavesList?: AppProfileSaveListComponent;
 
     protected readonly configFileUpdate$ = new ManagedBehaviorSubject<Date>(this, new Date());
     protected readonly profileDescCompareFn = (a: AppProfile.Description, b: AppProfile.Description): boolean => {
@@ -342,5 +346,5 @@ export class AppModsOverviewPage extends BasePage {
 }
 
 namespace AppModsOverviewPage {
-    export type DataAction = "plugins" | "config";
+    export type DataAction = "plugins" | "config" | "saves";
 }

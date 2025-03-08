@@ -127,6 +127,9 @@
                                     <mat-option [disabled]="!activeProfile.manageConfigFiles" value="config">
                                         Config
                                     </mat-option>
+                                    <mat-option [disabled]="!activeProfile.manageSaveFiles" value="saves">
+                                        Saves
+                                    </mat-option>
                                 </mat-select>
                             </mat-form-field>
                         </mat-card-title>
@@ -169,13 +172,31 @@
                                     </button>
                                 </span>
                             }
+                            @case ("saves") {
+                                <!-- Save Editor Controls -->
+                                <span class="select-header-buttons">
+                                    <button mat-icon-button
+                                            color="accent"
+                                            matTooltip="Refresh Files"
+                                            (click)="profileSavesList?.refresh()">
+                                        <mat-icon>sync</mat-icon>
+                                    </button>
+
+                                    <button mat-icon-button
+                                            color="accent"
+                                            matTooltip="Open Profile Saves Folder"
+                                            (click)="profileManager.showProfileSaveDirInFileExplorer()">
+                                        <mat-icon>folder_open</mat-icon>
+                                    </button>
+                                </span>
+                            }
                         }
                     </mat-card-header>
                     <mat-card-content [attr.action-type]="activeDataAction">
                         @switch (activeDataAction) {
                             @case ("plugins") {
                                 <!-- Plugin List -->
-                                <app-profile-plugin-list
+                                <app-profile-plugin-list id="plugins-list"
                                     [profile]="activeProfile"
                                     (pluginChange)="profileManager.updatePlugin($event.pluginRef)"
                                     (pluginOrderChange)="profileManager.reorderPlugins($event)"
@@ -255,6 +276,9 @@
                                         </button>
                                     </div>
                                 }
+                            }
+                            @case ("saves") {
+                                <app-profile-save-list #profileSavesList id="saves-list" [profile]="activeProfile!" />
                             }
                         }
                     </mat-card-content>

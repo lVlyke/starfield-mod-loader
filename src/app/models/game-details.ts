@@ -3,6 +3,7 @@ import type { GamePluginListType } from "./game-plugin-list-type";
 export interface GameDetails {
     title: string;
     pluginFormats: string[];
+    saveFormats: string[];
     requireExternalPlugins: boolean;
     steamId?: string;
     bkgColor?: string;

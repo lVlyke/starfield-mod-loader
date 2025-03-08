@@ -1,0 +1,20 @@
+<li-virtual-scroll id="saves-list" [items]="profileSaves">
+    <mat-card *liVirtualItem="let save" class="save-item">
+        <mat-card-title>
+            {{ save.name }}
+        </mat-card-title>
+
+        <mat-card-footer>
+            <mat-icon color="accent" class="date-icon">event_note</mat-icon>
+            <span class="date-text">{{ save.date | date:"medium" }}</span>
+            
+            <span class="save-actions">
+                <mat-icon color="warn"
+                          class="save-delete-button"
+                          (click)="deleteSaveFile(save)">
+                    delete
+                </mat-icon>
+            </span>
+        </mat-card-footer>
+    </mat-card>
+</li-virtual-scroll>

@@ -47,6 +47,7 @@ export type AppProfileVerificationResults = AppProfile.VerificationResults;
 export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
 export type AppProfileDescription = AppProfile.Description;
 export type AppProfileExternalFiles = AppProfile.ExternalFiles;
+export type AppProfileSave = AppProfile.Save;
 
 export namespace AppProfile {
 
@@ -72,6 +73,11 @@ export namespace AppProfile {
         gameDirFiles: string[];
         modDirFiles: string[];
         pluginFiles: string[];
+    }
+
+    export interface Save {
+        name: string;
+        date: Date;
     }
 
     export interface VerificationResult {

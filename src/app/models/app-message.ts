@@ -474,6 +474,13 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowProfileSaveDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileSaveDirInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface ShowGameRootDirInFileExplorer extends Base {
         id: `${ProfileMessage.Prefix}:showGameRootDirInFileExplorer`;
         data: {
@@ -521,12 +528,28 @@ export namespace AppMessage {
         result: string;
     }
 
+    export interface ReadSaveFiles extends Base {
+        id: `${ProfileMessage.Prefix}:readSaveFiles`;
+        data: {
+            profile: AppProfile;
+        };
+        result: AppProfile.Save[];
+    }
+
     export interface UpdateConfigFile extends Base {
         id: `${ProfileMessage.Prefix}:updateConfigFile`;
         data: {
             profile: AppProfile;
             fileName: string;
             data: string;
+        };
+    }
+
+    export interface DeleteSaveFile extends Base {
+        id: `${ProfileMessage.Prefix}:deleteSaveFile`;
+        data: {
+            profile: AppProfile;
+            save: AppProfile.Save;
         };
     }
 
@@ -586,12 +609,15 @@ export namespace AppMessage {
                                | ShowGameRootDirInFileExplorer
                                | ShowProfileModsDirInFileExplorer
                                | ShowProfileConfigDirInFileExplorer
+                               | ShowProfileSaveDirInFileExplorer
                                | ShowProfilePluginBackupsInFileExplorer
                                | RunGameAction
                                | OpenGameConfigFile
                                | OpenProfileConfigFile
                                | ReadConfigFile
+                               | ReadSaveFiles
                                | UpdateConfigFile
+                               | DeleteSaveFile
                                | ProfileDirLinkSupported
                                | SteamCompatSymlinksSupported
                                | ResolveGameBinaryVersion;
@@ -652,13 +678,16 @@ export namespace AppMessage {
         "profile:showProfileBaseDirInFileExplorer",
         "profile:showProfileModsDirInFileExplorer",
         "profile:showProfileConfigDirInFileExplorer",
+        "profile:showProfileSaveDirInFileExplorer",
         "profile:showGameRootDirInFileExplorer",
         "profile:showProfilePluginBackupsInFileExplorer",
         "profile:runGameAction",
         "profile:openGameConfigFile",
         "profile:openProfileConfigFile",
         "profile:readConfigFile",
+        "profile:readSaveFiles",
         "profile:updateConfigFile",
+        "profile:deleteSaveFile",
         "profile:dirLinkSupported",
         "profile:steamCompatSymlinksSupported",
         "profile:resolveGameBinaryVersion"
