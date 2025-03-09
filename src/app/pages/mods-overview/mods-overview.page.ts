@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
 import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef, ManagedBehaviorSubject } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -8,7 +9,7 @@ import { AbstractControl } from "@angular/forms";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { Observable, combineLatest, of } from "rxjs";
-import { delay, distinctUntilChanged, filter, skip, switchMap, tap } from "rxjs/operators";
+import { delay, distinctUntilChanged, filter, map, skip, switchMap, tap } from "rxjs/operators";
 import { AppProfile } from "../../models/app-profile";
 import { ModProfileRef } from "../../models/mod-profile-ref";
 import { ProfileManager } from "../../services/profile-manager";
@@ -133,7 +134,9 @@ export class AppModsOverviewPage extends BasePage {
     ) {
         super({ cdRef });
 
-        this.profiles$ = store.select(AppState.getProfileDescriptions);
+        this.profiles$ = store.select(AppState.getProfileDescriptions).pipe(
+            map(profiles => _.orderBy(profiles, ["gameId", "name"], "asc"))
+        );
         this.activeProfile$ = store.select(AppState.getActiveProfile);
         this.isPluginsEnabled$ = store.select(AppState.isPluginsEnabled);
         this.isDeployInProgress$ = store.select(AppState.isDeployInProgress);

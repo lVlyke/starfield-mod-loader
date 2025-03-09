@@ -145,10 +145,29 @@ class ElectronLoader {
                 }
             });
 
+            // Sync log panel visibility state
             const toggleLogPanelItem = this.menu.getMenuItemById("show-log-panel");
             if (toggleLogPanelItem) {
                 toggleLogPanelItem.checked = !!appState.logPanelEnabled;
             }
+            
+            const profileActionIds = [
+                "new-profile",
+                "add-external-profile",
+                "import-profile",
+                "copy-profile",
+                "export-profile",
+                "delete-profile",
+                "mods"
+            ];
+
+            // Enable/disable profile actions based on lock state
+            profileActionIds.forEach((profileActionId) => {
+                const menuItem = this.menu.getMenuItemById(profileActionId);
+                if (menuItem) {
+                    menuItem.enabled = !appState.activeProfile?.locked;
+                }
+            });
         });
 
         ipcMain.handle("app:chooseDirectory", async (
@@ -452,6 +471,7 @@ class ElectronLoader {
                 modLinkMode: modLinkModeResult,
                 configLinkMode: configLinkModeResult,
                 deployed: VERIFY_SUCCESS,
+                locked: VERIFY_SUCCESS,
                 baseProfile: baseProfileResult,
                 customGameActions: VERIFY_SUCCESS, // TODO
                 activeGameAction: VERIFY_SUCCESS, // TODO
@@ -1034,26 +1054,32 @@ class ElectronLoader {
                 label: "Profile",
                 submenu: [
                     {
+                        id: "new-profile",
                         label: "New Profile",
                         click: () => this.mainWindow.webContents.send("app:newProfile")
                     },
                     {
+                        id: "add-external-profile",
                         label: "Add External Profile",
                         click: () => this.mainWindow.webContents.send("app:importProfile", { directImport: true })
                     },
                     {
+                        id: "import-profile",
                         label: "Import Profile",
                         click: () => this.mainWindow.webContents.send("app:importProfile")
                     },
                     {
+                        id: "copy-profile",
                         label: "Copy Profile",
                         click: () => this.mainWindow.webContents.send("app:copyProfile")
                     },
                     {
+                        id: "export-profile",
                         label: "Export Profile",
                         click: () => this.mainWindow.webContents.send("app:exportProfile")
                     },
                     {
+                        id: "delete-profile",
                         label: "Delete Profile",
                         click: () => this.mainWindow.webContents.send("app:deleteProfile")
                     },
@@ -1061,6 +1087,7 @@ class ElectronLoader {
                         type: "separator"
                     },
                     {
+                        id: "mods",
                         label: "Mods",
                         submenu: [
                             {
@@ -1082,6 +1109,7 @@ class ElectronLoader {
                         ]
                     },
                     {
+                        id: "profile-settings",
                         label: "Profile Settings",
                         click: () => this.mainWindow.webContents.send("profile:settings")
                     },

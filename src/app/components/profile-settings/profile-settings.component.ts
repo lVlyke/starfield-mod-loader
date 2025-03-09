@@ -119,6 +119,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             ))
         ).subscribe(gameIds => this.gameIds = gameIds);
 
+        // Add validators
         stateRef.get("form").pipe(
             filterDefined(),
             distinctUntilChanged()
@@ -130,6 +131,16 @@ export class AppProfileSettingsComponent extends BaseComponent {
             form.controls["rootPathOverride"].updateValueAndValidity();
         });
 
+        // Update form enabled state depending on if profile is locked
+        combineLatest(stateRef.getAll("initialProfile", "form")).subscribe(([initialProfile, form]) => {
+            if (initialProfile.locked) {
+                form.control.disable();
+            } else {
+                form.control.enable();
+            }
+        });
+
+        // Check if mod links are supported
         this.formModel$.pipe(
             filter(formModel => !!formModel.name),
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
@@ -140,6 +151,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             }))
         ).subscribe(linkSupported => this.modLinkModeSupported = linkSupported);
 
+        // Check if config links are supported
         this.formModel$.pipe(
             filter(formModel => !!formModel.name),
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
@@ -151,6 +163,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             }))
         ).subscribe(linkSupported => this.configLinkModeSupported = linkSupported);
 
+        // Check if save mgmt is supported
         combineLatest(stateRef.getAll("formModel", "initialProfile")).pipe(
             filter(([formModel]) => !!formModel.name),
             switchMap(([formModel, initialProfile]) => initialProfile.deployed ? of(!!initialProfile.manageSaveFiles) : ElectronUtils.invoke("profile:dirLinkSupported", {
@@ -162,16 +175,19 @@ export class AppProfileSettingsComponent extends BaseComponent {
             }))
         ).subscribe(managedSavesSupported => this.manageSavesSupported = managedSavesSupported);
 
+        // Check if Steam compat symlinks are supported
         this.formModel$.pipe(
             switchMap(formModel => formModel.steamGameId ? ElectronUtils.invoke("profile:steamCompatSymlinksSupported", {
                 profile: formModel as AppProfile
             }) : of(false))
         ).subscribe(manageSteamCompatSymlinksSupported => this.manageSteamCompatSymlinksSupported = manageSteamCompatSymlinksSupported);
 
+        // Check if profile is a base profile
         combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(
             filter(([, createMode]) => !createMode)
         ).subscribe(([initialProfile]) => this.baseProfileMode = !AppProfile.isFullProfile(initialProfile));
 
+        // Monitor form status changes
         stateRef.get("form").pipe(
             filterDefined(),
             switchMap(form => form.statusChanges!.pipe(
@@ -179,6 +195,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
             ))
         ).subscribe(this.onFormStatusChange$);
 
+        // Monitor form model changes
         stateRef.get("form").pipe(
             filterDefined(),
             switchMap(form => form.valueChanges!.pipe(

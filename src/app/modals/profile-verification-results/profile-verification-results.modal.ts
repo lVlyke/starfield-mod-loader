@@ -35,6 +35,7 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         savesPathOverride: "Invalid Profile Saves directory",
         backupsPathOverride: "Invalid Profile Backups directory",
         deployed: "Invalid deployment state",
+        locked: "Invalid locked state",
         gameRootDir: "Invalid Game Root directory",
         gameModDir: "Invalid Game Data directory",
         gameBinaryPath: "Invalid Game Executable path",

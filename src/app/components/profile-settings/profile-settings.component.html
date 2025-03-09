@@ -102,6 +102,7 @@
                             type="button"
                             [attr.editable]="fieldInfo.linkFn"
                             [disabledInteractive]="!fieldInfo.linkFn"
+                            [disabled]="!profileForm.enabled"
                             [color]="fieldInfo.linked ? 'accent' : null"
                             (click)="fieldInfo.linkFn ? fieldInfo.linkFn(fieldInfo) : null; $event.stopPropagation()">
                         <mat-icon>{{ fieldInfo.linked ? "link" : "link_off" }}</mat-icon>
@@ -123,6 +124,7 @@
                                 type="button"
                                 color="accent"
                                 matTooltip="Reset to Default Value"
+                                [disabled]="!profileForm.enabled"
                                 [attr.hidden]="!fieldInfo.path || null"
                                 (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
                             <mat-icon>refresh</mat-icon>
@@ -134,6 +136,7 @@
                         type="button"
                         color="accent"
                         matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
+                        [disabled]="!profileForm.enabled"
                         [attr.hidden]="!fieldInfo.path || null"
                         (click)="choosePath(fieldModel, fieldInfo.fileTypes); $event.stopPropagation()">
                     <mat-icon>folder</mat-icon>
@@ -158,7 +161,7 @@
     @if (!baseProfileMode) {
         <div>
             <mat-checkbox name="modLinkMode"
-                        [disabled]="!modLinkModeSupported"
+                        [disabled]="!profileForm.enabled || !modLinkModeSupported"
                         [ngModel]="modLinkModeSupported ? (initialProfile.modLinkMode ?? true) : false">
                 Link Mode
             </mat-checkbox>
@@ -171,7 +174,7 @@
         <div>
             <mat-checkbox name="configLinkMode"
                         [attr.app-hidden]="true"
-                        [disabled]="!configLinkModeSupported"
+                        [disabled]="!profileForm.enabled || !configLinkModeSupported"
                         [ngModel]="configLinkModeSupported ? (initialProfile.configLinkMode ?? true) : false">
                 Config Link Mode
             </mat-checkbox>
@@ -179,7 +182,9 @@
     }
 
     <div>
-        <mat-checkbox name="manageConfigFiles" [ngModel]="initialProfile.manageConfigFiles">
+        <mat-checkbox name="manageConfigFiles"
+                      [disabled]="!profileForm.enabled"
+                      [ngModel]="initialProfile.manageConfigFiles">
             Manage Config/INI Files
             <mat-icon class="tooltip-icon" matTooltip="Create profile-specific INI files. Existing INI files are used if this is disabled.">help</mat-icon>
         </mat-checkbox>
@@ -188,8 +193,8 @@
     @if (!baseProfileMode) {
         <div>
             <mat-checkbox name="manageSaveFiles"
-                        [disabled]="!manageSavesSupported"
-                        [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
+                          [disabled]="!profileForm.enabled || !manageSavesSupported"
+                          [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
                 Manage Save Files
                 <mat-icon class="tooltip-icon" matTooltip="Manage save games so they are part of the profile and only active if the profile is active.">help</mat-icon>
             </mat-checkbox>
@@ -199,7 +204,8 @@
     @if (!baseProfileMode && manageSteamCompatSymlinksSupported) {
         <div>
             <mat-checkbox name="manageSteamCompatSymlinks"
-                        [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
+                          [disabled]="!profileForm.enabled"
+                          [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
                 Manage Steam Compat Symlinks
                 <mat-icon class="tooltip-icon" matTooltip="Automatically create symlinks that synchronize game data for your custom Steam game entry.">help</mat-icon>
             </mat-checkbox>
@@ -210,9 +216,9 @@
         @let gameDetails = gameDb[formModel.gameId!];
         @if (gameDetails?.archiveInvalidation) {
             <div>
-                <mat-checkbox [disabled]="createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
-                            [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
-                            (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
+                <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
+                              [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
+                              (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
                     Archive Invalidation
                 </mat-checkbox>
 

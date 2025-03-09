@@ -44,6 +44,11 @@ export class ActiveProfileState {
         return !!state?.manageConfigFiles;
     }
 
+    @Action(ActiveProfileActions.Lock)
+    public lock(context: ActiveProfileState.Context, state: ActiveProfileActions.Lock): void {
+        context.patchState(_.cloneDeep(state));
+    }
+
     @Action(ActiveProfileActions.AddMod)
     public addMod(context: ActiveProfileState.Context, { root, name, mod }: ActiveProfileActions.AddMod): void {
         const state = _.cloneDeep(context.getState()!);

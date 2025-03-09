@@ -239,15 +239,17 @@ export class AppProfileModListComponent extends BaseComponent {
             modContextMenuRef.component.instance.modName = listEntry.name;
             modContextMenuRef.component.instance.modRef = listEntry.modRef;
         } else if (this.isSectionEntry(listEntry)) {
-            const sectionContextMenuRef = this.overlayHelpers.createAttached(
-                AppModSectionContextMenuModal,
-                modalAnchor,
-                OverlayHelpers.ConnectionPositions.contextMenu,
-                modalConfig
-            );
+            if (!this.profile.locked) {
+                const sectionContextMenuRef = this.overlayHelpers.createAttached(
+                    AppModSectionContextMenuModal,
+                    modalAnchor,
+                    OverlayHelpers.ConnectionPositions.contextMenu,
+                    modalConfig
+                );
 
-            sectionContextMenuRef.component.instance.root = this.root;
-            sectionContextMenuRef.component.instance.section = listEntry.section;
+                sectionContextMenuRef.component.instance.root = this.root;
+                sectionContextMenuRef.component.instance.section = listEntry.section;
+            }
         }
 
         event.stopPropagation();

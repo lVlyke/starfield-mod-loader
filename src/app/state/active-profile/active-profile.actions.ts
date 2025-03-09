@@ -208,4 +208,12 @@ export namespace ActiveProfileActions {
     export class ReconcileModSections {
         public static readonly type = `[activeProfile] reconcile mod sections`;
     }
+
+    export class Lock {
+        public static readonly type = `[activeProfile] lock`;
+
+        constructor(
+            public locked: boolean
+        ) {}
+    }
 }

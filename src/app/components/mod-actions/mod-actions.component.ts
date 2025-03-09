@@ -50,7 +50,7 @@ export class AppModActionsComponent extends BaseComponent {
     @ViewChild("sectionListMenu", { read: CdkPortal, static: true })
     protected readonly sectionListMenuPortal!: CdkPortal;
 
-    protected modSections!: ModSection[];
+    protected modSections: ModSection[] = [];
     protected sectionMenu?: OverlayHelpersRef;
 
     constructor(

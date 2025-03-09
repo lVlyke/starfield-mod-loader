@@ -67,7 +67,11 @@
             <mat-card-content class="mod-list-content">
                 <div class="mod-list-actions-bar">
                     <span id="mod-list-actions">
-                        <button mat-icon-button color="accent" matTooltip="Add Mod..." (click)="showAddModMenu($event)">
+                        <button mat-icon-button
+                                color="accent"
+                                matTooltip="Add Mod..."
+                                [disabled]="activeProfile!.locked"
+                                (click)="showAddModMenu($event)">
                             <mat-icon>add</mat-icon>
                             <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                         </button>
@@ -78,6 +82,13 @@
 
                         <button mat-icon-button color="accent" matTooltip="Verify Profile" (click)="profileManager.verifyActiveProfile()">
                             <mat-icon>find_replace</mat-icon>
+                        </button>
+
+                        <button mat-icon-button
+                                color="accent"
+                                [matTooltip]="activeProfile!.locked ? 'Unlock Profile' : 'Lock Profile'"
+                                (click)="profileManager.toggleLockActiveProfile()">
+                            <mat-icon>{{ activeProfile!.locked ? "lock" : "lock_open" }}</mat-icon>
                         </button>
 
                         <button mat-icon-button color="accent" matTooltip="Profile Settings" (click)="profileManager.showProfileWizard(activeProfile)">
@@ -143,6 +154,7 @@
                                     <button mat-icon-button
                                             color="accent"
                                             matTooltip="Restore Plugin Backup"
+                                            [disabled]="activeProfile!.locked"
                                             (click)="showImportPluginBackupMenu($event)">
                                         <mat-icon>history</mat-icon>
                                         <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
@@ -151,6 +163,7 @@
                                     <button mat-icon-button
                                             color="accent"
                                             matTooltip="Create Plugin Backup" 
+                                            [disabled]="activeProfile!.locked"
                                             (click)="showExportPluginBackupMenu()">
                                         <mat-icon>file_copy</mat-icon>
                                     </button>
@@ -248,7 +261,7 @@
                                     <textarea #configFileDataModel="ngModel"
                                                 class="config-file-editor"
                                                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                                                [disabled]="!activeConfigFileModel.value"
+                                                [disabled]="activeProfile!.locked || !activeConfigFileModel.value"
                                                 [ngModel]="resolvedConfigData">
                                     </textarea>
 
@@ -273,6 +286,7 @@
                                         <button mat-flat-button
                                                 class="config-save-button"
                                                 color="accent"
+                                                [disabled]="activeProfile!.locked"
                                                 (click)="updateConfigFile(activeConfigFileModel.value, configFileDataModel.value); configFileDataModel.control.markAsPristine()">
                                             Save
                                         </button>

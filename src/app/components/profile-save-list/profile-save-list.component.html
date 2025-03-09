@@ -9,9 +9,9 @@
             <span class="date-text">{{ save.date | date:"medium" }}</span>
             
             <span class="save-actions">
-                <mat-icon color="warn"
+                <mat-icon [color]="profile.locked ? undefined : 'warn'"
                           class="save-delete-button"
-                          (click)="deleteSaveFile(save)">
+                          (click)="profile.locked ? false : deleteSaveFile(save)">
                     delete
                 </mat-icon>
             </span>

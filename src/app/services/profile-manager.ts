@@ -539,6 +539,23 @@ export class ProfileManager {
         ));
     }
 
+    public toggleLockActiveProfile(): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap((profile) => {
+                if (profile) {
+                    return this.lockProfile(!profile.locked);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public lockProfile(locked: boolean): Observable<unknown> {
+        return this.store.dispatch(new ActiveProfileActions.Lock(locked));
+    }
+
     public findExternalFiles(profile: AppProfile): Observable<AppProfile.ExternalFiles> {
         return ElectronUtils.invoke("profile:findExternalFiles", { profile });
     }

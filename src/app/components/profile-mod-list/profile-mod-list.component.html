@@ -8,7 +8,7 @@
                 <mat-icon color="primary" class="section-icon">{{ listEntry.section.iconName ?? "list" }}</mat-icon>
             } @else if (isModEntry(listEntry)) {
                 <mat-checkbox [checked]="listEntry.modRef.enabled"
-                              [disabled]="!!listEntry.modRef.baseProfile || !!listEntry.modRef.verificationError"
+                              [disabled]="!!profile.locked || !!listEntry.modRef.baseProfile || !!listEntry.modRef.verificationError"
                               (change)="modChange$.emit(assign({}, listEntry, { modRef: assign({}, listEntry.modRef, { enabled: $event.checked }) }))" />
             }
         </td>
@@ -82,7 +82,7 @@
     <tr *matRowDef="let listEntry; columns: displayedColumns;"
         mat-row
         cdkDrag
-        [cdkDragDisabled]="isManualEntry(listEntry) || (isModEntry(listEntry) && !!listEntry.modRef.baseProfile)"
+        [cdkDragDisabled]="profile.locked || isManualEntry(listEntry) || (isModEntry(listEntry) && !!listEntry.modRef.baseProfile)"
         [attr.li-theme]="themeContainer.theme"
         [attr.external-files]="isManualEntry(listEntry)"
         [class.mod-unverified]="isModEntry(listEntry) && !!listEntry.modRef.verificationError"

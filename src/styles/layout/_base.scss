@@ -10,5 +10,17 @@
         display: block;
     }
     
-    body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+    body {
+        margin: 0;
+        font-family: Roboto, "Helvetica Neue", sans-serif;
+        cursor: default;
+    }
+
+    :not(input):not(textarea),
+    :not(input):not(textarea)::after,
+    :not(input):not(textarea)::before {
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: inherit;
+    }
 }

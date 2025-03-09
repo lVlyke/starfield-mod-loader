@@ -18,6 +18,7 @@ export interface AppBaseProfile {
     savesPathOverride?: string;
     backupsPathOverride?: string;
     deployed?: boolean;
+    locked?: boolean;
     rootModSections?: ModSection[];
     modSections?: ModSection[];
 }

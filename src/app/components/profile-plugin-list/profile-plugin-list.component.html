@@ -8,6 +8,7 @@
             @if (!activeGameDetails!.requireExternalPlugins) {
                 <button mat-icon-button
                         matTooltip="Manage External Plugins"
+                        [disabled]="profile.locked"
                         [color]="profile.manageExternalPlugins || activeGameDetails!.requireExternalPlugins ? 'accent' : null"
                         (click)="pluginExternalManagementChange$.emit()">
                     <mat-icon>travel_explore</mat-icon>
@@ -17,7 +18,7 @@
         <td mat-cell *matCellDef="let pluginEntry" class="plugin-enabled">
             <ng-container>
                 <mat-checkbox [checked]="pluginEntry.pluginRef.enabled"
-                              [disabled]="pluginEntry.required || !!pluginEntry.baseProfile || !!pluginEntry.pluginRef.verificationError"
+                              [disabled]="profile.locked || pluginEntry.required || !!pluginEntry.baseProfile || !!pluginEntry.pluginRef.verificationError"
                               (change)="pluginChange$.emit(assign({}, pluginEntry, { pluginRef: assign({}, pluginEntry.pluginRef, { enabled: $event.checked }) }))" />
             </ng-container>
         </td>
@@ -89,7 +90,7 @@
         mat-row
         cdkDrag
         [cdkDragData]="pluginEntry"
-        [cdkDragDisabled]="!!pluginEntry.baseProfile"
+        [cdkDragDisabled]="profile.locked || !!pluginEntry.baseProfile"
         [attr.li-theme]="themeContainer.theme"
         [class.plugin-unverified]="!!pluginEntry.pluginRef.verificationError"
         (contextmenu)="!pluginEntry.baseProfile ? showPluginContextMenu$.next([$event, pluginEntry]) : null"></tr>
