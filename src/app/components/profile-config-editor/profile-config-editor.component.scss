@@ -1,0 +1,43 @@
+@use "../../../styles/mixins" as mixins;
+
+:host {
+    display: contents;
+
+    .config-file-editor {
+        font-family: monospace;
+        border-top: none;
+        flex-grow: 1;
+        resize: none;
+        overflow: auto;
+        white-space: pre;
+    }
+
+    .config-file-name {
+        display: flex;
+        align-items: center;
+
+        &[new-file="true"] {
+            font-style: italic;
+        }
+
+        .base-profile-marker {
+            margin-left: 0.5rem;
+            font-style: normal;
+            font-weight: 600;
+            @include mixins.mat-icon-size(0.95rem);
+        }
+    }
+
+    .config-file-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 0.5rem;
+        padding: 0 0.5rem 0.5rem 0.5rem;
+
+        .config-save-button {
+            width: 50%;
+            margin-left: 0.5rem;
+        }
+    }
+}

@@ -92,4 +92,20 @@
             height: 64px !important;
         }
     }
+
+    button.with-menu {
+
+        .button-menu-icon {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            font-size: 1.3rem;
+            width: 1.3rem;
+            height: 1.3rem;
+        }
+
+        &:not([mat-icon-button]) .button-menu-icon {
+            right: -0.5rem;
+        }
+    }
 }

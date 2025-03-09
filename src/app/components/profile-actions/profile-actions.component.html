@@ -1,0 +1,250 @@
+@if (compact) {
+    <span>
+        <button id="mod-activate-button-compact"
+                class="mat-elevation-z3"
+                mat-stroked-button
+                [matTooltip]="isProfileDeployed ? 'Deactivate Profile' : 'Activate Profile'"
+                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed); $event.stopPropagation()">
+                
+            @if (isDeployInProgress) {
+                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+            } @else {
+                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                </mat-icon>
+            }
+
+            @if ((profile | appProfileActiveModCount) > 0) {
+                ({{ profile | appProfileActiveModCount }})
+            }
+        </button>
+
+        <button id="mod-refresh-button-compact"
+                class="mat-elevation-z3 no-label"
+                mat-stroked-button
+                [disabled]="!isProfileDeployed"
+                (click)="profileManager.refreshDeployedMods(); $event.stopPropagation()">
+            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
+        </button>
+    </span>
+
+    <span>
+        <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
+
+        <button id="game-action-button-compact"
+                class="mat-elevation-z3"
+                mat-stroked-button
+                matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
+                [matTooltipDisabled]="isProfileDeployed"
+                (click)="profileManager.runGameAction(); $event.stopPropagation()">
+            <mat-icon color="accent">play_circle</mat-icon>
+
+            {{ (profile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
+        </button>
+    </span>
+} @else {
+    <div id="primary-actions" class="actions primary-actions">
+        <button id="mod-activate-button"
+                class="mat-elevation-z3"
+                mat-stroked-button
+                (click)="profileManager.updateActiveModDeployment(!isProfileDeployed)">
+            @if (isDeployInProgress) {
+                <mat-icon class="slow-rotate" color="primary">sync</mat-icon>
+            } @else {
+                <mat-icon [color]="isProfileDeployed ? 'warn' : 'primary'">
+                    {{ isProfileDeployed ? "pause_circle" : "play_circle" }}
+                </mat-icon>
+            }
+
+            {{ isProfileDeployed ? "Deactivate Profile" : "Activate Profile" }}
+
+            @if ((profile | appProfileActiveModCount) > 0) {
+                ({{ profile | appProfileActiveModCount }})
+            }
+        </button>
+
+        <button id="mod-refresh-button"
+                class="mat-elevation-z3"
+                mat-stroked-button
+                [disabled]="!isProfileDeployed"
+                (click)="profileManager.refreshDeployedMods()">
+            <mat-icon [color]="isProfileDeployed ? 'accent' : null">refresh</mat-icon>
+            
+            Refresh Files
+        </button>
+    </div>
+
+    <div id="secondary-actions" class="actions secondary-actions">
+        <button id="profile-dir-view-button"
+                class="with-menu"
+                mat-stroked-button
+                (click)="showProfileFoldersMenu($event)">
+            <mat-icon>folder_shared</mat-icon>
+            Profile Folders&nbsp;&nbsp;
+            <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+        </button>
+
+        <button id="mod-dir-view-button"
+                class="with-menu"
+                mat-stroked-button
+                (click)="showGameFoldersMenu($event)">
+            <mat-icon>drive_file_move</mat-icon>
+            Game Folders&nbsp;&nbsp;
+            <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+        </button>
+
+        @if (!profile.manageConfigFiles) {
+            @if (gameDetails | appGameConfigFilesFound$ | async) {
+                <button mat-stroked-button
+                        id="game-config-button"
+                        class="with-menu"
+                        (click)="showGameConfigFileMenu($event); $event.stopPropagation()">
+                    <mat-icon>description</mat-icon>
+                    Config Files&nbsp;&nbsp;
+                    <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                </button>
+            }
+        }
+    </div>
+
+    <div class="spacer"></div>
+
+    <div id="game-info">
+        <div id="mod-status" [attr.mods-activated]="isProfileDeployed">
+            <ng-container *ngTemplateOutlet="profileDeploymentStatusText" />
+        </div>
+    </div>
+
+    <div id="game-actions" class="actions">
+        <span id="game-action-button-wrapper">
+            <button id="game-action-button"
+                    class="mat-elevation-z3"
+                    mat-stroked-button
+                    (click)="profileManager.runGameAction()">
+                <mat-icon color="accent">play_circle</mat-icon>
+
+                {{ (profile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
+            </button>
+            <button id="game-action-menu-button"
+                    class="mat-elevation-z3"
+                    mat-stroked-button
+                    (click)="showGameActionsMenu($event)">
+                <mat-icon>arrow_drop_down</mat-icon>
+            </button>
+        </span>
+    </div>
+}
+
+<!-- Profile folders menu -->
+<ng-template #profileFoldersMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                @for (folderEntry of profileFolderKeys; track folderEntry[0]) {
+                    <button mat-list-item (click)="profileManager.showProfileDirInFileExplorer(folderEntry[0]); profileFoldersMenuRef?.close()">
+                        <mat-icon matListIcon>folder</mat-icon>
+                        {{ folderEntry[1] }}
+                    </button>
+                }
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Game folders menu -->
+<ng-template #gameFoldersMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                @for (folderEntry of gameFolderKeys; track folderEntry[0]) {
+                    <button mat-list-item (click)="profileManager.showProfileDirInFileExplorer(folderEntry[0]); gameFoldersMenuRef?.close()">
+                        <mat-icon matListIcon>folder</mat-icon>
+                        {{ folderEntry[1] }}
+                    </button>
+                }
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Game config file menu popup -->
+<ng-template #gameConfigFileMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                @for (gameConfigFile of gameDetails!.gameConfigFiles | keyvalue; track gameConfigFile.key) {
+                    @if ("app:verifyPathExists" | appSendElectronMsg$:{ path: gameConfigFile.value } | async) {
+                        <button class="game-config-button"
+                                mat-list-item
+                                (click)="profileManager.openGameConfigFile(gameConfigFile.value); gameConfigFileMenuRef?.close()">
+                            <mat-icon matListIcon>data_array</mat-icon>
+                            <span matLine>{{ gameConfigFile.key }}</span>
+                        </button>
+                    }
+                }
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Game actions button popup -->
+<ng-template #gameActionsMenu cdkPortal>
+    <mat-card class="mat-elevation-z3 game-actions-popup">
+        <mat-card-content>
+            <mat-action-list>
+                @let gameActions = [profileManager.LAUNCH_GAME_ACTION].concat(profile.customGameActions ?? []);
+
+                @for (gameAction of gameActions; track $index) {
+                    <button mat-list-item class="game-action" (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
+                        <mat-icon matListIcon color="accent">play_circle</mat-icon>
+
+                        <span class="game-action-name">{{ gameAction.name }}</span>
+
+                        @if ($index > 0) {
+                            <button mat-icon-button
+                                    matTooltip="Edit"
+                                    (click)="editCustomGameActionByIndex($index - 1, gameAction); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                                <mat-icon color="primary">edit</mat-icon>
+                            </button>
+
+                            <button mat-icon-button
+                                    matTooltip="Delete"
+                                    (click)="removeCustomGameActionByIndex($index - 1); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                                <mat-icon color="warn">delete</mat-icon>
+                            </button>
+                        }
+                    </button>
+                }
+
+                <button mat-list-item (click)="addCustomGameAction(); gameActionsMenuRef?.close()">
+                    <mat-icon matListIcon color="primary">add</mat-icon>
+
+                    New Action
+                </button>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Profile deployment status text -->
+<ng-template #profileDeploymentStatusText let-asTooltip>
+    @let anotherActiveProfileWarnText = "Mods for another profile are active";
+    @let deployedProfileName = "profile:findDeployedProfile" | appSendElectronMsg$:{ refProfile: profile } | async;
+    @if (!!deployedProfileName) {
+        @if (deployedProfileName !== profile.name) {
+
+            <mat-icon class="warning"
+                    [matTooltip]="anotherActiveProfileWarnText"
+                    [matTooltipDisabled]="!asTooltip">
+                    warning
+            </mat-icon>
+            @if (!asTooltip) {
+                <span class="warning">{{ anotherActiveProfileWarnText }}</span>
+            }
+        } @else if (!asTooltip) {
+            Mods are {{ isProfileDeployed ? "enabled" : "disabled" }}
+        }
+    } @else if (!asTooltip) {
+        Mods are {{ isProfileDeployed ? "enabled" : "disabled" }}
+    }
+</ng-template>

@@ -1,0 +1,70 @@
+@if (!!gameConfigFiles) {
+    @let profileConfigData = profile | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateDate | async;
+    @let baseProfileConfigData = profile.baseProfile | appProfileConfigFile$:activeConfigFileModel.value:lastUpdateDate | async;
+    @let resolvedConfigData = profile | appProfileConfigFile$:activeConfigFileModel.value:null:true | async;
+
+    <!-- File selector -->
+    <mat-form-field [attr.subscript]="false">
+        <mat-select #activeConfigFileModel="ngModel"
+                    [ngModel]="(gameConfigFiles | keyvalue)[0].key"
+                    (ngModelChange)="configFileDataModel.reset()">
+            <mat-select-trigger>
+                <span class="config-file-name" [attr.new-file]="profileConfigData === undefined">
+                    {{ activeConfigFileModel.value }}
+
+                    @if (!!baseProfileConfigData && !profileConfigData) {
+                        <mat-icon color="accent"
+                                class="base-profile-marker"
+                                matTooltip="Inherited from {{profile.baseProfile!.name}}">
+                            arrow_outward
+                        </mat-icon>
+                    }
+                </span>
+                @if (configFileDataModel.dirty) {
+                    <span matColor="accent">*</span>
+                }
+            </mat-select-trigger>
+            
+            @for (configFile of gameConfigFiles | keyvalue; track configFile.key) {
+                <mat-option [value]="configFile.key">
+                    {{ configFile.key }}
+                </mat-option>
+            }
+        </mat-select>
+    </mat-form-field>
+
+    <!-- File editor -->
+    <textarea #configFileDataModel="ngModel"
+                class="config-file-editor"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                [disabled]="profile.locked || !activeConfigFileModel.value"
+                [ngModel]="resolvedConfigData">
+    </textarea>
+
+    <!-- File actions -->
+    <div class="config-file-actions">
+        @if (profileConfigData !== undefined) {
+            <button mat-icon-button
+                    matTooltip="Open in external file editor"
+                    matColor="accent"
+                    (click)="openConfigFile(activeConfigFileModel.value)">
+                <mat-icon>file_open</mat-icon>
+            </button>
+        }
+
+        <button mat-icon-button
+                matTooltip="Reload file contents"
+                matColor="accent"
+                (click)="reloadConfigFile(activeConfigFileModel.value, configFileDataModel.control)">
+            <mat-icon>sync</mat-icon>
+        </button>
+
+        <button mat-flat-button
+                class="config-save-button"
+                color="accent"
+                [disabled]="profile.locked"
+                (click)="updateConfigFile(activeConfigFileModel.value, configFileDataModel.value); configFileDataModel.control.markAsPristine()">
+            Save
+        </button>
+    </div>
+}

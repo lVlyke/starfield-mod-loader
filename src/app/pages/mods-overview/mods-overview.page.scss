@@ -7,6 +7,7 @@
     flex-direction: column;
     height: 100vh;
     max-height: 100vh;
+    min-width: 65rem;
     align-items: stretch;
 
     .warning {
@@ -27,6 +28,7 @@
         gap: 1.5rem;
         flex-grow: 1;
         height: 100vh - $log-height;
+        min-height: 35rem;
 
         .control-card {
             width: 100%;
@@ -48,7 +50,7 @@
         }
 
         #profile-mod-list {
-            flex: 1 1 66%;
+            flex: 1 1 100%;
 
             > #profile-mgmt-controls {
                 display: flex;
@@ -118,13 +120,10 @@
         }
 
         #right-pane-actions {
-            $right-pane-max-width: 34vw;
-
-            flex: 1 1 content;
+            flex: 1 1 40vw;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            max-width: $right-pane-max-width;
 
             &:empty {
                 display: none;
@@ -168,12 +167,19 @@
                     overflow-y: hidden;
 
                     &[action-type="plugins"] {
+                        min-width: 15rem;
                         overflow-y: auto;
                     }
 
                     &[action-type="config"], &[action-type="saves"] {
-                        width: $right-pane-max-width;
+                        width: 30vw;
+                        min-width: 25rem;
                     }
+                }
+
+                #data-actions-type-trigger {
+                    font-size: 1.2rem;
+                    font-weight: 500;
                 }
 
                 #plugins-list {
@@ -181,55 +187,8 @@
                 }
             }
 
-            #data-actions-type-trigger {
-                font-size: 1.2rem;
-                font-weight: 500;
-            }
-
-            .config-file-editor {
-                font-family: monospace;
-                border-top: none;
-                flex-grow: 1;
-                resize: none;
-                overflow: auto;
-                white-space: pre;
-            }
-
-            .config-file-name {
-                display: flex;
-                align-items: center;
-
-                &[new-file="true"] {
-                    font-style: italic;
-                }
-
-                .base-profile-marker {
-                    margin-left: 0.5rem;
-                    font-style: normal;
-                    font-weight: 600;
-                    @include mixins.mat-icon-size(0.95rem);
-                }
-            }
-
-            .config-file-actions {
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                margin-top: 0.5rem;
-                padding: 0 0.5rem 0.5rem 0.5rem;
-
-                .config-save-button {
-                    width: 50%;
-                    margin-left: 0.5rem;
-                }
-            }
-
-            mat-tab-group {
-                height: 100%;
-            }
-
             #profile-actions {
-                flex-basis: min-content;
+                flex-basis: content;
                 display: flex;
                 flex-direction: column;
 
@@ -241,136 +200,14 @@
                     min-height: 10rem;
 
                     ::ng-deep {
-                        .mat-expansion-panel-content {
-                            flex-grow: 1;
-                            flex-basis: 100%;
+                        .mat-expansion-panel-content-wrapper {
                             overflow: auto;
-                            
-
-                            .mat-expansion-panel-body {
-                                height: 100%;
-                            }
                         }
                     }
                 }
 
                 mat-expansion-panel-header {
                     flex-shrink: 0;
-                }
-
-                mat-panel-description {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-
-                    > * {
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        gap: 1rem;
-
-                        button.no-label {
-                            min-width: auto !important;
-
-                            mat-icon {
-                                margin: 0 !important;
-                            }
-                        }
-                    }
-                }
-
-                #profile-actions-panel-content {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: space-between;
-                    height: 100%;
-
-                    > .actions {
-                        display: flex;
-                        flex-wrap: wrap;
-                        justify-content: center;
-                        row-gap: 1rem;
-                        margin-bottom: 1.25rem;
-
-                        > button {
-                            margin-right: 1rem;
-                        }
-                    }
-
-                    .spacer {
-                        flex: 1 1 auto;
-                        min-height: 3rem;
-                    }
-                }
-            }
-        }
-
-        .primary-actions > button {
-            height: 3.25rem;
-            font-size: 1rem;
-
-            > mat-icon {
-                @include mixins.mat-icon-size(1.75rem);
-            }
-        }
-
-        .secondary-actions > button {
-            font-size: 0.8rem;
-        }
-
-        #game-info {
-            margin-bottom: 0.5rem;
-
-            #mod-status {
-                opacity: 0.8;
-                display: flex;
-                align-items: flex-end;
-
-                mat-icon {
-                    margin-right: 0.5rem;
-                }
-
-                &[mods-activated=false] {
-                    font-style: italic;
-                }
-            }
-        }
-
-        #game-actions {
-
-            #game-action-button-wrapper {
-                display: flex;
-
-                > button {
-                    height: 5rem;
-                    font-size: 1.5rem;
-        
-                    > mat-icon {
-                        @include mixins.mat-icon-size(3rem);
-                    }
-
-                    &#game-action-button {
-                        border-top-right-radius: 0;
-                        border-bottom-right-radius: 0;
-                        max-width: 30rem;
-                        overflow: hidden;
-                    }
-
-                    &#game-action-menu-button {
-                        border-top-left-radius: 0;
-                        border-bottom-left-radius: 0;
-                        border-left: 0;
-                        min-width: 1.5rem !important;
-                        width: 1.5rem !important;
-                        padding: 0 !important;
-
-                        > mat-icon {
-                            @include mixins.mat-icon-size(2rem);
-                            margin-left: 0.2rem !important;
-                            margin-right: 0 !important;
-                        }
-                    }
                 }
             }
         }
@@ -379,6 +216,7 @@
     #log-pane {
         width: 100%;
         height: $log-height;
+        min-height: 8rem;
         display: flex;
         flex-direction: column-reverse;
         border-top: 1px solid;
@@ -386,22 +224,6 @@
 
         &[log-panel-active="false"] {
             display: none;
-        }
-    }
-
-    button {
-
-        .button-menu-icon {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            font-size: 1.3rem;
-            width: 1.3rem;
-            height: 1.3rem;
-        }
-
-        &:not([mat-icon-button]) .button-menu-icon {
-            right: -0.5rem;
         }
     }
 
@@ -442,13 +264,6 @@
         vertical-align: middle;
         align-content: center;
     }
-
-    @at-root .game-actions-popup {
-
-        mat-card-content, mat-action-list {
-            padding: 0;
-        }
-    }
 }
 
 .profile-name {
@@ -459,16 +274,6 @@
 
         .profile-icon {
             margin-left: 0.5rem;
-        }
-    }
-}
-
-.game-action {
-    @at-root .game-actions-popup &, :host & {
-
-        .game-action-name {
-            flex-grow: 1;
-            margin-right: 1rem;
         }
     }
 }

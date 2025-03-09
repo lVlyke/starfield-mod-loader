@@ -44,6 +44,11 @@ export class ActiveProfileState {
         return !!state?.manageConfigFiles;
     }
 
+    @Selector()
+    public static isManageSaveFiles(state: ActiveProfileState.Model): boolean {
+        return !!state?.manageSaveFiles;
+    }
+
     @Action(ActiveProfileActions.Lock)
     public lock(context: ActiveProfileState.Context, state: ActiveProfileActions.Lock): void {
         context.patchState(_.cloneDeep(state));

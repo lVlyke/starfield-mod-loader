@@ -131,14 +131,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
             form.controls["rootPathOverride"].updateValueAndValidity();
         });
 
-        // Update form enabled state depending on if profile is locked
-        combineLatest(stateRef.getAll("initialProfile", "form")).subscribe(([initialProfile, form]) => {
-            if (initialProfile.locked) {
-                form.control.disable();
-            } else {
-                form.control.enable();
-            }
-        });
+        // Disable form is profile is locked
+        combineLatest(stateRef.getAll("initialProfile", "form")).pipe(
+            filter(([initialProfile]) => !!initialProfile.locked),
+        ).subscribe(([, form]) => form.control.disable());
 
         // Check if mod links are supported
         this.formModel$.pipe(

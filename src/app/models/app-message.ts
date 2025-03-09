@@ -446,52 +446,11 @@ export namespace AppMessage {
         };
     }
 
-    export interface ShowGameModDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showGameModDirInFileExplorer`;
+    export interface ShowProfileDirInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileDirInFileExplorer`;
         data: {
             profile: AppProfile;
-        };
-    }
-
-    export interface ShowProfileBaseDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showProfileBaseDirInFileExplorer`;
-        data: {
-            profile: AppProfile;
-        };
-    }
-
-    export interface ShowProfileModsDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showProfileModsDirInFileExplorer`;
-        data: {
-            profile: AppProfile;
-        };
-    }
-
-    export interface ShowProfileConfigDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showProfileConfigDirInFileExplorer`;
-        data: {
-            profile: AppProfile;
-        };
-    }
-
-    export interface ShowProfileSaveDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showProfileSaveDirInFileExplorer`;
-        data: {
-            profile: AppProfile;
-        };
-    }
-
-    export interface ShowGameRootDirInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showGameRootDirInFileExplorer`;
-        data: {
-            profile: AppProfile;
-        };
-    }
-
-    export interface ShowProfilePluginBackupsInFileExplorer extends Base {
-        id: `${ProfileMessage.Prefix}:showProfilePluginBackupsInFileExplorer`;
-        data: {
-            profile: AppProfile;
+            profileKey: keyof AppProfile;
         };
     }
 
@@ -604,13 +563,7 @@ export namespace AppMessage {
                                | FindDeployedProfile
                                | FindProfileExternalFiles
                                | ShowModInFileExplorer
-                               | ShowGameModDirInFileExplorer
-                               | ShowProfileBaseDirInFileExplorer
-                               | ShowGameRootDirInFileExplorer
-                               | ShowProfileModsDirInFileExplorer
-                               | ShowProfileConfigDirInFileExplorer
-                               | ShowProfileSaveDirInFileExplorer
-                               | ShowProfilePluginBackupsInFileExplorer
+                               | ShowProfileDirInFileExplorer
                                | RunGameAction
                                | OpenGameConfigFile
                                | OpenProfileConfigFile
@@ -674,13 +627,7 @@ export namespace AppMessage {
         "profile:findDeployedProfile",
         "profile:findExternalFiles",
         "profile:showModInFileExplorer",
-        "profile:showGameModDirInFileExplorer",
-        "profile:showProfileBaseDirInFileExplorer",
-        "profile:showProfileModsDirInFileExplorer",
-        "profile:showProfileConfigDirInFileExplorer",
-        "profile:showProfileSaveDirInFileExplorer",
-        "profile:showGameRootDirInFileExplorer",
-        "profile:showProfilePluginBackupsInFileExplorer",
+        "profile:showProfileDirInFileExplorer",
         "profile:runGameAction",
         "profile:openGameConfigFile",
         "profile:openProfileConfigFile",

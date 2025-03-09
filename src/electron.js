@@ -767,67 +767,17 @@ class ElectronLoader {
             shell.openPath(path.resolve(modDirPath));
         });
 
-        ipcMain.handle("profile:showGameModDirInFileExplorer", async (
+        ipcMain.handle("profile:showProfileDirInFileExplorer", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showGameModDirInFileExplorer">} */ { profile }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileDirInFileExplorer">} */ { profile, profileKey }
         ) => {
-            shell.openPath(path.resolve(profile.gameModDir));
-        });
+            const profileDir = this.getProfileDirByKey(profile, profileKey);
 
-        ipcMain.handle("profile:showGameRootDirInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showGameRootDirInFileExplorer">} */ { profile }
-        ) => {
-            shell.openPath(path.resolve(profile.gameRootDir));
-        });
-
-        ipcMain.handle("profile:showProfileBaseDirInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileBaseDirInFileExplorer">} */ { profile }
-        ) => {
-            const profileDir = this.getProfileDir(profile);
-
-            shell.openPath(path.resolve(profileDir));
-        });
-
-        ipcMain.handle("profile:showProfileModsDirInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileModsDirInFileExplorer">} */ { profile }
-        ) => {
-            const profileModsDir = this.getProfileModsDir(profile);
-
-            shell.openPath(path.resolve(profileModsDir));
-        });
-
-        ipcMain.handle("profile:showProfileConfigDirInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileConfigDirInFileExplorer">} */ { profile }
-        ) => {
-            const profileConfigDir = path.resolve(this.getProfileConfigDir(profile));
-
-            if (fs.existsSync(profileConfigDir)) {
-                shell.openPath(profileConfigDir);
+            if (!profileDir) {
+                return; // TODO - Error
             }
-        });
 
-        ipcMain.handle("profile:showProfileSaveDirInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileSaveDirInFileExplorer">} */ { profile }
-        ) => {
-            const profileSaveDir = path.resolve(this.getProfileSaveDir(profile));
-
-            if (fs.existsSync(profileSaveDir)) {
-                shell.openPath(profileSaveDir);
-            }
-        });
-
-        ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
-            _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
-        ) => {
-            const profileModsDir = this.getProfilePluginBackupsDir(profile);
-
-            shell.openPath(path.resolve(profileModsDir));
+            shell.openPath(path.resolve(this.#expandPath(profileDir)));
         });
 
         ipcMain.handle("profile:runGameAction", async (

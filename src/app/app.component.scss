@@ -1,7 +1,9 @@
-li-theme-container {
-    display: block;
-    min-height: 100vh;
+:host {
 
-    min-width: 55rem;
-    min-height: 33rem;
+    li-theme-container {
+        display: block;
+        min-height: 100vh;
+        max-height: 100vh;
+        overflow: auto;
+    }
 }

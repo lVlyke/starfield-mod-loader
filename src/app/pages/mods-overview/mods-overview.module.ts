@@ -12,7 +12,6 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatButtonModule } from "@angular/material/button";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
-import { MatTabsModule } from "@angular/material/tabs";
 import { AppModsOverviewPage } from "./mods-overview.page";
 import { AppProfileModListComponentModule } from "../../components/profile-mod-list";
 import { AppProfilePluginListComponentModule } from "../../components/profile-plugin-list";
@@ -20,6 +19,8 @@ import { AppGameBadgeComponentModule } from "../../components/game-badge/game-ba
 import { AppPipesModule } from "../../pipes";
 import { AppLogComponentModule } from "../../components/app-log";
 import { AppProfileSaveListComponent } from "../../components/profile-save-list";
+import { AppProfileConfigEditorComponentModule } from "../../components/profile-config-editor";
+import { AppProfileActionsComponentModule } from "../../components/profile-actions";
 
 const routes: Routes = [
     {
@@ -51,7 +52,6 @@ const routes: Routes = [
         MatListModule,
         MatExpansionModule,
         MatProgressSpinnerModule,
-        MatTabsModule,
 
         AppPipesModule,
 
@@ -59,6 +59,8 @@ const routes: Routes = [
         AppProfilePluginListComponentModule,
         AppGameBadgeComponentModule,
         AppLogComponentModule,
+        AppProfileConfigEditorComponentModule,
+        AppProfileActionsComponentModule,
 
         AppProfileSaveListComponent
     ],

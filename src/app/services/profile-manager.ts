@@ -1198,53 +1198,39 @@ export class ProfileManager {
         )));
     }
 
-    public showProfileBaseDirInFileExplorer(): Observable<unknown> {
+    public showProfileDirInFileExplorer(profileKey: keyof AppProfile): Observable<unknown> {
         return runOnce(this.activeProfile$.pipe(
             take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showProfileBaseDirInFileExplorer", { profile: profile! })
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileDirInFileExplorer", { profile: profile!, profileKey })
         )));
+    }
+
+    public showProfileBaseDirInFileExplorer(): Observable<unknown> {
+        return this.showProfileDirInFileExplorer("rootPathOverride");
     }
 
     public showProfileModsDirInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showProfileModsDirInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("modsPathOverride");
     }
 
     public showProfileConfigDirInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigDirInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("configPathOverride");
     }
 
     public showProfileSaveDirInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showProfileSaveDirInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("savesPathOverride");
     }
 
     public showGameModDirInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showGameModDirInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("gameModDir");
     }
 
     public showGameRootDirInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showGameRootDirInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("gameRootDir");
     }
 
     public showProfilePluginBackupsInFileExplorer(): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:showProfilePluginBackupsInFileExplorer", { profile: profile! })
-        )));
+        return this.showProfileDirInFileExplorer("backupsPathOverride");
     }
 
     public openGameConfigFile(configPaths: string[]): Observable<unknown> {
