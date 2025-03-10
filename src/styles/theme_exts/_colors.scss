@@ -13,4 +13,8 @@
     [matWarn], [matColor="warn"] {
         color: mat.m2-get-color-from-palette($warn, 500);
     }
+
+    [matInfo], [matColor="info"] {
+        color: rgb(200, 200, 0);
+    }
 }

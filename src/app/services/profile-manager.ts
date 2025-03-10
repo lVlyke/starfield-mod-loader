@@ -624,7 +624,8 @@ export class ProfileManager {
         return runOnce(this.showProfileWizard({
             ...profileToCopy,
             name: profileName,
-            deployed: false
+            deployed: false,
+            rootPathOverride: undefined
         }, { createMode: true, verifyProfile: false }).pipe(
             switchMap((newProfile) => {
                 if (!!newProfile) {
