@@ -78,6 +78,16 @@
                             <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
                         </button>
 
+                        <button mat-icon-button
+                                class="with-menu"
+                                color="accent"
+                                matTooltip="Backup"
+                                [disabled]="activeProfile!.locked"
+                                (click)="showModBackupMenu($event)">
+                            <mat-icon>history</mat-icon>
+                            <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                        </button>
+
                         <button mat-icon-button color="accent" matTooltip="Explore Profile Mod Files" (click)="showProfileModsDirInFileExplorer()">
                             <mat-icon>folder_open</mat-icon>
                         </button>
@@ -167,8 +177,16 @@
                                             color="accent"
                                             matTooltip="Create Plugin Backup" 
                                             [disabled]="activeProfile!.locked"
-                                            (click)="showExportPluginBackupMenu()">
+                                            (click)="createPluginBackupFromUser()">
                                         <mat-icon>file_copy</mat-icon>
+                                    </button>
+
+                                    <button mat-icon-button
+                                            color="accent"
+                                            matTooltip="Import Plugin Backup"
+                                            [disabled]="activeProfile!.locked"
+                                            (click)="profileManager.importProfilePluginBackup(activeProfile)">
+                                        <mat-icon>save_alt</mat-icon>
                                     </button>
                 
                                     <button mat-icon-button
@@ -182,6 +200,24 @@
                             @case ("config") {
                                 <!-- Config Editor Controls -->
                                 <span class="select-header-buttons">
+                                    <button mat-icon-button
+                                            class="with-menu"
+                                            color="accent"
+                                            matTooltip="Restore Config Backup"
+                                            [disabled]="activeProfile!.locked"
+                                            (click)="showImportConfigBackupMenu($event)">
+                                        <mat-icon>history</mat-icon>
+                                        <mat-icon class="button-menu-icon">arrow_drop_down</mat-icon>
+                                    </button>
+
+                                    <button mat-icon-button
+                                            color="accent"
+                                            matTooltip="Create Config Backup" 
+                                            [disabled]="activeProfile!.locked"
+                                            (click)="createConfigBackupFromUser()">
+                                        <mat-icon>file_copy</mat-icon>
+                                    </button>
+
                                     <button mat-icon-button
                                             color="accent"
                                             matTooltip="Open Profile Config Folder"
@@ -312,6 +348,26 @@
     </mat-card>
 </ng-template>
 
+<!-- Mod backup menu popup -->
+<ng-template #modBackupMenu cdkPortal>
+    <mat-card class="mat-elevation-z3">
+        <mat-card-content>
+            <mat-action-list>
+                <button mat-list-item (click)="createModOrderBackupFromUser(); modBackupMenuRef?.close()">
+                    <mat-icon matListIcon color="accent">format_list_numbered_rtl</mat-icon>
+                    <span matLine>Create Mod Order Backup</span>
+                </button>
+
+                <button mat-list-item (click)="showModOrderBackupMenu()">
+                    <mat-icon matListIcon color="accent">restore</mat-icon>
+                    <span matLine>Restore Mod Order Backup</span>
+                    <mat-icon>chevron_right</mat-icon>
+                </button>
+            </mat-action-list>
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
 <!-- Profile mgmt menu popup -->
 <ng-template #profileMgmtMenu cdkPortal>
     <mat-card class="mat-elevation-z3">
@@ -351,9 +407,9 @@
     </mat-card>
 </ng-template>
 
-<!-- Import plugin list menu -->
+<!-- Restore plugin backup menu -->
 <ng-template #importPluginBackupMenu cdkPortal>
-    <mat-card class="import-plugin-backup-menu mat-elevation-z3">
+    <mat-card class="backup-list-menu mat-elevation-z3">
         <mat-card-content>
             @let backupFileEntries = "profile:readPluginBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
             @if (!!backupFileEntries) {
@@ -364,7 +420,7 @@
                                     class="backup-file-item"
                                     matTooltipPosition="before"
                                     [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
-                                    (click)="profileManager.importProfilePluginBackup(activeProfile!, backupFileEntry.filePath); importPluginBackupMenuRef?.close()">
+                                    (click)="importProfilePluginBackup(backupFileEntry.filePath); importPluginBackupMenuRef?.close()">
                                 <span matLine class="backup-file-item-line">
                                     <span>{{ resolveBackupName(backupFileEntry) }}</span>
 
@@ -378,6 +434,90 @@
                         <mat-divider />
 
                         <button mat-list-item (click)="profileManager.showProfilePluginBackupsInFileExplorer(); importPluginBackupMenuRef?.close()">
+                            <span matLine class="backup-file-item-line">
+                                <span>Explore backups</span>
+
+                                <mat-icon color="accent">folder</mat-icon>
+                            </span>
+                        </button>
+                    </mat-action-list>
+                } @else {
+                    No backups
+                }      
+            }
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Restore config backup menu -->
+<ng-template #importConfigBackupMenu cdkPortal>
+    <mat-card class="backup-list-menu mat-elevation-z3">
+        <mat-card-content>
+            @let backupFileEntries = "profile:readConfigBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
+            @if (!!backupFileEntries) {
+                @if (backupFileEntries.length > 0) {
+                    <mat-action-list>
+                        @for (backupFileEntry of backupFileEntries; track $index) {
+                            <button mat-list-item
+                                    class="backup-file-item"
+                                    matTooltipPosition="before"
+                                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
+                                    (click)="importProfileConfigBackup(backupFileEntry.filePath); importConfigBackupMenuRef?.close()">
+                                <span matLine class="backup-file-item-line">
+                                    <span>{{ resolveBackupName(backupFileEntry) }}</span>
+
+                                    <button mat-icon-button (click)="deleteProfileConfigBackup(backupFileEntry.filePath); importConfigBackupMenuRef?.close(); $event.preventDefault()">
+                                        <mat-icon color="warn">delete</mat-icon>
+                                    </button>
+                                </span>
+                            </button>
+                        }
+
+                        <mat-divider />
+
+                        <button mat-list-item (click)="profileManager.showProfileConfigBackupsInFileExplorer(); importConfigBackupMenuRef?.close()">
+                            <span matLine class="backup-file-item-line">
+                                <span>Explore backups</span>
+
+                                <mat-icon color="accent">folder</mat-icon>
+                            </span>
+                        </button>
+                    </mat-action-list>
+                } @else {
+                    No backups
+                }      
+            }
+        </mat-card-content>
+    </mat-card>
+</ng-template>
+
+<!-- Restore mod order backup menu -->
+<ng-template #modOrderBackupMenu cdkPortal>
+    <mat-card class="backup-list-menu mat-elevation-z3">
+        <mat-card-content>
+            @let backupFileEntries = "profile:readModOrderBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
+            @if (!!backupFileEntries) {
+                @if (backupFileEntries.length > 0) {
+                    <mat-action-list>
+                        @for (backupFileEntry of backupFileEntries; track $index) {
+                            <button mat-list-item
+                                    class="backup-file-item"
+                                    matTooltipPosition="before"
+                                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
+                                    (click)="importProfileModOrderBackup(backupFileEntry.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()">
+                                <span matLine class="backup-file-item-line">
+                                    <span>{{ resolveBackupName(backupFileEntry) }}</span>
+
+                                    <button mat-icon-button (click)="deleteProfileModOrderBackup(backupFileEntry.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close(); $event.preventDefault()">
+                                        <mat-icon color="warn">delete</mat-icon>
+                                    </button>
+                                </span>
+                            </button>
+                        }
+
+                        <mat-divider />
+
+                        <button mat-list-item (click)="profileManager.showProfileModOrderBackupsInFileExplorer(); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()">
                             <span matLine class="backup-file-item-line">
                                 <span>Explore backups</span>
 

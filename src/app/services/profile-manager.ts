@@ -419,23 +419,76 @@ export class ProfileManager {
         }
     }
 
-    public importProfilePluginBackup(profile: AppProfile, backupPath: string): Observable<AppProfile | undefined> {
+    public importProfileModOrderBackup(profile: AppProfile, backupPath?: string): Observable<AppProfile | undefined> {
+        return runOnce(ElectronUtils.invoke("profile:importModOrderBackup", {
+            profile, backupPath
+        }).pipe(
+            // Reload the profile after restoring the backup
+            switchMap((updateProfile) => {
+                if (!!updateProfile) {
+                    return this.setActiveProfile(updateProfile).pipe(
+                        // Reconcile data lista
+                        switchMap(() => this.reconcileDataLists()),
+                        // Save the profile
+                        switchMap(() => this.saveProfile(updateProfile))
+                    );
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public importProfilePluginBackup(profile: AppProfile, backupPath?: string): Observable<AppProfile | undefined> {
         return runOnce(ElectronUtils.invoke("profile:importPluginBackup", {
             profile, backupPath
         }).pipe(
             // Reload the profile after restoring the backup
-            switchMap((updateProfile) => this.setActiveProfile(updateProfile).pipe(
-                // Reconcile data lista
-                switchMap(() => this.reconcileDataLists()),
-                // Save the profile
-                switchMap(() => this.saveProfile(updateProfile))
-            ))
+            switchMap((updateProfile) => {
+                if (!!updateProfile) {
+                    return this.setActiveProfile(updateProfile).pipe(
+                        // Reconcile data lista
+                        switchMap(() => this.reconcileDataLists()),
+                        // Save the profile
+                        switchMap(() => this.saveProfile(updateProfile))
+                    );
+                } else {
+                    return of(undefined);
+                }
+            })
         ));
+    }
+
+    public importProfileConfigBackup(profile: AppProfile, backupPath?: string): Observable<AppProfile | undefined> {
+        return runOnce(ElectronUtils.invoke("profile:importConfigBackup", {
+            profile, backupPath
+        }).pipe(
+            // Reload the profile after restoring the backup
+            switchMap((updateProfile) => {
+                if (!!updateProfile) {
+                    return this.setActiveProfile(updateProfile);
+                } else {
+                    return of(undefined);
+                }
+            })
+        ));
+    }
+
+    public createProfileModOrderBackup(profile: AppProfile, backupName?: string): Observable<unknown> {
+        return runOnce(
+            ElectronUtils.invoke("profile:createModOrderBackup", { profile, backupName })
+        );
     }
 
     public createProfilePluginBackup(profile: AppProfile, backupName?: string): Observable<unknown> {
         return runOnce(
             ElectronUtils.invoke("profile:createPluginBackup", { profile, backupName })
+        );
+    }
+
+    public createProfileConfigBackup(profile: AppProfile, backupName?: string): Observable<unknown> {
+        return runOnce(
+            ElectronUtils.invoke("profile:createConfigBackup", { profile, backupName })
         );
     }
 
@@ -445,8 +498,24 @@ export class ProfileManager {
         );
     }
 
-    public readPluginBackups(profile: AppProfile): Observable<AppProfile.PluginBackupEntry[]> {
+    public deleteProfileConfigBackup(profile: AppProfile, backupFile: string): Observable<unknown> {
+        return runOnce(
+            ElectronUtils.invoke("profile:deleteConfigBackup", { profile, backupFile })
+        );
+    }
+
+    public deleteProfileModOrderBackup(profile: AppProfile, backupFile: string): Observable<unknown> {
+        return runOnce(
+            ElectronUtils.invoke("profile:deleteModOrderBackup", { profile, backupFile })
+        );
+    }
+
+    public readPluginBackups(profile: AppProfile): Observable<AppProfile.BackupEntry[]> {
         return ElectronUtils.invoke("profile:readPluginBackups", { profile });
+    }
+
+    public readConfigBackups(profile: AppProfile): Observable<AppProfile.BackupEntry[]> {
+        return ElectronUtils.invoke("profile:readConfigBackups", { profile });
     }
 
     public exportPluginList(profile: AppProfile): Observable<unknown> {
@@ -1229,8 +1298,29 @@ export class ProfileManager {
         return this.showProfileDirInFileExplorer("gameRootDir");
     }
 
-    public showProfilePluginBackupsInFileExplorer(): Observable<unknown> {
+    public showProfileBackupsInFileExplorer(): Observable<unknown> {
         return this.showProfileDirInFileExplorer("backupsPathOverride");
+    }
+
+    public showProfileModOrderBackupsInFileExplorer(): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileModOrderBackupsInFileExplorer", { profile: profile! })
+        )));
+    }
+
+    public showProfilePluginBackupsInFileExplorer(): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfilePluginBackupsInFileExplorer", { profile: profile! })
+        )));
+    }
+
+    public showProfileConfigBackupsInFileExplorer(): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigBackupsInFileExplorer", { profile: profile! })
+        )));
     }
 
     public openGameConfigFile(configPaths: string[]): Observable<unknown> {
@@ -1242,6 +1332,14 @@ export class ProfileManager {
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:openProfileConfigFile", { profile: profile!, configFileName })
         )));
+    }
+
+    public deleteProfileConfigFile(configFileName: string): Observable<unknown> {
+        return runOnce(this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:deleteProfileConfigFile", { profile: profile!, configFileName })),
+            switchMap(profile => this.setActiveProfile(profile))
+        ));
     }
 
     private deployActiveMods(): Observable<boolean> {

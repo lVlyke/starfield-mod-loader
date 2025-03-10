@@ -349,17 +349,67 @@ export namespace AppMessage {
         result: AppProfile.ModList;
     }
 
+    export interface ImportProfileModOrderBackup extends Base {
+        id: `${ProfileMessage.Prefix}:importModOrderBackup`;
+        data: {
+            profile: AppProfile;
+            backupPath?: string;
+        };
+        result: AppProfile | undefined;
+    }
+
+    export interface CreateProfileModOrderBackup extends Base {
+        id: `${ProfileMessage.Prefix}:createModOrderBackup`;
+        data: {
+            profile: AppProfile;
+            backupName?: string;
+        };
+    }
+
+    export interface ReadProfileModOrderBackups extends Base {
+        id: `${ProfileMessage.Prefix}:readModOrderBackups`;
+        data: {
+            profile: AppProfile;
+        };
+        result: AppProfile.BackupEntry[];
+    }
+
+    export interface DeleteProfileModOrderBackup extends Base {
+        id: `${ProfileMessage.Prefix}:deleteModOrderBackup`;
+        data: {
+            profile: AppProfile;
+            backupFile: string;
+        };
+    }
+
     export interface ImportProfilePluginBackup extends Base {
         id: `${ProfileMessage.Prefix}:importPluginBackup`;
         data: {
             profile: AppProfile;
-            backupPath: string;
+            backupPath?: string;
         };
-        result: AppProfile;
+        result: AppProfile | undefined;
+    }
+
+    export interface ImportProfileConfigBackup extends Base {
+        id: `${ProfileMessage.Prefix}:importConfigBackup`;
+        data: {
+            profile: AppProfile;
+            backupPath?: string;
+        };
+        result: AppProfile | undefined;
     }
 
     export interface CreateProfilePluginBackup extends Base {
         id: `${ProfileMessage.Prefix}:createPluginBackup`;
+        data: {
+            profile: AppProfile;
+            backupName?: string;
+        };
+    }
+
+    export interface CreateProfileConfigBackup extends Base {
+        id: `${ProfileMessage.Prefix}:createConfigBackup`;
         data: {
             profile: AppProfile;
             backupName?: string;
@@ -374,12 +424,28 @@ export namespace AppMessage {
         };
     }
 
+    export interface DeleteProfileConfigBackup extends Base {
+        id: `${ProfileMessage.Prefix}:deleteConfigBackup`;
+        data: {
+            profile: AppProfile;
+            backupFile: string;
+        };
+    }
+
     export interface ReadProfilePluginBackups extends Base {
         id: `${ProfileMessage.Prefix}:readPluginBackups`;
         data: {
             profile: AppProfile;
         };
-        result: AppProfile.PluginBackupEntry[];
+        result: AppProfile.BackupEntry[];
+    }
+
+    export interface ReadProfileConfigBackups extends Base {
+        id: `${ProfileMessage.Prefix}:readConfigBackups`;
+        data: {
+            profile: AppProfile;
+        };
+        result: AppProfile.BackupEntry[];
     }
 
     export interface ExportProfilePluginList extends Base {
@@ -454,6 +520,27 @@ export namespace AppMessage {
         };
     }
 
+    export interface ShowProfileModOrderBackupsInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileModOrderBackupsInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ShowProfilePluginBackupsInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfilePluginBackupsInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
+    export interface ShowProfileConfigBackupsInFileExplorer extends Base {
+        id: `${ProfileMessage.Prefix}:showProfileConfigBackupsInFileExplorer`;
+        data: {
+            profile: AppProfile;
+        };
+    }
+
     export interface RunGameAction extends Base {
         id: `${ProfileMessage.Prefix}:runGameAction`;
         data: {
@@ -475,6 +562,15 @@ export namespace AppMessage {
             profile: AppProfile;
             configFileName: string;
         };
+    }
+
+    export interface DeleteProfileConfigFile extends Base {
+        id: `${ProfileMessage.Prefix}:deleteProfileConfigFile`;
+        data: {
+            profile: AppProfile;
+            configFileName: string;
+        };
+        result: AppProfile;
     }
 
     export interface ReadConfigFile extends Base {
@@ -551,10 +647,18 @@ export namespace AppMessage {
                                | ReadProfileModFilePaths
                                | FindPluginFiles
                                | FindModFiles
+                               | ImportProfileModOrderBackup
+                               | CreateProfileModOrderBackup
+                               | ReadProfileModOrderBackups
+                               | DeleteProfileModOrderBackup
                                | ImportProfilePluginBackup
                                | CreateProfilePluginBackup
                                | DeleteProfilePluginBackup
                                | ReadProfilePluginBackups
+                               | ImportProfileConfigBackup
+                               | CreateProfileConfigBackup
+                               | ReadProfileConfigBackups
+                               | DeleteProfileConfigBackup
                                | ExportProfilePluginList
                                | CheckArchiveInvalidationEnabled
                                | SetArchiveInvalidationEnabled
@@ -564,9 +668,13 @@ export namespace AppMessage {
                                | FindProfileExternalFiles
                                | ShowModInFileExplorer
                                | ShowProfileDirInFileExplorer
+                               | ShowProfileModOrderBackupsInFileExplorer
+                               | ShowProfilePluginBackupsInFileExplorer
+                               | ShowProfileConfigBackupsInFileExplorer
                                | RunGameAction
                                | OpenGameConfigFile
                                | OpenProfileConfigFile
+                               | DeleteProfileConfigFile
                                | ReadConfigFile
                                | ReadSaveFiles
                                | UpdateConfigFile
@@ -615,10 +723,18 @@ export namespace AppMessage {
         "profile:readModFilePaths",
         "profile:findPluginFiles",
         "profile:findModFiles",
+        "profile:importModOrderBackup",
+        "profile:createModOrderBackup",
+        "profile:readModOrderBackups",
+        "profile:deleteModOrderBackup",
         "profile:importPluginBackup",
         "profile:createPluginBackup",
         "profile:deletePluginBackup",
         "profile:readPluginBackups",
+        "profile:importConfigBackup",
+        "profile:createConfigBackup",
+        "profile:readConfigBackups",
+        "profile:deleteConfigBackup",
         "profile:exportPluginList",
         "profile:checkArchiveInvalidationEnabled",
         "profile:setArchiveInvalidationEnabled",
@@ -628,9 +744,13 @@ export namespace AppMessage {
         "profile:findExternalFiles",
         "profile:showModInFileExplorer",
         "profile:showProfileDirInFileExplorer",
+        "profile:showProfileModOrderBackupsInFileExplorer",
+        "profile:showProfilePluginBackupsInFileExplorer",
+        "profile:showProfileConfigBackupsInFileExplorer",
         "profile:runGameAction",
         "profile:openGameConfigFile",
         "profile:openProfileConfigFile",
+        "profile:deleteProfileConfigFile",
         "profile:readConfigFile",
         "profile:readSaveFiles",
         "profile:updateConfigFile",

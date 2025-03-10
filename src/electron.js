@@ -10,7 +10,9 @@
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResult} AppProfileVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfileCollectedVerificationResult} AppProfileCollectedVerificationResult;
  * @typedef {import("./app/models/app-profile").AppProfileVerificationResults} AppProfileVerificationResults;
- * @typedef {import("./app/models/app-profile").AppProfilePluginBackupEntry} AppProfilePluginBackupEntry;
+ * @typedef {import("./app/models/app-profile").AppProfileBackupEntry} AppProfileBackupEntry;
+ * @typedef {import("./app/models/app-profile").AppProfileModOrderBackupEntry} AppProfileModOrderBackupEntry;
+ * @typedef {import("./app/models/app-profile").AppProfileModOrderBackup} AppProfileModOrderBackup;
  * @typedef {import("./app/models/app-profile").AppProfileDescription} AppProfileDescription;
  * @typedef {import("./app/models/app-profile").AppProfileExternalFiles} AppProfileExternalFiles;
  * @typedef {import("./app/models/app-profile").AppProfileDefaultablePaths} AppProfileDefaultablePaths;
@@ -68,7 +70,9 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_CONFIG_DIR = "config";
     static /** @type {string} */ PROFILE_SAVE_DIR = "save";
     static /** @type {string} */ PROFILE_BACKUPS_DIR = "backups";
+    static /** @type {string} */ PROFILE_BACKUPS_MOD_ORDER_DIR = "modorder";
     static /** @type {string} */ PROFILE_BACKUPS_PLUGINS_DIR = "plugins";
+    static /** @type {string} */ PROFILE_BACKUPS_CONFIG_DIR = "config";
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     static /** @type {string} */ PROFILE_LINK_SUPPORT_TEST_FILE = ".sml_link_test";
     static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
@@ -680,10 +684,70 @@ class ElectronLoader {
             return this.findModFiles(profile);
         });
 
+        ipcMain.handle("profile:importModOrderBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:importModOrderBackup">} */ { profile, backupPath }
+        ) => {
+            if (!backupPath) {
+                const pickedFile = (await dialog.showOpenDialog({
+                    filters: [
+                        { 
+                            name: "Mod Order Backup", extensions: ["json"]
+                        }
+                    ]
+                }));
+                
+                backupPath = pickedFile?.filePaths[0];
+            }
+
+            if (!backupPath) {
+                return;
+            }
+
+            return this.importProfileModOrderBackup(profile, backupPath);
+        })
+
+        ipcMain.handle("profile:createModOrderBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:createModOrderBackup">} */ { profile, backupName }
+        ) => {
+            return this.createProfileModOrderBackup(profile, backupName);
+        });
+
+        ipcMain.handle("profile:readModOrderBackups", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readModOrderBackups">} */ { profile }
+        ) => {
+            return this.readProfileModOrderBackups(profile);
+        });
+
+        ipcMain.handle("profile:deleteModOrderBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteModOrderBackup">} */ { profile, backupFile }
+        ) => {
+            return this.deleteProfileModOrderBackup(profile, backupFile);
+        });
+
         ipcMain.handle("profile:importPluginBackup", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:importPluginBackup">} */ { profile, backupPath }
         ) => {
+            if (!backupPath) {
+                const pickedFile = (await dialog.showOpenDialog({
+                    filters: [
+                        { 
+                            name: "Plugin List Backup", extensions: ["json"]
+                        }
+                    ]
+                }));
+                
+                backupPath = pickedFile?.filePaths[0];
+            }
+
+            if (!backupPath) {
+                return;
+            }
+
             return this.importProfilePluginBackup(profile, backupPath);
         });
 
@@ -724,6 +788,46 @@ class ElectronLoader {
             if (pluginListPath) {
                 return this.exportProfilePluginList(profile, pluginListPath);
             }
+        });
+
+        ipcMain.handle("profile:importConfigBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:importConfigBackup">} */ { profile, backupPath }
+        ) => {
+            if (!backupPath) {
+                const pickedFile = (await dialog.showOpenDialog({
+                    properties: ["openDirectory"]
+                }));
+                
+                backupPath = pickedFile?.filePaths[0];
+            }
+
+            if (!backupPath) {
+                return;
+            }
+
+            return this.importProfileConfigBackup(profile, backupPath);
+        });
+
+        ipcMain.handle("profile:createConfigBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:createConfigBackup">} */ { profile, backupName }
+        ) => {
+            return this.createProfileConfigBackup(profile, backupName);
+        });
+
+        ipcMain.handle("profile:readConfigBackups", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readConfigBackups">} */ { profile }
+        ) => {
+            return this.readProfileConfigBackups(profile);
+        });
+
+        ipcMain.handle("profile:deleteConfigBackup", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteConfigBackup">} */ { profile, backupFile }
+        ) => {
+            return this.deleteProfileConfigBackup(profile, backupFile);
         });
 
         ipcMain.handle("profile:checkArchiveInvalidationEnabled", async (
@@ -780,6 +884,33 @@ class ElectronLoader {
             shell.openPath(path.resolve(this.#expandPath(profileDir)));
         });
 
+        ipcMain.handle("profile:showProfileModOrderBackupsInFileExplorer", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileModOrderBackupsInFileExplorer">} */ { profile }
+        ) => {
+            const backupDir = this.getProfileModOrderBackupsDir(profile);
+
+            shell.openPath(path.resolve(backupDir));
+        });
+
+        ipcMain.handle("profile:showProfilePluginBackupsInFileExplorer", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfilePluginBackupsInFileExplorer">} */ { profile }
+        ) => {
+            const backupDir = this.getProfilePluginBackupsDir(profile);
+
+            shell.openPath(path.resolve(backupDir));
+        });
+
+        ipcMain.handle("profile:showProfileConfigBackupsInFileExplorer", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:showProfileConfigBackupsInFileExplorer">} */ { profile }
+        ) => {
+            const backupDir = this.getProfileConfigBackupsDir(profile);
+
+            shell.openPath(path.resolve(backupDir));
+        });
+
         ipcMain.handle("profile:runGameAction", async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:runGameAction">} */ { profile, gameAction }
@@ -818,6 +949,19 @@ class ElectronLoader {
             if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
                 return shell.openPath(path.resolve(profileConfigFilePath));
             }
+        });
+
+        ipcMain.handle("profile:deleteProfileConfigFile", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteProfileConfigFile">} */ { profile, configFileName }
+        ) => {
+            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName, false);
+
+            if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
+                fs.rmSync(path.resolve(profileConfigFilePath));
+            }
+
+            return profile;
         });
 
         ipcMain.handle("profile:dirLinkSupported", (
@@ -1245,10 +1389,26 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
+    getProfileModOrderBackupsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return path.join(
+            this.getProfileBackupsDir(profile),
+            ElectronLoader.PROFILE_BACKUPS_MOD_ORDER_DIR
+        );
+    }
+
+    /** @returns {string} */
     getProfilePluginBackupsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
         return path.join(
             this.getProfileBackupsDir(profile),
             ElectronLoader.PROFILE_BACKUPS_PLUGINS_DIR
+        );
+    }
+
+    /** @returns {string} */
+    getProfileConfigBackupsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
+        return path.join(
+            this.getProfileBackupsDir(profile),
+            ElectronLoader.PROFILE_BACKUPS_CONFIG_DIR
         );
     }
 
@@ -1478,12 +1638,88 @@ class ElectronLoader {
     }
 
     /** @returns {AppProfile} */
+    importProfileModOrderBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        backupPath = this.#expandPath(backupPath);
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfileModOrderBackupsDir(profile), backupPath);
+        }
+
+        if (!fs.existsSync(backupPath)) {
+            throw new Error("Invalid backup path.");
+        }
+
+        /** @type {AppProfileModOrderBackup} */ const modOrderBackup = fs.readJSONSync(backupPath);
+
+        if (!(typeof modOrderBackup === "object")) {
+            throw new Error("Invalid backup.");
+        }
+
+        /** @type {Array<keyof AppProfile & ("mods" | "rootMods")>} */ const modListKeys = ["mods", "rootMods"];
+        modListKeys.forEach((modListKey) => {
+            /** @type {AppProfileModOrderBackupEntry[]} */ const modListBackup = modOrderBackup[modListKey];
+            /** @type {AppProfileModList} */ const modList = profile[modListKey];
+
+            // Only restore mods that already exist in the current mod list
+            const restoredMods = modListBackup.reduce((/** @type {AppProfileModList} */ restoredMods, modBackup) => {
+                const existingMod = modList.find(([modName]) => modName === modBackup.name);
+                if (existingMod) {
+                    // Restore enabled state if mod is not from a base profile
+                    if (!existingMod[1].baseProfile) {
+                        existingMod[1].enabled = modBackup.enabled;
+                    }
+                    restoredMods.push(existingMod);
+                }
+
+                return restoredMods;
+            }, []);
+
+            // Move any existing mods that weren't in the backup to the bottom of the load order
+            restoredMods.push(...modList.filter(([modName]) => !restoredMods.some(([restoredModName]) => {
+                return modName === restoredModName;
+            })));
+
+            // Update the profile's mod list
+            Object.assign(profile, { [modListKey]: restoredMods });
+        });
+
+        /** @type {Array<keyof AppProfile & ("modSections" | "rootModSections")>} */ const sectionListKeys = ["modSections", "rootModSections"];
+        sectionListKeys.forEach((sectionListKey) => {
+            const root = sectionListKey === "rootModSections";
+            const sectionsBackup = modOrderBackup[sectionListKey];
+            const modList = root ? profile.rootMods : profile.mods;
+
+            if (sectionsBackup) {
+                // Overwrite profile sections with sections from backup
+                profile[sectionListKey] = sectionsBackup?.map((sectionBackup) => ({
+                    name: sectionBackup.name,
+                    modIndexBefore: sectionBackup.modBefore
+                        ? modList.findIndex(([modName]) => modName === sectionBackup.modBefore)
+                        : undefined,
+                    iconName: sectionBackup.iconName
+                }));
+            } else {
+                // TODO - Delete all existing sections if none in backup?
+            }
+        });
+
+        return profile;
+    }
+
+    /** @returns {AppProfile} */
     importProfilePluginBackup(
         /** @type {AppProfile} */ profile,
         /** @type {string} */ backupPath
     ) {
+        backupPath = this.#expandPath(backupPath);
         if (!path.isAbsolute(backupPath)) {
             backupPath = path.join(this.getProfilePluginBackupsDir(profile), backupPath);
+        }
+
+        if (!fs.existsSync(backupPath)) {
+            throw new Error("Invalid backup path.");
         }
 
         /** @type {AppProfile["plugins"]} */ const pluginsBackup = fs.readJSONSync(backupPath);
@@ -1493,7 +1729,7 @@ class ElectronLoader {
         }
 
         // Only import plugins that already exist in the current plugin list
-        let restoredPlugins = pluginsBackup.filter((restoredPlugin) => profile.plugins.some((existingPlugin) => {
+        const restoredPlugins = pluginsBackup.filter((restoredPlugin) => profile.plugins.some((existingPlugin) => {
             if (existingPlugin.plugin !== restoredPlugin.plugin) {
                 return false;
             }
@@ -1512,7 +1748,73 @@ class ElectronLoader {
         })));
         
         // Return the updated profile
-        return Object.assign({}, profile, { plugins: restoredPlugins });
+        return Object.assign(profile, { plugins: restoredPlugins });
+    }
+
+    /** @returns {AppProfile} */
+    importProfileConfigBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        backupPath = this.#expandPath(backupPath);
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfileConfigBackupsDir(profile), backupPath);
+        }
+
+        if (!fs.existsSync(backupPath)) {
+            throw new Error("Invalid backup.");
+        }
+
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        const gameConfigFiles = Object.keys(gameDetails?.gameConfigFiles ?? {});
+        const configDir = this.getProfileConfigDir(profile);
+        fs.mkdirpSync(configDir);
+
+        // Restore all config files in the backup
+        fs.readdirSync(backupPath).forEach((backupConfigFile) => {
+            if (gameConfigFiles.includes(backupConfigFile)) {
+                fs.copySync(
+                    path.join(backupPath, backupConfigFile),
+                    path.join(configDir, backupConfigFile),
+                    { overwrite: true }
+                );
+            }
+        });
+        
+        // Return the profile
+        return profile;
+    }
+
+    /** @returns {void} */
+    createProfileModOrderBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string | undefined} */ backupName
+    ) {
+        const backupsDir = this.getProfileModOrderBackupsDir(profile);
+        const backupFileName = `${this.#asFileName(backupName || this.#currentDateTimeAsFileName())}.json`;
+
+        fs.mkdirpSync(backupsDir);
+
+        /** @type {AppProfileModOrderBackup} */ const modOrderBackup = {
+            rootMods: profile.rootMods.map(([name, { enabled }]) => ({ name, enabled })),
+            mods: profile.mods.map(([name, { enabled }]) => ({ name, enabled })),
+            rootModSections: profile.rootModSections?.map((section) => ({
+                name: section.name,
+                modBefore: (section.modIndexBefore !== undefined) ? profile.rootMods[section.modIndexBefore][0] : undefined,
+                iconName: section.iconName
+            })),
+            modSections: profile.modSections?.map((section) => ({
+                name: section.name,
+                modBefore: (section.modIndexBefore !== undefined) ? profile.mods[section.modIndexBefore][0] : undefined,
+                iconName: section.iconName
+            }))
+        };
+
+        fs.writeJSONSync(
+            path.join(backupsDir, backupFileName),
+            modOrderBackup,
+            { spaces: 4 }
+        );
     }
 
     /** @returns {void} */
@@ -1521,14 +1823,50 @@ class ElectronLoader {
         /** @type {string | undefined} */ backupName
     ) {
         const backupsDir = this.getProfilePluginBackupsDir(profile);
+        const backupFileName = `${this.#asFileName(backupName || this.#currentDateTimeAsFileName())}.json`;
 
         fs.mkdirpSync(backupsDir);
 
         fs.writeJSONSync(
-            path.join(backupsDir, `${this.#asFileName(backupName || this.#currentDateTimeAsFileName())}.json`),
+            path.join(backupsDir, backupFileName),
             profile.plugins,
             { spaces: 4 }
         );
+    }
+
+    /** @returns {void} */
+    createProfileConfigBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string | undefined} */ backupName
+    ) {
+        backupName = this.#asFileName(backupName || this.#currentDateTimeAsFileName());
+        const backupsDir = this.getProfileConfigBackupsDir(profile);
+        const backupDir = path.join(backupsDir, backupName);
+        const profileConfigDir = this.getProfileConfigDir(profile);
+
+        fs.mkdirpSync(backupDir);
+
+        if (fs.existsSync(profileConfigDir)) {
+            fs.readdirSync(profileConfigDir).forEach((configFileName) => {
+                fs.copyFileSync(
+                    path.join(profileConfigDir, configFileName),
+                    path.join(backupDir, configFileName)
+                );
+            });
+        }
+    }
+
+    /** @returns {void} */
+    deleteProfileModOrderBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        backupPath = this.#expandPath(backupPath);
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfileModOrderBackupsDir(profile), backupPath);
+        }
+
+        fs.rmSync(backupPath);
     }
 
     /** @returns {void} */
@@ -1536,6 +1874,7 @@ class ElectronLoader {
         /** @type {AppProfile} */ profile,
         /** @type {string} */ backupPath
     ) {
+        backupPath = this.#expandPath(backupPath);
         if (!path.isAbsolute(backupPath)) {
             backupPath = path.join(this.getProfilePluginBackupsDir(profile), backupPath);
         }
@@ -1543,7 +1882,38 @@ class ElectronLoader {
         fs.rmSync(backupPath);
     }
 
-    /** @returns {AppProfilePluginBackupEntry[]} */
+    /** @returns {void} */
+    deleteProfileConfigBackup(
+        /** @type {AppProfile} */ profile,
+        /** @type {string} */ backupPath
+    ) {
+        backupPath = this.#expandPath(backupPath);
+        if (!path.isAbsolute(backupPath)) {
+            backupPath = path.join(this.getProfileConfigBackupsDir(profile), backupPath);
+        }
+
+        fs.removeSync(backupPath);
+    }
+
+    /** @returns {AppProfileBackupEntry[]} */
+    readProfileModOrderBackups(
+        /** @type {AppProfile} */ profile
+    ) {
+        const backupsDir = this.getProfileModOrderBackupsDir(profile);
+
+        if (!fs.existsSync(backupsDir)) {
+            return [];
+        }
+
+        return _.orderBy(fs.readdirSync(backupsDir)
+            .filter(filePath => filePath.endsWith(".json"))
+            .map((filePath) => ({
+                filePath,
+                backupDate: fs.lstatSync(path.join(backupsDir, filePath)).mtime
+            })), "backupDate", "desc");
+    }
+
+    /** @returns {AppProfileBackupEntry[]} */
     readProfilePluginBackups(
         /** @type {AppProfile} */ profile
     ) {
@@ -1555,6 +1925,23 @@ class ElectronLoader {
 
         return _.orderBy(fs.readdirSync(backupsDir)
             .filter(filePath => filePath.endsWith(".json"))
+            .map((filePath) => ({
+                filePath,
+                backupDate: fs.lstatSync(path.join(backupsDir, filePath)).mtime
+            })), "backupDate", "desc");
+    }
+
+    /** @returns {AppProfileBackupEntry[]} */
+    readProfileConfigBackups(
+        /** @type {AppProfile} */ profile
+    ) {
+        const backupsDir = this.getProfileConfigBackupsDir(profile);
+
+        if (!fs.existsSync(backupsDir)) {
+            return [];
+        }
+
+        return _.orderBy(fs.readdirSync(backupsDir)
             .map((filePath) => ({
                 filePath,
                 backupDate: fs.lstatSync(path.join(backupsDir, filePath)).mtime

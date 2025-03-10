@@ -45,6 +45,13 @@
     <div class="config-file-actions">
         @if (profileConfigData !== undefined) {
             <button mat-icon-button
+                    matTooltip="Delete file"
+                    matColor="warn"
+                    (click)="deleteConfigFile(activeConfigFileModel.value)">
+                <mat-icon>delete</mat-icon>
+            </button>
+
+            <button mat-icon-button
                     matTooltip="Open in external file editor"
                     matColor="accent"
                     (click)="openConfigFile(activeConfigFileModel.value)">

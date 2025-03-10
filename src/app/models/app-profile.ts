@@ -48,7 +48,9 @@ export type AppProfileDefaultablePaths = AppProfile.DefaultablePaths;
 export type AppProfileCollectedVerificationResult = AppProfile.CollectedVerificationResult;
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
-export type AppProfilePluginBackupEntry = AppProfile.PluginBackupEntry;
+export type AppProfileBackupEntry = AppProfile.BackupEntry;
+export type AppProfileModOrderBackupEntry = AppProfile.ModOrderBackupEntry;
+export type AppProfileModOrderBackup = AppProfile.ModOrderBackup;
 export type AppProfileDescription = AppProfile.Description;
 export type AppProfileExternalFiles = AppProfile.ExternalFiles;
 export type AppProfileSave = AppProfile.Save;
@@ -109,9 +111,27 @@ export namespace AppProfile {
         properties: PropertiesVerificationResult;
     }
 
-    export interface PluginBackupEntry {
+    export interface BackupEntry {
         filePath: string;
         backupDate: Date;
+    }
+
+    export interface ModOrderBackupEntry {
+        name: string;
+        enabled: boolean;
+    }
+
+    export interface ModSectionBackupEntry {
+        name: string;
+        modBefore?: string;
+        iconName?: string;
+    }
+
+    export interface ModOrderBackup {
+        rootMods: ModOrderBackupEntry[];
+        mods: ModOrderBackupEntry[];
+        rootModSections?: ModSectionBackupEntry[];
+        modSections?: ModSectionBackupEntry[];
     }
 
     export const BASE_PROFILE_KEYS: Array<keyof AppBaseProfile> = [

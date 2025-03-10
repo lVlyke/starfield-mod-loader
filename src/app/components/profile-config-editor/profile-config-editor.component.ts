@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, EventEmitter, Output } from "@angular/core";
 import { AbstractControl } from "@angular/forms";
 import { Observable, combineLatest } from "rxjs";
-import { tap } from "rxjs/operators";
+import { switchMap, tap } from "rxjs/operators";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { AppState } from "../../state";
@@ -10,8 +10,10 @@ import { GameDetails } from "../../models/game-details";
 import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { AppProfile } from "../../models/app-profile";
-import { runOnce } from "../../core/operators";
+import { filterTrue, runOnce } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
+import { DialogManager } from "../../services/dialog-manager";
+import { AppDialogs } from "../../services/app-dialogs";
 
 @Component({
     selector: "app-profile-config-editor",
@@ -47,7 +49,8 @@ export class AppProfileConfigEditorComponent extends BaseComponent {
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppProfileConfigEditorComponent>,
         store: Store,
-        private readonly profileManager: ProfileManager
+        private readonly profileManager: ProfileManager,
+        private readonly dialogs: AppDialogs
     ) {
         super({ cdRef });
 
@@ -79,6 +82,16 @@ export class AppProfileConfigEditorComponent extends BaseComponent {
 
     protected openConfigFile(fileName: string): Observable<unknown> {
         return this.profileManager.openProfileConfigFile(fileName);
+    }
+
+    protected deleteConfigFile(fileName: string): Observable<unknown> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to delete this config file?", [
+            DialogManager.YES_ACTION,
+            DialogManager.NO_ACTION_PRIMARY
+        ]).pipe(
+            filterTrue(),
+            switchMap(() => this.profileManager.deleteProfileConfigFile(fileName))
+        ));
     }
 
     private markConfigUpdated(date = new Date()): void {

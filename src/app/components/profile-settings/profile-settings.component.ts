@@ -132,9 +132,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
         });
 
         // Disable form is profile is locked
-        combineLatest(stateRef.getAll("initialProfile", "form")).pipe(
-            filter(([initialProfile]) => !!initialProfile.locked),
-        ).subscribe(([, form]) => form.control.disable());
+        combineLatest(stateRef.getAll("initialProfile", "createMode", "form")).pipe(
+            filter(([initialProfile, createMode]) => !createMode && !!initialProfile.locked),
+        ).subscribe(([, , form]) => form.control.disable());
 
         // Check if mod links are supported
         this.formModel$.pipe(

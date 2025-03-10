@@ -22,11 +22,11 @@ import { AppDialogActionsComponentModule } from "../../components/dialog-actions
 export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN");
 
 @Component({
-    templateUrl: "./profile-plugin-backup-name-dialog.component.html",
-    styleUrls: ["./profile-plugin-backup-name-dialog.component.scss"],
+    templateUrl: "./profile-backup-name-dialog.component.html",
+    styleUrls: ["./profile-backup-name-dialog.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
-        ComponentState.create(AppProfilePluginBackupNameDialog)
+        ComponentState.create(AppProfileBackupNameDialog)
     ],
     imports: [
     FormsModule,
@@ -36,7 +36,7 @@ export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN")
     AppDialogActionsComponentModule
 ]
 })
-export class AppProfilePluginBackupNameDialog extends BaseComponent implements DialogComponent {
+export class AppProfileBackupNameDialog extends BaseComponent implements DialogComponent {
 
     @Output("actionSelected")
     public readonly actionSelected$ = new EventEmitter<DialogAction>();

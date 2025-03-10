@@ -67,14 +67,23 @@ export class AppModsOverviewPage extends BasePage {
     @ViewChild("currentProfileSelect")
     public readonly currentProfileSelect!: MatSelect;
 
-    @ViewChild("addModMenu", { read: CdkPortal })
+    @ViewChild("addModMenu", { read: CdkPortal, static: true })
     protected readonly addModMenuPortal!: CdkPortal;
 
-    @ViewChild("profileMgmtMenu", { read: CdkPortal })
+    @ViewChild("modBackupMenu", { read: CdkPortal, static: true })
+    protected readonly modBackupMenuPortal!: CdkPortal;
+
+    @ViewChild("modOrderBackupMenu", { read: CdkPortal, static: true })
+    protected readonly modOrderBackupMenuPortal!: CdkPortal;
+
+    @ViewChild("profileMgmtMenu", { read: CdkPortal, static: true })
     protected readonly profileMgmtMenuPortal!: CdkPortal;
 
-    @ViewChild("importPluginBackupMenu", { read: CdkPortal })
-    protected readonly ImportPluginBackupMenuPortal!: CdkPortal;
+    @ViewChild("importPluginBackupMenu", { read: CdkPortal, static: true })
+    protected readonly importPluginBackupMenuPortal!: CdkPortal;
+
+    @ViewChild("importConfigBackupMenu", { read: CdkPortal, static: true })
+    protected readonly importConfigBackupMenuPortal!: CdkPortal;
 
     @ViewChild("profileActionsPanel")
     protected readonly profileActionsPanel!: MatExpansionPanel;
@@ -90,10 +99,19 @@ export class AppModsOverviewPage extends BasePage {
     protected addModMenuRef?: OverlayHelpersRef;
 
     @DeclareState()
+    protected modBackupMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
+    protected modOrderBackupMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
     protected showProfileMgmtMenuRef?: OverlayHelpersRef;
 
     @DeclareState()
     protected importPluginBackupMenuRef?: OverlayHelpersRef;
+
+    @DeclareState()
+    protected importConfigBackupMenuRef?: OverlayHelpersRef;
 
     @DeclareState("activeDataAction")
     protected _activeDataAction?: AppModsOverviewPage.DataAction;
@@ -221,6 +239,14 @@ export class AppModsOverviewPage extends BasePage {
         );
     }
 
+    protected showModBackupMenu($event: MouseEvent): void {
+        this.modBackupMenuRef = this.overlayHelpers.createAttached(this.modBackupMenuPortal,
+            $event.target as HTMLElement,
+            OverlayHelpers.ConnectionPositions.contextMenu,
+            { managed: false }
+        );
+    }
+
     protected showProfileMgmtMenu($event: MouseEvent): void {
         this.showProfileMgmtMenuRef = this.overlayHelpers.createAttached(this.profileMgmtMenuPortal,
             $event.target as HTMLElement,
@@ -230,7 +256,7 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected showImportPluginBackupMenu($event: MouseEvent): void {
-        this.importPluginBackupMenuRef = this.overlayHelpers.createAttached(this.ImportPluginBackupMenuPortal,
+        this.importPluginBackupMenuRef = this.overlayHelpers.createAttached(this.importPluginBackupMenuPortal,
             $event.target as HTMLElement,
             [
                 OverlayHelpers.fromDefaultConnectionPosition({
@@ -245,16 +271,99 @@ export class AppModsOverviewPage extends BasePage {
         );
     }
 
-    protected showExportPluginBackupMenu(): Observable<unknown> {
+    protected showImportConfigBackupMenu($event: MouseEvent): void {
+        this.importConfigBackupMenuRef = this.overlayHelpers.createAttached(this.importConfigBackupMenuPortal,
+            $event.target as HTMLElement,
+            [
+                OverlayHelpers.fromDefaultConnectionPosition({
+                    originX: "end",
+                    overlayX: "end"
+                }), ...OverlayHelpers.ConnectionPositions.contextMenu
+            ],
+            {
+                managed: false,
+                panelClass: "mat-app-background"
+            }
+        );
+    }
+
+    protected showModOrderBackupMenu(): void {
+        this.modOrderBackupMenuRef = this.overlayHelpers.createAttached(this.modOrderBackupMenuPortal,
+            this.modBackupMenuRef!.overlay.overlayElement,
+            OverlayHelpers.ConnectionPositions.nestedContextMenu,
+            {
+                managed: false,
+                panelClass: "mat-app-background"
+            }
+        );
+    }
+
+    protected createModOrderBackupFromUser(): Observable<unknown> {
+        return runOnce(this.dialogs.showProfileBackupNameDialog().pipe(
+            filterDefined(),
+            switchMap((backupName) => this.profileManager.createProfileModOrderBackup(this.activeProfile!, backupName))
+        ));
+    }
+
+    protected createPluginBackupFromUser(): Observable<unknown> {
         return runOnce(this.dialogs.showProfileBackupNameDialog().pipe(
             filterDefined(),
             switchMap((backupName) => this.profileManager.createProfilePluginBackup(this.activeProfile!, backupName))
         ));
     }
 
+    protected createConfigBackupFromUser(): Observable<unknown> {
+        return runOnce(this.dialogs.showProfileBackupNameDialog().pipe(
+            filterDefined(),
+            switchMap((backupName) => this.profileManager.createProfileConfigBackup(this.activeProfile!, backupName))
+        ));
+    }
+
+    protected importProfileModOrderBackup(backupPath: string): Observable<unknown> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to restore this mod order backup?", [
+            DialogManager.YES_ACTION_PRIMARY,
+            DialogManager.NO_ACTION
+        ], DialogManager.POSITIVE_ACTIONS).pipe(
+            filterTrue(),
+            switchMap(() => this.profileManager.importProfileModOrderBackup(this.activeProfile!, backupPath))
+        ));
+    }
+
+    protected importProfilePluginBackup(backupPath: string): Observable<unknown> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to restore this plugin order backup?", [
+            DialogManager.YES_ACTION_PRIMARY,
+            DialogManager.NO_ACTION
+        ], DialogManager.POSITIVE_ACTIONS).pipe(
+            filterTrue(),
+            switchMap(() => this.profileManager.importProfilePluginBackup(this.activeProfile!, backupPath))
+        ));
+    }
+
+    protected importProfileConfigBackup(backupPath: string): Observable<unknown> {
+        return runOnce(this.dialogs.showDefault("Are you sure you want to restore this config backup?", [
+            DialogManager.YES_ACTION_PRIMARY,
+            DialogManager.NO_ACTION
+        ], DialogManager.POSITIVE_ACTIONS).pipe(
+            filterTrue(),
+            switchMap(() => this.profileManager.importProfileConfigBackup(this.activeProfile!, backupPath))
+        ));
+    }
+
     protected deleteProfilePluginBackup(backupFile: string): Observable<unknown> {
         return runOnce(
             this.profileManager.deleteProfilePluginBackup(this.activeProfile!, backupFile)
+        );
+    }
+
+    protected deleteProfileConfigBackup(backupFile: string): Observable<unknown> {
+        return runOnce(
+            this.profileManager.deleteProfileConfigBackup(this.activeProfile!, backupFile)
+        );
+    }
+
+    protected deleteProfileModOrderBackup(backupFile: string): Observable<unknown> {
+        return runOnce(
+            this.profileManager.deleteProfileModOrderBackup(this.activeProfile!, backupFile)
         );
     }
 
@@ -266,7 +375,7 @@ export class AppModsOverviewPage extends BasePage {
         this.profileManager.deleteProfileFromUser(this.activeProfile!);
     }
 
-    protected resolveBackupName(backupEntry: AppProfile.PluginBackupEntry): string {
+    protected resolveBackupName(backupEntry: AppProfile.BackupEntry): string {
         return backupEntry.filePath.replace(/\.[^.]+$/g, "");
     }
 }

@@ -5,7 +5,7 @@ import { DialogConfig, DialogManager } from "./dialog-manager";
 import { DialogAction } from "./dialog-manager.types";
 import { GameAction } from "../models/game-action";
 import { AppModRenameDialog, MOD_CUR_NAME_TOKEN } from "../modals/mod-rename-dialog";
-import { AppProfilePluginBackupNameDialog } from "../modals/profile-plugin-backup-name-dialog";
+import { AppProfileBackupNameDialog } from "../modals/profile-backup-name-dialog";
 import { AppProfileFolderMoveDialog, NEW_PATH_TOKEN, OLD_PATH_TOKEN } from "../modals/profile-folder-move-dialog";
 import { AppSymlinkWarningDialog } from "../modals/symlink-warning-dialog";
 import { AppCustomGameActionDialog, GAME_ACTION_TOKEN } from "../modals/custom-game-action-dialog";
@@ -49,7 +49,7 @@ export class AppDialogs {
     }
 
     public showProfileBackupNameDialog(): Observable<string | undefined> {
-        return this.dialogManager.create(AppProfilePluginBackupNameDialog, [
+        return this.dialogManager.create(AppProfileBackupNameDialog, [
                 DialogManager.OK_ACTION_PRIMARY,
                 DialogManager.CANCEL_ACTION
             ], {
