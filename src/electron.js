@@ -55,9 +55,9 @@ class ElectronLoader {
 
     static /** @type {string} */ STEAM_DEFAULT_COMPAT_DATA_ROOT = "~/.local/share/Steam/steamapps/compatdata";
     static /** @type {string} */ STEAM_COMPAT_STEAMUSER_DIR = "pfx/drive_c/users/steamuser";
-    static /** @type {string} */ APP_PACKAGE_FILE = "package.json";
     static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
     static /** @type {string} */ APP_PROFILES_DIR = "profiles";
+    static /** @type {string} */ APP_PACKAGE_FILE = path.join(__dirname, "package.json");
     static /** @type {string} */ APP_DEPS_LICENSES_FILE = path.join(__dirname, "3rdpartylicenses.txt");
     static /** @type {string} */ APP_DEPS_INFO_FILE = path.join(__dirname, "3rdpartylicenses.json");
     static /** @type {string} */ GAME_DB_FILE = path.join(__dirname, "game-db.json");
@@ -78,7 +78,7 @@ class ElectronLoader {
             const appPackage = fs.readJSONSync(ElectronLoader.APP_PACKAGE_FILE, { encoding: "utf-8" });
             return `v${appPackage.version}`;
         } catch (err) {
-            return "main";
+            return "master";
         }
     })();
 
