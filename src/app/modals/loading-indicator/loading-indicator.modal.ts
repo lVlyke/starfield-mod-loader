@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
-
 import { MatCardModule } from "@angular/material/card";
 import { MatIconModule } from "@angular/material/icon";
 import { BaseComponent } from "../../core/base-component";
@@ -11,9 +10,9 @@ export const LOADING_MSG_TOKEN = new InjectionToken<string>("LOADING_MSG");
     styleUrls: ["./loading-indicator.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-    MatCardModule,
-    MatIconModule
-]
+        MatCardModule,
+        MatIconModule
+    ]
 })
 export class AppModSyncIndicatorModal extends BaseComponent {
 

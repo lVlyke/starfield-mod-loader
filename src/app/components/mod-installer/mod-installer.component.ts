@@ -10,13 +10,37 @@ import {
     ViewChildren,
     QueryList
 } from "@angular/core";
-import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/forms";
+import { NgTemplateOutlet, AsyncPipe } from "@angular/common";
+import { AbstractControl, NgForm, NgModel, ValidationErrors, FormsModule } from "@angular/forms";
 import { CdkPortal } from "@angular/cdk/portal";
-import { MatStep, MatStepper } from "@angular/material/stepper";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatCard, MatCardContent } from "@angular/material/card";
+import { MatIconButton } from "@angular/material/button";
+import { MatStep, MatStepper, MatStepLabel } from "@angular/material/stepper";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatSlideToggle } from "@angular/material/slide-toggle";
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
+import { MatRadioGroup, MatRadioButton } from "@angular/material/radio";
 import { Store } from "@ngxs/store";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { EMPTY, Observable, forkJoin, from, of } from "rxjs";
-import { catchError, concatMap, defaultIfEmpty, delay, distinctUntilChanged, finalize, map, mergeMap, startWith, switchMap, take, tap, toArray } from "rxjs/operators";
+import {
+    catchError,
+    concatMap,
+    defaultIfEmpty,
+    delay,
+    distinctUntilChanged,
+    finalize,
+    map,
+    mergeMap,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    toArray
+} from "rxjs/operators";
 import { AppModInstaller } from "./mod-installer.types";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined, filterFalse, filterTrue, runOnce } from "../../core/operators";
@@ -29,19 +53,56 @@ import { ProfileManager } from "../../services/profile-manager";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { log } from "../../util/logger";
 import { AppDialogs } from "../../services/app-dialogs";
+import { AppPluginGroupValidator } from "./plugin-group-validator.directive";
+import { AppValueCheckboxGroupComponent } from "../value-checkbox/group/value-checkbox-group.component";
+import { AppValueCheckboxComponent } from "../value-checkbox/value-checkbox.component";
+import { AppModImportRequestImagePipe } from "../../pipes/mod-import-request-image.pipe";
+import { AppIsDebugPipe } from "../../pipes/is-debug.pipe";
+import { AppResolveDefaultModInstallerPluginPipe } from "./resolve-default-mod-installer-plugin.pipe";
+import { AppResolveDefaultModInstallerPluginsPipe } from "./resolve-default-mod-installer-plugins.pipe";
 
 @Component({
     selector: "app-mod-installer",
     templateUrl: "./mod-installer.component.html",
     styleUrls: ["./mod-installer.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AsyncPipe,
+        NgTemplateOutlet,
+        FormsModule,
+
+        CdkPortal,
+
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatSlideToggle,
+        MatProgressSpinner,
+        MatStepper,
+        MatStep,
+        MatStepLabel,
+        MatRadioGroup,
+        MatIcon,
+        MatTooltip,
+        MatRadioButton,
+        MatCard,
+        MatCardContent,
+        MatIconButton,
+
+        AppPluginGroupValidator,
+        AppValueCheckboxGroupComponent,
+        AppValueCheckboxComponent,
+        AppModImportRequestImagePipe,
+        AppIsDebugPipe,
+        AppResolveDefaultModInstallerPluginPipe,
+        AppResolveDefaultModInstallerPluginsPipe
+    ],
     providers: [
         ComponentState.create(AppModInstallerComponent)
     ],
     host: {
         "[attr.compact-view]": "compactView"
-    },
-    standalone: false
+    }
 })
 export class AppModInstallerComponent extends BaseComponent {
 

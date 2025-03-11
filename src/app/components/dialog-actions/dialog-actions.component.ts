@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter } from "@angular/core";
+import { MatButton } from "@angular/material/button";
+import { MatTooltip } from "@angular/material/tooltip";
 import { ComponentState } from "@lithiumjs/angular";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction } from "../../services/dialog-manager.types";
@@ -8,8 +10,12 @@ import { DialogAction } from "../../services/dialog-manager.types";
     templateUrl: "./dialog-actions.component.html",
     styleUrls: ["./dialog-actions.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppDialogActionsComponent)],
-    standalone: false
+    imports: [
+        MatButton,
+        MatTooltip
+    ],
+    providers: [ComponentState.create(AppDialogActionsComponent)]
+    
 })
 export class AppDialogActionsComponent extends BaseComponent {
 

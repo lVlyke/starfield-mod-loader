@@ -3,10 +3,7 @@ import { NEVER, Observable } from "rxjs";
 import { ElectronUtils } from "../util/electron-utils";
 import { AppBaseProfile } from "../models/app-profile";
 
-@Pipe({
-    name: "appProfileConfigFile$",
-    standalone: false
-})
+@Pipe({ name: "appProfileConfigFile$" })
 export class AppProfileConfigFilePipe implements PipeTransform {
 
     public transform(

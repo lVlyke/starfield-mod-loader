@@ -106,10 +106,7 @@ function STANDARD_FIELDS({
     ];
 }
 
-@Pipe({
-    name: "appProfileSettingsStandardPathFields",
-    standalone: false
-})
+@Pipe({ name: "appProfileSettingsStandardPathFields" })
 export class AppProfileSettingsStandardPathFieldsPipe implements PipeTransform {
 
     public transform(options: AppProfileSettingsStandardPathFieldsPipe.Options): Readonly<DefaultProfilePathFieldEntry[]> {

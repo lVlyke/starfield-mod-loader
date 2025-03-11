@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject, ViewChild } from "@angular/core";
 import { AfterViewInit, ComponentState, DeclareState, ManagedSubject } from "@lithiumjs/angular";
-import { CommonModule } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { FormsModule, NgForm } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -10,22 +10,24 @@ import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppData } from "../../models/app-data";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
-import { AppPreferencesComponent, AppPreferencesComponentModule } from "../../components/app-preferences";
+import { AppPreferencesComponent } from "../../components/app-preferences";
 
 @Component({
     templateUrl: "./app-preferences.modal.html",
     styleUrls: ["./app-preferences.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        ComponentState.create(AppPreferencesModal),
-    ],
     imports: [
-        CommonModule,
+        AsyncPipe,
         FormsModule,
+
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
-        AppPreferencesComponentModule
+
+        AppPreferencesComponent
+    ],
+    providers: [
+        ComponentState.create(AppPreferencesModal),
     ]
 })
 export class AppPreferencesModal extends BaseComponent {

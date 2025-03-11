@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject, ViewChild } from "@angular/core";
 import { AfterViewInit, ComponentState, DeclareState, ManagedSubject } from "@lithiumjs/angular";
-import { CommonModule } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { FormsModule, NgForm } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -9,23 +9,25 @@ import { Observable } from "rxjs";
 import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
-import { AppModImportOptionsComponent, AppModImportOptionsComponentModule } from "../../components/mod-import-options";
+import { AppModImportOptionsComponent } from "../../components/mod-import-options";
 import { ModImportRequest } from "../../models/mod-import-status";
 
 @Component({
     templateUrl: "./mod-import-options.modal.html",
     styleUrls: ["./mod-import-options.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        ComponentState.create(AppModImportOptionsModal),
-    ],
     imports: [
-        CommonModule,
+        AsyncPipe,
         FormsModule,
+
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
-        AppModImportOptionsComponentModule
+
+        AppModImportOptionsComponent
+    ],
+    providers: [
+        ComponentState.create(AppModImportOptionsModal),
     ]
 })
 export class AppModImportOptionsModal extends BaseComponent {

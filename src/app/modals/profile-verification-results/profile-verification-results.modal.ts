@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MAT_SNACK_BAR_DATA, MatSnackBarModule, MatSnackBarRef } from "@angular/material/snack-bar";
-import { CommonModule } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { Store } from "@ngxs/store";
 import { Observable } from "rxjs";
 import { AppState } from "../../state";
@@ -16,7 +16,8 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
     styleUrls: ["./profile-verification-results.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
+        AsyncPipe,
+
         MatButtonModule,
         MatSnackBarModule
     ]

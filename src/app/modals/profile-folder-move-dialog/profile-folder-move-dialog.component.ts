@@ -16,7 +16,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
-import { AppDialogActionsComponentModule } from "../../components/dialog-actions/dialog-actions.module";
+import { AppDialogActionsComponent } from "../../components/dialog-actions";
 
 export const OLD_PATH_TOKEN = new InjectionToken<string>("OLD_PATH");
 export const NEW_PATH_TOKEN = new InjectionToken<string>("NEW_PATH");
@@ -25,17 +25,19 @@ export const NEW_PATH_TOKEN = new InjectionToken<string>("NEW_PATH");
     templateUrl: "./profile-folder-move-dialog.component.html",
     styleUrls: ["./profile-folder-move-dialog.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        FormsModule,
+        
+        MatCardModule,
+        MatButtonModule,
+        MatCheckboxModule,
+        MatIconModule,
+
+        AppDialogActionsComponent
+    ],
     providers: [
         ComponentState.create(AppProfileFolderMoveDialog)
-    ],
-    imports: [
-    FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatCheckboxModule,
-    MatIconModule,
-    AppDialogActionsComponentModule
-]
+    ]
 })
 export class AppProfileFolderMoveDialog extends BaseComponent implements DialogComponent {
 

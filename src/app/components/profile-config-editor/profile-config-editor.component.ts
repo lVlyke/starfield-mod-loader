@@ -1,5 +1,12 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, EventEmitter, Output } from "@angular/core";
-import { AbstractControl } from "@angular/forms";
+import { AsyncPipe, KeyValuePipe } from "@angular/common";
+import { AbstractControl, FormsModule } from "@angular/forms";
+import { MatFormField } from "@angular/material/form-field";
+import { MatSelect, MatSelectTrigger } from "@angular/material/select";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatOption } from "@angular/material/core";
+import { MatIconButton, MatButton } from "@angular/material/button";
 import { Observable, combineLatest } from "rxjs";
 import { switchMap, tap } from "rxjs/operators";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
@@ -14,14 +21,30 @@ import { filterTrue, runOnce } from "../../core/operators";
 import { ProfileManager } from "../../services/profile-manager";
 import { DialogManager } from "../../services/dialog-manager";
 import { AppDialogs } from "../../services/app-dialogs";
+import { AppProfileConfigFilePipe } from "../../pipes/profile-config-file.pipe";
 
 @Component({
     selector: "app-profile-config-editor",
     templateUrl: "./profile-config-editor.component.html",
     styleUrls: ["./profile-config-editor.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppProfileConfigEditorComponent)],
-    standalone: false
+    imports: [
+        AsyncPipe,
+        KeyValuePipe,
+        FormsModule,
+
+        MatFormField,
+        MatSelect,
+        MatSelectTrigger,
+        MatIcon,
+        MatTooltip,
+        MatOption,
+        MatIconButton,
+        MatButton, 
+        
+        AppProfileConfigFilePipe
+    ],
+    providers: [ComponentState.create(AppProfileConfigEditorComponent)]
 })
 export class AppProfileConfigEditorComponent extends BaseComponent {
 

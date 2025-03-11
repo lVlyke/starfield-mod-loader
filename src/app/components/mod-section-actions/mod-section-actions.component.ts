@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter } from "@angular/core";
+import { MatActionList, MatListItem } from "@angular/material/list";
+import { MatIcon } from "@angular/material/icon";
 import { ComponentState } from "@lithiumjs/angular";
 import { Observable } from "rxjs";
 import { switchMap, tap } from "rxjs/operators";
@@ -14,10 +16,14 @@ import { filterTrue, runOnce } from "../../core/operators";
     templateUrl: "./mod-section-actions.component.html",
     styleUrls: ["./mod-section-actions.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        MatActionList,
+        MatListItem,
+        MatIcon
+    ],
     providers: [
         ComponentState.create(AppModSectionActionsComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppModSectionActionsComponent extends BaseComponent {
 

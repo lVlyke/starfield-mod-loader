@@ -18,8 +18,7 @@ import { AppValueCheckboxComponent } from "../value-checkbox.component";
             useExisting: forwardRef(() => AppValueCheckboxGroupComponent),
             multi: true
         }
-    ],
-    standalone: false
+    ]
 })
 export class AppValueCheckboxGroupComponent<T> extends BaseComponent implements ControlValueAccessor {
 

@@ -1,5 +1,11 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
+import { NgTemplateOutlet, AsyncPipe, KeyValuePipe } from "@angular/common";
 import { CdkPortal } from "@angular/cdk/portal";
+import { MatButton, MatIconButton } from "@angular/material/button";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatIcon } from "@angular/material/icon";
+import { MatCard, MatCardContent } from "@angular/material/card";
+import { MatActionList, MatListItem } from "@angular/material/list";
 import { Observable, combineLatest } from "rxjs";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -16,17 +22,38 @@ import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helper
 import { GameAction } from "../../models/game-action";
 import { DialogManager } from "../../services/dialog-manager";
 import { AppDialogs } from "../../services/app-dialogs";
+import { AppProfileActiveModCountPipe } from "../../pipes/profile-active-mod-count.pipe";
+import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
+import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found.pipe";
 
 @Component({
     selector: "app-profile-actions",
     templateUrl: "./profile-actions.component.html",
     styleUrls: ["./profile-actions.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AsyncPipe,
+        KeyValuePipe,
+        NgTemplateOutlet,
+        CdkPortal,
+
+        MatButton,
+        MatTooltip,
+        MatIcon,
+        MatCard,
+        MatCardContent,
+        MatActionList,
+        MatListItem,
+        MatIconButton,
+
+        AppProfileActiveModCountPipe,
+        AppSendElectronMsgPipe,
+        AppGameConfigFilesFoundPipe
+    ],
     providers: [ComponentState.create(AppProfileActionsComponent)],
     host: {
         "[attr.compact]": "compact ? compact : null"
-    },
-    standalone: false
+    }
 })
 export class AppProfileActionsComponent extends BaseComponent {
 

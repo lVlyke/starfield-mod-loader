@@ -4,10 +4,7 @@ import { ExternalFile } from "../models/external-file";
 import { ModImportRequest } from "../models/mod-import-status";
 import { AppStateBehaviorManager } from "../services/app-state-behavior-manager";
 
-@Pipe({
-    name: "appModImportRequestImage$",
-    standalone: false
-})
+@Pipe({ name: "appModImportRequestImage$" })
 export class AppModImportRequestImagePipe implements PipeTransform {
 
     constructor (private readonly appManager: AppStateBehaviorManager) {}

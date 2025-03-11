@@ -1,23 +1,23 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject } from "@angular/core";
-
 import { MatCardModule } from "@angular/material/card";
 import { BasePage } from "../../core/base-page";
 import { ComponentState, DeclareState } from "@lithiumjs/angular";
 import { OverlayRefSymbol, OverlayHelpersRef } from "../../services/overlay-helpers";
 import { ModProfileRef } from "../../models/mod-profile-ref";
-import { AppModActionsComponentModule } from "../../components/mod-actions/mod-actions.module";
+import { AppModActionsComponent } from "../../components/mod-actions";
 
 @Component({
     templateUrl: "./mod-context-menu.modal.html",
     styleUrls: ["./mod-context-menu.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        MatCardModule,
+
+        AppModActionsComponent
+    ],
     providers: [
         ComponentState.create(AppModContextMenuModal)
-    ],
-    imports: [
-    MatCardModule,
-    AppModActionsComponentModule
-]
+    ]
 })
 export class AppModContextMenuModal extends BasePage {
 

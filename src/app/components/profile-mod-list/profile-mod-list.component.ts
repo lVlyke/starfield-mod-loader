@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, Injector } from "@angular/core";
-import { moveItemInArray } from "@angular/cdk/drag-drop";
+import { moveItemInArray, CdkDropList, CdkDrag } from "@angular/cdk/drag-drop";
 import { Store } from "@ngxs/store";
 import { Observable, combineLatest } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
@@ -16,6 +16,11 @@ import { AppProfileExternalFilesListModal, FILE_LIST_TOKEN } from "../../modals/
 import { ModSection } from "../../models/mod-section";
 import { RelativeOrderedMap } from "../../util/relative-ordered-map";
 import { AppModSectionContextMenuModal } from "../../modals/mod-section-context-menu";
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from "@angular/material/table";
+import { MatCheckbox } from "@angular/material/checkbox";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { DatePipe } from "@angular/common";
 
 type ModListEntryType = "manual" | "mod" | "section";
 
@@ -47,10 +52,28 @@ type ModListDataSource = Array<ModListEntry>;
     templateUrl: "./profile-mod-list.component.html",
     styleUrls: ["./profile-mod-list.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        DatePipe,
+        CdkDrag,
+        CdkDropList,
+        
+        MatTable,
+        MatColumnDef,
+        MatHeaderCellDef,
+        MatHeaderCell,
+        MatCellDef,
+        MatCell,
+        MatCheckbox,
+        MatIcon,
+        MatTooltip,
+        MatHeaderRowDef,
+        MatHeaderRow,
+        MatRowDef,
+        MatRow
+    ],
     providers: [
         ComponentState.create(AppProfileModListComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppProfileModListComponent extends BaseComponent {
 

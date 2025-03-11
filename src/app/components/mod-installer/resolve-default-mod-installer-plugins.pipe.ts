@@ -2,10 +2,7 @@ import { Pipe, PipeTransform } from "@angular/core";
 import { AppModInstaller } from "./mod-installer.types";
 import { ModInstaller } from "../../models/mod-installer";
 
-@Pipe({
-    name: "appResolveDefaultModInstallerPlugins",
-    standalone: false
-})
+@Pipe({ name: "appResolveDefaultModInstallerPlugins" })
 export class AppResolveDefaultModInstallerPluginsPipe implements PipeTransform {
 
     public transform(pluginGroup: AppModInstaller.PluginGroup): AppModInstaller.Plugin[] {

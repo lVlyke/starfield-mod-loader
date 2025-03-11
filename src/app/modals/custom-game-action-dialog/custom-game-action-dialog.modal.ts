@@ -7,7 +7,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
-import { AppDialogActionsComponentModule } from "../../components/dialog-actions/dialog-actions.module";
+import { AppDialogActionsComponent } from "../../components/dialog-actions";
 import { GameAction } from "../../models/game-action";
 
 export const GAME_ACTION_TOKEN = new InjectionToken<GameAction>("GAME_ACTION");
@@ -16,16 +16,18 @@ export const GAME_ACTION_TOKEN = new InjectionToken<GameAction>("GAME_ACTION");
     templateUrl: "./custom-game-action-dialog.modal.html",
     styleUrls: ["./custom-game-action-dialog.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        FormsModule,
+        
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+
+        AppDialogActionsComponent
+    ],
     providers: [
         ComponentState.create(AppCustomGameActionDialog)
-    ],
-    imports: [
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    AppDialogActionsComponentModule
-]
+    ]
 })
 export class AppCustomGameActionDialog extends BaseComponent implements DialogComponent {
 

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, Output, ViewChild } from "@angular/core";
-import { ControlValueAccessor, FormControlDirective, NG_VALUE_ACCESSOR } from "@angular/forms";
+import { ControlValueAccessor, FormControlDirective, NG_VALUE_ACCESSOR, FormsModule } from "@angular/forms";
+import { MatCheckbox } from "@angular/material/checkbox";
 import { ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { map, skip } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -9,6 +10,10 @@ import { BaseComponent } from "../../core/base-component";
     templateUrl: "./value-checkbox.component.html",
     styleUrls: ["./value-checkbox.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        FormsModule,
+        MatCheckbox,
+    ],
     providers: [
         ComponentState.create(AppValueCheckboxComponent),
         {
@@ -16,8 +21,7 @@ import { BaseComponent } from "../../core/base-component";
             useExisting: forwardRef(() => AppValueCheckboxComponent),
             multi: true
         }
-    ],
-    standalone: false
+    ]
 })
 export class AppValueCheckboxComponent<T> extends BaseComponent implements ControlValueAccessor {
 

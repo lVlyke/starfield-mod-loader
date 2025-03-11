@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Inject, ViewChild } from "@angular/core";
 import { AfterViewInit, ComponentState, DeclareState, ManagedSubject } from "@lithiumjs/angular";
-import { CommonModule } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { FormsModule, NgForm } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
@@ -10,30 +10,32 @@ import { EMPTY, Observable, of } from "rxjs";
 import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
-import { AppModInstallerComponent, AppModInstallerComponentModule } from "../../components/mod-installer";
+import { AppModInstallerComponent } from "../../components/mod-installer";
 import { ModImportRequest } from "../../models/mod-import-status";
-import { AppPipesModule } from "../../pipes";
 import { DialogManager } from "../../services/dialog-manager";
 import { AppDialogs } from "../../services/app-dialogs";
-import { AppExternalUrlComponentModule } from "../../components/external-url";
+import { AppExternalUrlComponent } from "../../components/external-url";
+import { AppModImportRequestImagePipe } from "../../pipes";
 
 @Component({
     templateUrl: "./mod-installer.modal.html",
     styleUrls: ["./mod-installer.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        ComponentState.create(AppModInstallerModal),
-    ],
     imports: [
-        CommonModule,
+        AsyncPipe,
         FormsModule,
+
         MatCardModule,
         MatButtonModule,
         MatDividerModule,
         MatIconModule,
-        AppPipesModule,
-        AppModInstallerComponentModule,
-        AppExternalUrlComponentModule
+
+        AppModInstallerComponent,
+        AppExternalUrlComponent,
+        AppModImportRequestImagePipe
+    ],
+    providers: [
+        ComponentState.create(AppModInstallerModal),
     ]
 })
 export class AppModInstallerModal extends BaseComponent {

@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input } from "@angular/core";
+import { AsyncPipe } from "@angular/common";
 import { Observable, combineLatest } from "rxjs";
 import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -7,19 +8,24 @@ import { BaseComponent } from "../../core/base-component";
 import { GameDetails } from "../../models/game-details";
 import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
+import { AppGameTitlePipe } from "../../pipes/game-title.pipe";
 
 @Component({
     selector: "app-game-badge",
     templateUrl: "./game-badge.component.html",
     styleUrls: ["./game-badge.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AsyncPipe,
+
+        AppGameTitlePipe
+    ],
     providers: [ComponentState.create(AppGameBadgeComponent)],
     host: {
         "[style.background-color]": "gameDetails?.bkgColor ?? null",
         "[style.color]": "gameDetails?.fgColor ?? null",
         "[class.high-contrast]": "gameDetails?.fgColor === '#ffffff'"
-    },
-    standalone: false
+    }
 })
 export class AppGameBadgeComponent extends BaseComponent {
 

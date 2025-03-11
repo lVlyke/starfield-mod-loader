@@ -16,8 +16,7 @@ const STATE_PROVIDER = createDirectiveState(forwardRef(() => AppPluginGroupValid
             useExisting: forwardRef(() => AppPluginGroupValidator),
             multi: true
         }
-    ],
-    standalone: false
+    ]
 })
 export class AppPluginGroupValidator extends BaseComponent implements Validator {
 

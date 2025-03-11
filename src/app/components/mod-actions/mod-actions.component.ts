@@ -1,5 +1,9 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, ViewChild, ElementRef } from "@angular/core";
 import { CdkPortal } from "@angular/cdk/portal";
+import { MatActionList, MatListItem } from "@angular/material/list";
+import { MatIcon } from "@angular/material/icon";
+import { MatDivider } from "@angular/material/divider";
+import { MatCard, MatCardContent } from "@angular/material/card";
 import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, Observable } from "rxjs";
@@ -20,10 +24,19 @@ import { AppState } from "../../state";
     templateUrl: "./mod-actions.component.html",
     styleUrls: ["./mod-actions.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        CdkPortal,
+
+        MatActionList,
+        MatListItem,
+        MatIcon,
+        MatDivider,
+        MatCard,
+        MatCardContent
+    ],
     providers: [
         ComponentState.create(AppModActionsComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppModActionsComponent extends BaseComponent {
 

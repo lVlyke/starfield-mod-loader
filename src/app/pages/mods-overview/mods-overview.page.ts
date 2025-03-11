@@ -1,10 +1,20 @@
 import _ from "lodash";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
+import { NgTemplateOutlet, AsyncPipe, TitleCasePipe, DatePipe } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { MatActionList, MatListItem } from "@angular/material/list";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatOption } from "@angular/material/core";
+import { MatDivider } from "@angular/material/divider";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatIconButton } from "@angular/material/button";
+import { MatCard, MatCardContent, MatCardTitle, MatCardHeader } from "@angular/material/card";
 import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
-import { MatExpansionPanel } from "@angular/material/expansion";
-import { MatSelect } from "@angular/material/select";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent } from "@angular/material/expansion";
+import { MatSelect, MatSelectTrigger } from "@angular/material/select";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
 import { EMPTY, Observable, combineLatest, of } from "rxjs";
@@ -20,14 +30,62 @@ import { ActiveProfileState } from "../../state/active-profile/active-profile.st
 import { GamePluginProfileRef } from "../../models/game-plugin-profile-ref";
 import { LangUtils } from "../../util/lang-utils";
 import { AppProfileSaveListComponent } from "../../components/profile-save-list";
+import { AppGameBadgeComponent } from "../../components/game-badge/game-badge.component";
+import { AppProfileModListComponent } from "../../components/profile-mod-list/profile-mod-list.component";
+import { AppProfilePluginListComponent } from "../../components/profile-plugin-list/profile-plugin-list.component";
+import { AppProfileConfigEditorComponent } from "../../components/profile-config-editor/profile-config-editor.component";
+import { AppProfileActionsComponent } from "../../components/profile-actions/profile-actions.component";
+import { AppLogComponent } from "../../components/app-log/app-log.component";
+import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
+import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
 
 @Component({
     selector: "app-mods-overview-page",
     templateUrl: "./mods-overview.page.html",
     styleUrls: ["./mods-overview.page.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppModsOverviewPage)],
-    standalone: false
+    imports: [
+        NgTemplateOutlet,
+        AsyncPipe,
+        TitleCasePipe,
+        DatePipe,
+        FormsModule,
+
+        CdkPortal,
+
+        MatCard,
+        MatFormField,
+        MatLabel,
+        MatSelect,
+        
+        MatSelectTrigger,
+        MatOption,
+        MatDivider,
+        MatIcon,
+        MatTooltip,
+        MatIconButton,
+        MatCardContent,
+        MatCardTitle,
+        MatCardHeader,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatExpansionPanelTitle,
+        MatExpansionPanelDescription,
+        MatExpansionPanelContent,
+        MatActionList,
+        MatListItem, 
+
+        AppLogComponent,
+        AppGameBadgeComponent,
+        AppProfileModListComponent,
+        AppProfileActionsComponent,
+        AppProfilePluginListComponent,
+        AppProfileConfigEditorComponent,
+        AppProfileSaveListComponent,
+        AppSendElectronMsgPipe,
+        AppIsFullProfilePipe
+    ],
+    providers: [ComponentState.create(AppModsOverviewPage)]
 })
 export class AppModsOverviewPage extends BasePage {
 

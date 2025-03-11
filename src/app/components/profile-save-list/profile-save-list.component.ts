@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { DatePipe } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatIconModule } from "@angular/material/icon";
 import { Observable } from "rxjs";
@@ -19,7 +19,7 @@ import { filterDefined, filterTrue, runOnce } from "../../core/operators";
     styleUrls: ["./profile-save-list.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
+        DatePipe,
 
         MatCardModule,
         MatIconModule,

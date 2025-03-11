@@ -1,9 +1,6 @@
 import { Pipe, PipeTransform } from "@angular/core";
 
-@Pipe({
-    name: "appValues",
-    standalone: false
-})
+@Pipe({ name: "appValues" })
 export class AppValuesPipe implements PipeTransform {
 
     public transform<T>(value?: Record<any, T>): T[] {

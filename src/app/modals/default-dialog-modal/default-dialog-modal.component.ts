@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Inject, Output, SecurityContext } from "@angular/core";
-
 import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { MatCardModule } from "@angular/material/card";
 import { ComponentState, ComponentStateRef } from "@lithiumjs/angular";
 import { DEFAULT_DIALOG_PROMPT_TOKEN, DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
-import { AppDialogActionsComponentModule } from "../../components/dialog-actions/dialog-actions.module";
+import { AppDialogActionsComponent } from "../../components/dialog-actions";
 import { BaseComponent } from "../../core/base-component";
 
 @Component({
@@ -12,9 +11,10 @@ import { BaseComponent } from "../../core/base-component";
     styleUrls: ["./default-dialog-modal.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-    MatCardModule,
-    AppDialogActionsComponentModule
-],
+        MatCardModule,
+
+        AppDialogActionsComponent
+    ],
     providers: [ComponentState.create(AppDefaultDialogComponent)]
 })
 export class AppDefaultDialogComponent extends BaseComponent implements DialogComponent {

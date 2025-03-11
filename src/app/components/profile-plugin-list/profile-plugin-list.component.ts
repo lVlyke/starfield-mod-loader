@@ -1,6 +1,36 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, Injector, ViewChild } from "@angular/core";
-import { CdkDrag, CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
+import {
+    Component,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Input,
+    Output,
+    EventEmitter,
+    Injector,
+    ViewChild
+} from "@angular/core";
+import { UpperCasePipe } from "@angular/common";
+import { CdkDrag, CdkDragDrop, moveItemInArray, CdkDropList } from "@angular/cdk/drag-drop";
 import { CdkPortal } from "@angular/cdk/portal";
+import {
+    MatTable,
+    MatColumnDef,
+    MatHeaderCellDef,
+    MatHeaderCell,
+    MatCellDef,
+    MatCell,
+    MatHeaderRowDef,
+    MatHeaderRow,
+    MatRowDef,
+    MatRow
+} from "@angular/material/table";
+import { MatIconButton } from "@angular/material/button";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatIcon } from "@angular/material/icon";
+import { MatCheckbox } from "@angular/material/checkbox";
+import { MatCard, MatCardContent } from "@angular/material/card";
+import { MatActionList, MatListItem } from "@angular/material/list";
+import { MatSelect, MatSelectTrigger } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
 import { Observable } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
 import { AsyncState, ComponentState, ComponentStateRef, ManagedSubject } from "@lithiumjs/angular";
@@ -12,7 +42,8 @@ import { Store } from "@ngxs/store";
 import { AppState } from "../../state";
 import { ProfileUtils } from "../../util/profile-utils";
 import { OverlayHelpers, OverlayHelpersRef } from "../../services/overlay-helpers";
-import { RelativeOrderedMap } from "src/app/util/relative-ordered-map";
+import { RelativeOrderedMap } from "../../util/relative-ordered-map";
+import { AppHexPipe } from "../../pipes/hex.pipe";
 
 type PluginListEntry = {
     pluginRef: GamePluginProfileRef;
@@ -29,10 +60,39 @@ type PluginDataSourceEntry = PluginListEntry;
     templateUrl: "./profile-plugin-list.component.html",
     styleUrls: ["./profile-plugin-list.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        UpperCasePipe,
+        CdkDropList,
+        CdkDrag,
+        CdkPortal,
+
+        MatTable,
+        MatColumnDef,
+        MatHeaderCellDef,
+        MatHeaderCell,
+        MatIconButton,
+        MatTooltip,
+        MatIcon,
+        MatCellDef,
+        MatCell,
+        MatCheckbox,
+        MatHeaderRowDef,
+        MatHeaderRow,
+        MatRowDef,
+        MatRow,
+        MatCard, 
+        MatCardContent,
+        MatActionList,
+        MatListItem,
+        MatSelect,
+        MatSelectTrigger,
+        MatOption,
+
+        AppHexPipe
+    ],
     providers: [
         ComponentState.create(AppProfilePluginListComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppProfilePluginListComponent extends BaseComponent {
 

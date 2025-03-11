@@ -1,10 +1,41 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
-import { AbstractControl, NgForm, NgModel, ValidationErrors } from "@angular/forms";
-import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
+import { NgTemplateOutlet, AsyncPipe } from "@angular/common";
+import { AbstractControl, NgForm, NgModel, ValidationErrors, FormsModule } from "@angular/forms";
+import { CdkTrapFocus } from "@angular/cdk/a11y";
+import { MatCheckbox } from "@angular/material/checkbox";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatFormField, MatLabel, MatHint, MatSuffix, MatPrefix, MatError } from "@angular/material/form-field";
+import { MatSelect, MatSelectTrigger } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
+import { MatInput } from "@angular/material/input";
+import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";
+import { MatIconButton } from "@angular/material/button";
+import {
+    AsyncState,
+    ComponentState,
+    ComponentStateRef,
+    DeclareState,
+    ManagedBehaviorSubject,
+    ManagedSubject
+} from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
-import { defaultIfEmpty, delay, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, take, tap, withLatestFrom } from "rxjs/operators";
+import {
+    defaultIfEmpty,
+    delay,
+    distinctUntilChanged,
+    filter,
+    finalize,
+    map,
+    mergeMap,
+    startWith,
+    switchMap,
+    take,
+    tap,
+    withLatestFrom
+} from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ElectronUtils } from "../../util/electron-utils";
@@ -15,18 +46,53 @@ import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
 import { LangUtils } from "../../util/lang-utils";
-import { DefaultProfilePathFieldEntry, DefaultProfilePathFieldGroup } from "./profile-standard-path-fields.pipe";
+import {
+    DefaultProfilePathFieldEntry,
+    DefaultProfilePathFieldGroup,
+    AppProfileSettingsStandardPathFieldsPipe
+} from "./profile-standard-path-fields.pipe";
 import { AppDialogs } from "../../services/app-dialogs";
+import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
+import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found.pipe";
+import { AppGameBadgeComponent } from "../game-badge/game-badge.component";
 
 @Component({
     selector: "app-profile-settings",
     templateUrl: "./profile-settings.component.html",
     styleUrls: ["./profile-settings.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AsyncPipe,
+        NgTemplateOutlet,
+        FormsModule,
+
+        CdkTrapFocus,
+
+        MatCheckbox,
+        MatIcon,
+        MatTooltip,
+        MatFormField,
+        MatLabel,
+        MatSelect,
+        MatSelectTrigger,
+        MatOption,
+        MatInput,
+        MatHint,
+        MatSuffix,
+        MatExpansionPanel,
+        MatExpansionPanelHeader,
+        MatIconButton,
+        MatPrefix,
+        MatError,
+        
+        AppGameBadgeComponent,
+        AppSendElectronMsgPipe,
+        AppGameConfigFilesFoundPipe,
+        AppProfileSettingsStandardPathFieldsPipe
+    ],
     providers: [
         ComponentState.create(AppProfileSettingsComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppProfileSettingsComponent extends BaseComponent {
 

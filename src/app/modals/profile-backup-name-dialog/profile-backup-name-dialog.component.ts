@@ -17,7 +17,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
-import { AppDialogActionsComponentModule } from "../../components/dialog-actions";
+import { AppDialogActionsComponent } from "../../components/dialog-actions";
 
 export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN");
 
@@ -25,16 +25,18 @@ export const BACKUP_NAME_TOKEN = new InjectionToken<string>("BACKUP_NAME_TOKEN")
     templateUrl: "./profile-backup-name-dialog.component.html",
     styleUrls: ["./profile-backup-name-dialog.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        FormsModule,
+        
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+
+        AppDialogActionsComponent
+    ],
     providers: [
         ComponentState.create(AppProfileBackupNameDialog)
-    ],
-    imports: [
-    FormsModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    AppDialogActionsComponentModule
-]
+    ]
 })
 export class AppProfileBackupNameDialog extends BaseComponent implements DialogComponent {
 

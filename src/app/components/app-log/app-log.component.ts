@@ -1,5 +1,7 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from "@angular/core";
+import { TitleCasePipe, DatePipe } from "@angular/common";
+import { MatIcon } from "@angular/material/icon";
 import { ComponentState, OnDestroy } from "@lithiumjs/angular";
 import { Observable } from "rxjs";
 import { Hook, LogLevel, LogMessage } from "electron-log";
@@ -18,10 +20,15 @@ interface LogEntry {
     templateUrl: "./app-log.component.html",
     styleUrls: ["./app-log.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        DatePipe,
+        TitleCasePipe,
+
+        MatIcon
+    ],
     providers: [
         ComponentState.create(AppLogComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppLogComponent extends BaseComponent {
 

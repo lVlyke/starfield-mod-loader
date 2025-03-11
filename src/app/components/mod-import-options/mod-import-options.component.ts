@@ -1,9 +1,31 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter, ViewChild } from "@angular/core";
-import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, ValidationErrors } from "@angular/forms";
-import { AsyncState, ComponentState, ComponentStateRef, DeclareState, ManagedBehaviorSubject, ManagedSubject } from "@lithiumjs/angular";
-import { Store } from "@ngxs/store";
+import { NgTemplateOutlet, AsyncPipe } from "@angular/common";
+import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, ValidationErrors, FormsModule } from "@angular/forms";
 import { FlatTreeControl } from "@angular/cdk/tree";
-import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatIconButton, MatAnchor } from "@angular/material/button";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatCheckbox } from "@angular/material/checkbox";
+import {
+    MatTreeFlatDataSource,
+    MatTreeFlattener,
+    MatTree,
+    MatTreeNodeDef,
+    MatTreeNode,
+    MatTreeNodePadding,
+    MatTreeNodeToggle
+} from "@angular/material/tree";
+import {
+    AsyncState,
+    ComponentState,
+    ComponentStateRef,
+    DeclareState,
+    ManagedBehaviorSubject,
+    ManagedSubject
+} from "@lithiumjs/angular";
+import { Store } from "@ngxs/store";
 import { BehaviorSubject, EMPTY, Observable, combineLatest } from "rxjs";
 import { filter, map, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -33,14 +55,32 @@ type FileTreeNodeRecord = Record<string, FileTreeNode>;
     templateUrl: "./mod-import-options.component.html",
     styleUrls: ["./mod-import-options.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        AsyncPipe,
+        NgTemplateOutlet,
+        FormsModule,
+
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatTree,
+        MatTreeNodeDef,
+        MatTreeNode,
+        MatTreeNodePadding,
+        MatIconButton,
+        MatTreeNodeToggle,
+        MatIcon,
+        MatAnchor,
+        MatTooltip,
+        MatCheckbox
+    ],
     providers: [
         ComponentState.create(AppModImportOptionsComponent),
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: AppModImportOptionsComponent
         }
-    ],
-    standalone: false
+    ]
 })
 export class AppModImportOptionsComponent extends BaseComponent implements ControlValueAccessor {
 

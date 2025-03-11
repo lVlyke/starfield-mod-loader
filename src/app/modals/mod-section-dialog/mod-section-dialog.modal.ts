@@ -8,7 +8,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatSelectModule } from "@angular/material/select";
 import { BaseComponent } from "../../core/base-component";
 import { DialogAction, DialogComponent, DIALOG_ACTIONS_TOKEN } from "../../services/dialog-manager.types";
-import { AppDialogActionsComponentModule } from "../../components/dialog-actions/dialog-actions.module";
+import { AppDialogActionsComponent } from "../../components/dialog-actions";
 import { ModSection } from "../../models/mod-section";
 
 export const MOD_SECTION_TOKEN = new InjectionToken<ModSection>("MOD_SECTION");
@@ -17,17 +17,19 @@ export const MOD_SECTION_TOKEN = new InjectionToken<ModSection>("MOD_SECTION");
     templateUrl: "./mod-section-dialog.modal.html",
     styleUrls: ["./mod-section-dialog.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [
-        ComponentState.create(AppModSectionDialog)
-    ],
     imports: [
         FormsModule,
+        
         MatCardModule,
         MatFormFieldModule,
         MatInputModule,
         MatSelectModule,
         MatIconModule,
-        AppDialogActionsComponentModule
+
+        AppDialogActionsComponent
+    ],
+    providers: [
+        ComponentState.create(AppModSectionDialog)
     ]
 })
 export class AppModSectionDialog extends BaseComponent implements DialogComponent {

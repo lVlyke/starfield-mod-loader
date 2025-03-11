@@ -1,6 +1,13 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
-import { NgForm } from "@angular/forms";
+import { NgForm, FormsModule } from "@angular/forms";
+import { MatCheckbox } from "@angular/material/checkbox";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from "@angular/material/input";
+import { MatSelect } from "@angular/material/select";
+import { MatOption } from "@angular/material/core";
 import { ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
 import { filter, switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -13,10 +20,21 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
     templateUrl: "./app-preferences.component.html",
     styleUrls: ["./app-preferences.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        FormsModule,
+
+        MatCheckbox,
+        MatIcon,
+        MatTooltip,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatSelect,
+        MatOption
+    ],
     providers: [
         ComponentState.create(AppPreferencesComponent),
-    ],
-    standalone: false
+    ]
 })
 export class AppPreferencesComponent extends BaseComponent {
 

@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, InjectionToken } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { DatePipe, KeyValuePipe } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { ComponentState } from "@lithiumjs/angular";
 import { BaseComponent } from "../../core/base-component";
 import { AppMessageData } from "../../models/app-message";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
-import { AppExternalUrlComponentModule } from "../../components/external-url";
+import { AppExternalUrlComponent } from "../../components/external-url";
 
 export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutInfo">>("DEPS_INFO_TOKEN");
 
@@ -16,10 +16,13 @@ export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutI
     styleUrls: ["./app-about-info.modal.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
+        DatePipe,
+        KeyValuePipe,
+
         MatCardModule,
         MatButtonModule,
-        AppExternalUrlComponentModule
+
+        AppExternalUrlComponent
     ],
     providers: [ComponentState.create(AppAboutInfoModal)]
 })

@@ -6,10 +6,7 @@ import { GameId } from "../models/game-id";
 import { GameDatabase } from "../models/game-database";
 import { AppState } from "../state";
 
-@Pipe({
-    name: "appGameTitle$",
-    standalone: false
-})
+@Pipe({ name: "appGameTitle$" })
 export class AppGameTitlePipe implements PipeTransform {
 
     public readonly gameDb$: Observable<GameDatabase>;

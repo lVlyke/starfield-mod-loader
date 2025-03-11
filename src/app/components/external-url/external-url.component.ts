@@ -1,19 +1,26 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input } from "@angular/core";
+import { NgTemplateOutlet } from "@angular/common";
+import { MatAnchor, MatIconAnchor } from "@angular/material/button";
 import { ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { switchMap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined } from "../../core/operators";
-import { AppStateBehaviorManager } from "src/app/services/app-state-behavior-manager";
-import { AppResource } from "src/app/models/app-resource";
-
+import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
+import { AppResource } from "../../models/app-resource";
 
 @Component({
     selector: "app-external-url",
     templateUrl: "./external-url.component.html",
     styleUrls: ["./external-url.component.scss"],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [ComponentState.create(AppExternalUrlComponent)],
-    standalone: false
+    imports: [
+        NgTemplateOutlet,
+
+        MatAnchor,
+        MatIconAnchor
+    ],
+    providers: [ComponentState.create(AppExternalUrlComponent)]
+    
 })
 export class AppExternalUrlComponent extends BaseComponent {
 
