@@ -30,7 +30,7 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatCard, MatCardContent } from "@angular/material/card";
 import { MatActionList, MatListItem } from "@angular/material/list";
 import { MatSelect, MatSelectTrigger } from "@angular/material/select";
-import { MatOption } from "@angular/material/core";
+import { MatLine, MatOption } from "@angular/material/core";
 import { Observable } from "rxjs";
 import { BaseComponent } from "../../core/base-component";
 import { AsyncState, ComponentState, ComponentStateRef, ManagedSubject } from "@lithiumjs/angular";
@@ -84,6 +84,7 @@ type PluginDataSourceEntry = PluginListEntry;
         MatCardContent,
         MatActionList,
         MatListItem,
+        MatLine,
         MatSelect,
         MatSelectTrigger,
         MatOption,

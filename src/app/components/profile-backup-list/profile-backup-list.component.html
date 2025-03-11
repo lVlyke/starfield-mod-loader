@@ -1,0 +1,31 @@
+@if (!!backupFileEntries?.length) {
+    <mat-action-list>
+        @for (backupFileEntry of backupFileEntries; track $index) {
+            <button mat-list-item
+                    class="backup-file-item"
+                    matTooltipPosition="before"
+                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
+                    (click)="backupSelect$.emit(backupFileEntry)">
+                <span matLine class="backup-file-item-line">
+                    <span>{{ backupFileEntry | appProfileBackupName }}</span>
+
+                    <button mat-icon-button (click)="backupDelete$.emit(backupFileEntry); $event.preventDefault()">
+                        <mat-icon color="warn">delete</mat-icon>
+                    </button>
+                </span>
+            </button>
+        }
+
+        <mat-divider />
+
+        <button mat-list-item (click)="exploreBackups$.emit()">
+            <span matLine class="backup-file-item-line">
+                <span>Explore backups</span>
+
+                <mat-icon color="accent">folder</mat-icon>
+            </span>
+        </button>
+    </mat-action-list>
+} @else {
+    No backups
+}

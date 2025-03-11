@@ -6,6 +6,7 @@ import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { MatCard, MatCardContent } from "@angular/material/card";
 import { MatActionList, MatListItem } from "@angular/material/list";
+import { MatLine } from "@angular/material/core";
 import { Observable, combineLatest } from "rxjs";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -44,6 +45,7 @@ import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found
         MatCardContent,
         MatActionList,
         MatListItem,
+        MatLine,
         MatIconButton,
 
         AppProfileActiveModCountPipe,

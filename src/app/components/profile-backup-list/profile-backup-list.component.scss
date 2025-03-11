@@ -1,0 +1,15 @@
+:host {
+    mat-action-list {
+
+        > button.backup-file-item {
+            padding-right: 4px; 
+        }
+
+        .backup-file-item-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+    }
+}

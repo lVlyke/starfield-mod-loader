@@ -1,10 +1,10 @@
 import _ from "lodash";
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ViewChild } from "@angular/core";
-import { NgTemplateOutlet, AsyncPipe, TitleCasePipe, DatePipe } from "@angular/common";
+import { NgTemplateOutlet, AsyncPipe, TitleCasePipe } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatActionList, MatListItem } from "@angular/material/list";
 import { MatFormField, MatLabel } from "@angular/material/form-field";
-import { MatOption } from "@angular/material/core";
+import { MatLine, MatOption } from "@angular/material/core";
 import { MatDivider } from "@angular/material/divider";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -13,7 +13,13 @@ import { MatCard, MatCardContent, MatCardTitle, MatCardHeader } from "@angular/m
 import { ComponentState, AsyncState, DeclareState, AfterViewInit, ComponentStateRef } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { CdkPortal } from "@angular/cdk/portal";
-import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription, MatExpansionPanelContent } from "@angular/material/expansion";
+import {
+    MatExpansionPanel,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    MatExpansionPanelDescription,
+    MatExpansionPanelContent
+} from "@angular/material/expansion";
 import { MatSelect, MatSelectTrigger } from "@angular/material/select";
 import { AppState } from "../../state";
 import { BasePage } from "../../core/base-page";
@@ -38,6 +44,7 @@ import { AppProfileActionsComponent } from "../../components/profile-actions/pro
 import { AppLogComponent } from "../../components/app-log/app-log.component";
 import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
 import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
+import { AppProfileBackupListComponent } from "../../components/profile-backup-list";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -48,7 +55,6 @@ import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
         NgTemplateOutlet,
         AsyncPipe,
         TitleCasePipe,
-        DatePipe,
         FormsModule,
 
         CdkPortal,
@@ -73,7 +79,8 @@ import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
         MatExpansionPanelDescription,
         MatExpansionPanelContent,
         MatActionList,
-        MatListItem, 
+        MatListItem,
+        MatLine,
 
         AppLogComponent,
         AppGameBadgeComponent,
@@ -82,6 +89,7 @@ import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
         AppProfilePluginListComponent,
         AppProfileConfigEditorComponent,
         AppProfileSaveListComponent,
+        AppProfileBackupListComponent,
         AppSendElectronMsgPipe,
         AppIsFullProfilePipe
     ],
@@ -431,10 +439,6 @@ export class AppModsOverviewPage extends BasePage {
 
     protected deleteActiveProfile(): void {
         this.profileManager.deleteProfileFromUser(this.activeProfile!);
-    }
-
-    protected resolveBackupName(backupEntry: AppProfile.BackupEntry): string {
-        return backupEntry.filePath.replace(/\.[^.]+$/g, "");
     }
 }
 

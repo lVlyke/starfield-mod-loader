@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, Output, EventEmitter } from "@angular/core";
 import { MatActionList, MatListItem } from "@angular/material/list";
 import { MatIcon } from "@angular/material/icon";
+import { MatLine } from "@angular/material/core";
 import { ComponentState } from "@lithiumjs/angular";
 import { Observable } from "rxjs";
 import { switchMap, tap } from "rxjs/operators";
@@ -19,6 +20,7 @@ import { filterTrue, runOnce } from "../../core/operators";
     imports: [
         MatActionList,
         MatListItem,
+        MatLine,
         MatIcon
     ],
     providers: [

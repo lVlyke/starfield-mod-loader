@@ -412,39 +412,11 @@
     <mat-card class="backup-list-menu mat-elevation-z3">
         <mat-card-content>
             @let backupFileEntries = "profile:readPluginBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
-            @if (!!backupFileEntries) {
-                @if (backupFileEntries.length > 0) {
-                    <mat-action-list>
-                        @for (backupFileEntry of backupFileEntries; track $index) {
-                            <button mat-list-item
-                                    class="backup-file-item"
-                                    matTooltipPosition="before"
-                                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
-                                    (click)="importProfilePluginBackup(backupFileEntry.filePath); importPluginBackupMenuRef?.close()">
-                                <span matLine class="backup-file-item-line">
-                                    <span>{{ resolveBackupName(backupFileEntry) }}</span>
 
-                                    <button mat-icon-button (click)="deleteProfilePluginBackup(backupFileEntry.filePath); importPluginBackupMenuRef?.close(); $event.preventDefault()">
-                                        <mat-icon color="warn">delete</mat-icon>
-                                    </button>
-                                </span>
-                            </button>
-                        }
-
-                        <mat-divider />
-
-                        <button mat-list-item (click)="profileManager.showProfilePluginBackupsInFileExplorer(); importPluginBackupMenuRef?.close()">
-                            <span matLine class="backup-file-item-line">
-                                <span>Explore backups</span>
-
-                                <mat-icon color="accent">folder</mat-icon>
-                            </span>
-                        </button>
-                    </mat-action-list>
-                } @else {
-                    No backups
-                }      
-            }
+            <app-profile-backup-list [backupFileEntries]="backupFileEntries"
+                                     (backupSelect)="importProfilePluginBackup($event.filePath); importConfigBackupMenuRef?.close()"
+                                     (backupDelete)="deleteProfilePluginBackup($event.filePath); importConfigBackupMenuRef?.close()"
+                                     (exploreBackups)="profileManager.showProfilePluginBackupsInFileExplorer(); importConfigBackupMenuRef?.close()"/>
         </mat-card-content>
     </mat-card>
 </ng-template>
@@ -454,39 +426,11 @@
     <mat-card class="backup-list-menu mat-elevation-z3">
         <mat-card-content>
             @let backupFileEntries = "profile:readConfigBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
-            @if (!!backupFileEntries) {
-                @if (backupFileEntries.length > 0) {
-                    <mat-action-list>
-                        @for (backupFileEntry of backupFileEntries; track $index) {
-                            <button mat-list-item
-                                    class="backup-file-item"
-                                    matTooltipPosition="before"
-                                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
-                                    (click)="importProfileConfigBackup(backupFileEntry.filePath); importConfigBackupMenuRef?.close()">
-                                <span matLine class="backup-file-item-line">
-                                    <span>{{ resolveBackupName(backupFileEntry) }}</span>
 
-                                    <button mat-icon-button (click)="deleteProfileConfigBackup(backupFileEntry.filePath); importConfigBackupMenuRef?.close(); $event.preventDefault()">
-                                        <mat-icon color="warn">delete</mat-icon>
-                                    </button>
-                                </span>
-                            </button>
-                        }
-
-                        <mat-divider />
-
-                        <button mat-list-item (click)="profileManager.showProfileConfigBackupsInFileExplorer(); importConfigBackupMenuRef?.close()">
-                            <span matLine class="backup-file-item-line">
-                                <span>Explore backups</span>
-
-                                <mat-icon color="accent">folder</mat-icon>
-                            </span>
-                        </button>
-                    </mat-action-list>
-                } @else {
-                    No backups
-                }      
-            }
+            <app-profile-backup-list [backupFileEntries]="backupFileEntries"
+                                     (backupSelect)="importProfileConfigBackup($event.filePath); importConfigBackupMenuRef?.close()"
+                                     (backupDelete)="deleteProfileConfigBackup($event.filePath); importConfigBackupMenuRef?.close()"
+                                     (exploreBackups)="profileManager.showProfileConfigBackupsInFileExplorer(); importConfigBackupMenuRef?.close()"/>
         </mat-card-content>
     </mat-card>
 </ng-template>
@@ -496,39 +440,11 @@
     <mat-card class="backup-list-menu mat-elevation-z3">
         <mat-card-content>
             @let backupFileEntries = "profile:readModOrderBackups" | appSendElectronMsg$:{ profile: activeProfile! } | async;
-            @if (!!backupFileEntries) {
-                @if (backupFileEntries.length > 0) {
-                    <mat-action-list>
-                        @for (backupFileEntry of backupFileEntries; track $index) {
-                            <button mat-list-item
-                                    class="backup-file-item"
-                                    matTooltipPosition="before"
-                                    [matTooltip]="(backupFileEntry.backupDate | date:'medium') ?? ''"
-                                    (click)="importProfileModOrderBackup(backupFileEntry.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()">
-                                <span matLine class="backup-file-item-line">
-                                    <span>{{ resolveBackupName(backupFileEntry) }}</span>
 
-                                    <button mat-icon-button (click)="deleteProfileModOrderBackup(backupFileEntry.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close(); $event.preventDefault()">
-                                        <mat-icon color="warn">delete</mat-icon>
-                                    </button>
-                                </span>
-                            </button>
-                        }
-
-                        <mat-divider />
-
-                        <button mat-list-item (click)="profileManager.showProfileModOrderBackupsInFileExplorer(); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()">
-                            <span matLine class="backup-file-item-line">
-                                <span>Explore backups</span>
-
-                                <mat-icon color="accent">folder</mat-icon>
-                            </span>
-                        </button>
-                    </mat-action-list>
-                } @else {
-                    No backups
-                }      
-            }
+            <app-profile-backup-list [backupFileEntries]="backupFileEntries"
+                                     (backupSelect)="importProfileModOrderBackup($event.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()"
+                                     (backupDelete)="deleteProfileModOrderBackup($event.filePath); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()"
+                                     (exploreBackups)="profileManager.showProfileModOrderBackupsInFileExplorer(); modOrderBackupMenuRef?.close(); modBackupMenuRef?.close()"/>
         </mat-card-content>
     </mat-card>
 </ng-template>

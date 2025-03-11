@@ -4,6 +4,7 @@ import { MatActionList, MatListItem } from "@angular/material/list";
 import { MatIcon } from "@angular/material/icon";
 import { MatDivider } from "@angular/material/divider";
 import { MatCard, MatCardContent } from "@angular/material/card";
+import { MatLine } from "@angular/material/core";
 import { AsyncState, ComponentState, ComponentStateRef } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
 import { combineLatest, Observable } from "rxjs";
@@ -29,6 +30,7 @@ import { AppState } from "../../state";
 
         MatActionList,
         MatListItem,
+        MatLine,
         MatIcon,
         MatDivider,
         MatCard,
