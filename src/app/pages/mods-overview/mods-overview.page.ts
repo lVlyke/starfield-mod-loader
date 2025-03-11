@@ -218,9 +218,9 @@ export class AppModsOverviewPage extends BasePage {
         if (this.showedModExternalEditWarning || this.activeProfile?.modLinkMode) {
             check$ = of(true);
         } else {
-            check$ = this.dialogs.showDefault(
+            check$ = this.dialogs.showNotice(
                 "If you update any of this profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the Refresh Files button after, otherwise your changes will not be applied.",
-                [DialogManager.OK_ACTION_PRIMARY]
+                DialogManager.OK_ACTION_PRIMARY
             );
         }
 

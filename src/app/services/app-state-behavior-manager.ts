@@ -182,7 +182,7 @@ export class AppStateBehaviorManager {
                     );
                 } else {
                     const errorText = "Unable to open game database file.";
-                    this.dialogs.showDefault(errorText, [DialogManager.OK_ACTION_PRIMARY]).subscribe();
+                    this.dialogs.showNotice(errorText).subscribe();
                     return throwError(() => errorText);
                 }
             })

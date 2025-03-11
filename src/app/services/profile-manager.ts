@@ -710,7 +710,7 @@ export class ProfileManager {
                 }
             }),
             catchError(() => {
-                this.dialogManager.createDefault("Failed to import profile. See app.log for more information.", [DialogManager.OK_ACTION]);
+                this.dialogManager.createNotice("Failed to import profile. See app.log for more information.");
                 return of(undefined)
             })
         ));
@@ -748,7 +748,7 @@ export class ProfileManager {
                 }
             }),
             catchError(() => {
-                this.dialogManager.createDefault("Failed to copy profile. See app.log for more information.", [DialogManager.OK_ACTION]);
+                this.dialogManager.createNotice("Failed to copy profile. See app.log for more information.");
                 return of(undefined)
             })
         ));
@@ -825,9 +825,7 @@ export class ProfileManager {
                     return of(undefined);
                 } else if (importRequest.importStatus === "FAILED") {
                     // TODO - Show error
-                    return this.dialogs.showDefault("Failed to add mod.", [
-                        DialogManager.OK_ACTION
-                    ]).pipe(
+                    return this.dialogManager.createNotice("Failed to add mod.").pipe(
                         switchMap(() => throwError(() => "Failed to add mod."))
                     );
                 }
@@ -863,10 +861,9 @@ export class ProfileManager {
                 // Check if this mod already exists in the active profile
                 if (!!existingMod && importRequest.importStatus !== "CANCELED") {
                     if (!!existingMod.baseProfile) {
-                        return this.dialogManager.createDefault(
-                            `"${importRequest.modName}" already exists in base profile "${existingMod.baseProfile}". Please choose a different mod name.`, [
-                            DialogManager.OK_ACTION_PRIMARY
-                        ]).pipe(
+                        return this.dialogManager.createNotice(
+                            `"${importRequest.modName}" already exists in base profile "${existingMod.baseProfile}". Please choose a different mod name.`
+                        ).pipe(
                             map(() => {
                                 importRequest.importStatus = "RESTART";
                                 return importRequest;
@@ -983,7 +980,7 @@ export class ProfileManager {
             switchMap((activeProfile) => {
                 const newMod = this.findMod(activeProfile!, root, modNewName);
                 if (!!newMod) {
-                    return this.dialogManager.createDefault(`Cannot rename mod to "${modNewName}". A mod with this name already exists.`);
+                    return this.dialogManager.createNotice(`Cannot rename mod to "${modNewName}". A mod with this name already exists.`);
                 } else {
                     const curMod = this.findMod(activeProfile!, root, modCurName);
                     const modHasError = curMod ? this.modHasError(curMod) : false;
@@ -1074,9 +1071,15 @@ export class ProfileManager {
 
     public updateModSectionFromUser(root: boolean, section?: ModSection): Observable<unknown> {
         return runOnce(this.dialogs.showAddModSectionDialog(section ? { ...section } : undefined).pipe(
-            switchMap((newSection) => {
+            withLatestFrom(this.activeProfile$),
+            switchMap(([newSection, activeProfile]) => {
                 if (newSection) {
-                    return this.store.dispatch(new ActiveProfileActions.UpdateModSection(root, newSection, section));
+                    const existingSection = this.findModSection(activeProfile!, root, newSection.name);
+                    if (existingSection && section?.name !== newSection.name) {
+                        return this.dialogManager.createNotice(`Section named "${newSection.name}" already exists.`);
+                    } else {
+                        return this.store.dispatch(new ActiveProfileActions.UpdateModSection(root, newSection, section));
+                    }
                 } else {
                     return of(undefined);
                 }
@@ -1097,7 +1100,7 @@ export class ProfileManager {
                     : undefined;
 
                 if (!!baseSection) {
-                    return this.dialogManager.createDefault(`Cannot delete mod section "${section.name}". This section is inherited from base profile "${activeProfile!.baseProfile!.name}".`);
+                    return this.dialogManager.createNotice(`Cannot delete mod section "${section.name}". This section is inherited from base profile "${activeProfile!.baseProfile!.name}".`);
                 } else {
                     return this.store.dispatch(new ActiveProfileActions.DeleteModSection(root, section));
                 }
@@ -1248,7 +1251,7 @@ export class ProfileManager {
                 });
             }),
             catchError((error) => {
-                this.dialogManager.createDefault(`Failed to run game action: ${error.toString()}`, [DialogManager.OK_ACTION_PRIMARY]);
+                this.dialogManager.createNotice(`Failed to run game action: ${error.toString()}`);
                 return of(undefined);
             })
         ));
@@ -1377,9 +1380,7 @@ export class ProfileManager {
                                     })),
                                     catchError(() => {
                                         // TODO - Show error in dialog
-                                        return this.dialogs.showDefault("Mod deployment failed. Check app.log file for more information.", [
-                                            DialogManager.OK_ACTION_PRIMARY
-                                        ]).pipe(
+                                        return this.dialogs.showNotice("Mod deployment failed. Check app.log file for more information.").pipe(
                                             switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
                                             map(() => false)
                                         );
@@ -1418,9 +1419,7 @@ export class ProfileManager {
                         switchMap(() => ElectronUtils.invoke("profile:undeploy", { profile: activeProfile })),
                         catchError(() => {
                             // TODO - Show error in dialog
-                            return this.dialogs.showDefault("Mod undeployment failed. Check app.log file for more information.", [
-                                DialogManager.OK_ACTION_PRIMARY
-                            ]).pipe(
+                            return this.dialogs.showNotice("Mod undeployment failed. Check app.log file for more information.").pipe(
                                 switchMap(() => this.store.dispatch(new AppActions.setDeployInProgress(false))),
                                 map(() => false)
                             );

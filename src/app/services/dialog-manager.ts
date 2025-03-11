@@ -87,6 +87,15 @@ export class DialogManager {
             ]
         );
     }
+
+    public createNotice(
+        prompt: string,
+        action: DialogAction = DialogManager.OK_ACTION,
+        config?: DialogConfig,
+        injectionTokens?: OverlayHelpers.InjetorTokens
+    ): Observable<DialogAction> {
+        return this.createDefault(prompt, [action], config, injectionTokens);
+    }
 }
 
 export namespace DialogManager {

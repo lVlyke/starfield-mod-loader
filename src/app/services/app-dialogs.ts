@@ -30,6 +30,16 @@ export class AppDialogs {
         );
     }
 
+    public showNotice(
+        prompt: string,
+        action: DialogAction = DialogManager.OK_ACTION,
+        config?: DialogConfig
+    ): Observable<true> {
+        return this.dialogManager.createNotice(prompt, action, config).pipe(
+            map(() => true)
+        );
+    }
+
     public showModRenameDialog(modCurName: string): Observable<string | undefined> {
         return this.dialogManager.create(AppModRenameDialog, [
                 DialogManager.OK_ACTION_PRIMARY,

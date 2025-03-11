@@ -7,7 +7,6 @@
     flex-direction: column;
     height: 100vh;
     max-height: 100vh;
-    min-width: 65rem;
     align-items: stretch;
 
     .select-header-buttons {
@@ -22,7 +21,8 @@
         gap: 1.5rem;
         flex-grow: 1;
         height: 100vh - $log-height;
-        min-height: 35rem;
+        min-width: 73rem;
+        min-height: 25rem;
 
         .control-card {
             width: 100%;
@@ -44,7 +44,8 @@
         }
 
         #profile-mod-list {
-            flex: 1 1 100%;
+            flex: 1 1 auto;
+            width: 65%;
 
             > #profile-mgmt-controls {
                 display: flex;
@@ -114,7 +115,8 @@
         }
 
         #right-pane-actions {
-            flex: 1 1 40vw;
+            flex: 1 1 auto;
+            width: 35%;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
@@ -123,13 +125,21 @@
                 display: none;
             }
 
+            &[data-action-type="config"], &[data-action-type="saves"] {
+                $large-data-action-width: 45%;
+
+                width: $large-data-action-width;
+                max-width: $large-data-action-width;
+                min-width: $large-data-action-width;
+            }
+
             > * {
                 height: 1px;
             }
 
             #plugin-actions {
                 flex-grow: 1;
-                min-height: 20rem;
+                min-height: 16rem;
 
                 > mat-card-header {
                     padding: 0;
@@ -161,13 +171,7 @@
                     overflow-y: hidden;
 
                     &[action-type="plugins"] {
-                        min-width: 15rem;
                         overflow-y: auto;
-                    }
-
-                    &[action-type="config"], &[action-type="saves"] {
-                        width: 30vw;
-                        min-width: 25rem;
                     }
                 }
 
@@ -191,7 +195,7 @@
                 }
 
                 &.mat-expanded {
-                    min-height: 10rem;
+                    min-height: 6rem;
 
                     ::ng-deep {
                         .mat-expansion-panel-content-wrapper {

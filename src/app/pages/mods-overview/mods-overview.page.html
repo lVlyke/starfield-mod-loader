@@ -135,7 +135,7 @@
         </mat-card>
 
         <!-- Data actions -->
-        <div id="right-pane-actions">
+        <div id="right-pane-actions" [attr.data-action-type]="activeDataAction">
             @if (activeDataAction) {
                 <mat-card id="plugin-actions">
                     <mat-card-header class="tool-header">
