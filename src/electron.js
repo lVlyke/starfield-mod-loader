@@ -58,6 +58,7 @@ class ElectronLoader {
 
     static /** @type {string} */ STEAM_DEFAULT_COMPAT_DATA_ROOT = "~/.local/share/Steam/steamapps/compatdata";
     static /** @type {string} */ STEAM_COMPAT_STEAMUSER_DIR = "pfx/drive_c/users/steamuser";
+    static /** @type {string} */ APP_PACKAGE_FILE = "package.json";
     static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
     static /** @type {string} */ APP_PROFILES_DIR = "profiles";
     static /** @type {string} */ APP_DEPS_LICENSES_FILE = path.join(__dirname, "3rdpartylicenses.txt");
@@ -77,9 +78,18 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_LINK_SUPPORT_TEST_FILE = ".sml_link_test";
     static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
 
+    static /** @type {string} */ APP_VERSION = (() => {
+        try {
+            const appPackage = fs.readJSONSync(ElectronLoader.APP_PACKAGE_FILE, { encoding: "utf-8" });
+            return `v${appPackage.version}`;
+        } catch (err) {
+            return "main";
+        }
+    })();
+
     static /** @type {Record<AppResource, string>} */ APP_RESOURCES = {
         "readme_offline": `file://${process.cwd()}/README.md`,
-        "readme_online": "https://github.com/lVlyke/starfield-mod-loader/blob/master/README.md",
+        "readme_online": `https://github.com/lVlyke/starfield-mod-loader/blob/${ElectronLoader.APP_VERSION}/README.md`,
         "license": `file://${process.cwd()}/LICENSE`,
         "homepage": "https://github.com/lVlyke/starfield-mod-loader"
     };
@@ -3283,22 +3293,28 @@ class ElectronLoader {
         log.info("Mod undeployment succeeded");
     }
 
-    showAppAboutInfo() {
+    /** @returns {import("./app/models/app-message").AppMessageData<"app:showAboutInfo">} */
+    getAppAboutInfo() {
         let depsLicenseText = "";
-        let depsInfo = "";
+        let depsInfo = undefined;
 
         try {
             depsLicenseText = fs.readFileSync(ElectronLoader.APP_DEPS_LICENSES_FILE).toString("utf-8");
         } catch (_err) {}
 
         try {
-            depsInfo = JSON.parse(fs.readFileSync(ElectronLoader.APP_DEPS_INFO_FILE).toString("utf-8"));
+            depsInfo = fs.readJSONSync(ElectronLoader.APP_DEPS_INFO_FILE);
         } catch (_err) {}
 
-        this.mainWindow.webContents.send("app:showAboutInfo", {
+        return {
+            appVersion: ElectronLoader.APP_VERSION,
             depsLicenseText,
             depsInfo
-        });
+        };
+    }
+    
+    showAppAboutInfo() {
+        this.mainWindow.webContents.send("app:showAboutInfo", this.getAppAboutInfo());
     }
 
     /** @returns {Promise<string>} */

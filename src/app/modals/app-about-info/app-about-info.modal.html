@@ -1,6 +1,7 @@
 <mat-card>
     <mat-card-header>
-        <mat-card-title>About Starfield Mod Loader</mat-card-title>
+        <mat-card-title>Starfield Mod Loader</mat-card-title>
+        <mat-card-subtitle>{{aboutData.appVersion}}</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -41,7 +42,7 @@
             Close
         </button>
         <div class="copyright">
-            Copyright (C) 2024 Mychal Thompson
+            Copyright (C) <span class="copyright-date">{{today | date:"y"}}</span> Mychal Thompson
         </div>
     </mat-card-actions>
 </mat-card>

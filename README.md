@@ -346,3 +346,5 @@ If you run into a problem, please check the [issues page](https://github.com/lVl
 # Devs - Building and testing
 
 To build and run the app for testing and development, ensure you have Node and NPM installed on your machine and run `npm install` and `npm run start`.
+
+To build a release, run `npm run app:build-release` for the current platform or `npm run app:build-release:all` for all supported platforms.
