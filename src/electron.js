@@ -90,12 +90,14 @@ class ElectronLoader {
     /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
     constructor() {
-        log.initialize();
+        log.initialize({ spyRendererConsole: true });
         
+        log.transports.console.level = false;
         log.transports.ipc.level = DEBUG_MODE ? "debug" : "info";
-        log.transports.console.level = DEBUG_MODE ? "debug" : "info";
         log.transports.file.level = DEBUG_MODE ? "debug" : "info";
         log.transports.file.resolvePathFn = () => "app.log";
+
+        this.enableConsoleLogHook();
 
         this.menu = this.createMenu();
         Menu.setApplicationMenu(this.menu);
@@ -422,10 +424,13 @@ class ElectronLoader {
             const configPathOverrideResult = profile.configPathOverride ? this.verifyProfilePathExists(profile.configPathOverride) : VERIFY_SUCCESS;
             const savesPathOverrideResult = profile.savesPathOverride ? this.verifyProfilePathExists(profile.savesPathOverride) : VERIFY_SUCCESS;
             const backupsPathOverrideResult = profile.backupsPathOverride ? this.verifyProfilePathExists(profile.backupsPathOverride) : VERIFY_SUCCESS;
-            const modLinkModeResult = ("gameModDir" in profile && profile.modLinkMode) ? (this.#checkLinkSupported(
-                this.getProfileDirByKey(profile, "modsPathOverride") ?? "",
-                [this.getProfileDirByKey(profile, "gameModDir") ?? "", this.getProfileDirByKey(profile, "gameRootDir") ?? ""],
-                false
+            const modLinkModeResult = ("gameModDir" in profile && profile.modLinkMode) ? (this.checkLinkSupported(
+                profile,
+                "modsPathOverride",
+                ["gameModDir", "gameRootDir"],
+                false,
+                undefined,
+                true
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
             const configLinkModeResult = ("gameConfigFilePath" in profile && profile.configLinkMode) ? (this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "configPathOverride") ?? "",
@@ -966,24 +971,23 @@ class ElectronLoader {
 
         ipcMain.handle("profile:dirLinkSupported", (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:dirLinkSupported">} */ { profile, srcDir, destDirs, symlink, symlinkType }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:dirLinkSupported">} */ {
+                profile,
+                srcDir,
+                destDirs,
+                symlink,
+                symlinkType,
+                checkBaseProfile
+            }
         ) => {
-            if (!profile) {
-                return false;
-            }
-
-            const srcPath = this.getProfileDirByKey(profile, srcDir);
-
-            if (!srcPath) {
-                return false;
-            }
-
-            const destPaths = destDirs.map(destDir => this.getProfileDirByKey(profile, destDir));
-            if (destPaths.some(destPath => destPath === undefined)) {
-                return false;
-            }
-
-            return this.#checkLinkSupported(srcPath, /** @type { string[] } */ (destPaths), symlink, symlinkType);
+            return this.checkLinkSupported(
+                profile,
+                srcDir,
+                destDirs,
+                symlink,
+                symlinkType,
+                checkBaseProfile
+            );
         });
 
         ipcMain.handle("profile:steamCompatSymlinksSupported", (
@@ -1099,6 +1103,18 @@ class ElectronLoader {
                 slashes: true
             })
         );
+    }
+
+    enableConsoleLogHook() {
+        const originalConsole = console;
+
+        console = Object.assign({}, console, {
+            log: (...params) => (originalConsole.log(...params), log.log(...params)),
+            info: (...params) => (originalConsole.info(...params), log.info(...params)),
+            warn: (...params) => (originalConsole.warn(...params), log.warn(...params)),
+            error: (...params) => (originalConsole.error(...params), log.error(...params)),
+            debug: (...params) => (originalConsole.debug(...params), log.debug(...params)),
+        });
     }
 
     enableHotReload() {
@@ -1413,13 +1429,13 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    getProfileDirByKey(/** @type { AppProfile } */ profile, /** @type { keyof AppProfile } */ pathKey) {
+    getProfileDirByKey(/** @type { AppProfile | AppBaseProfile } */ profile, /** @type { keyof AppProfile } */ pathKey) {
         switch (pathKey) {
-            case "gameModDir": return profile.gameModDir;
-            case "gameRootDir": return profile.gameRootDir;
-            case "gameBinaryPath": return profile.gameBinaryPath;
-            case "gameConfigFilePath": return profile.gameConfigFilePath;
-            case "gameSaveFolderPath": return profile.gameSaveFolderPath;
+            case "gameModDir": return pathKey in profile ? profile.gameModDir : undefined;
+            case "gameRootDir": return pathKey in profile ? profile.gameRootDir : undefined;
+            case "gameBinaryPath": return pathKey in profile ? profile.gameBinaryPath : undefined;
+            case "gameConfigFilePath": return pathKey in profile ? profile.gameConfigFilePath : undefined;
+            case "gameSaveFolderPath": return pathKey in profile ? profile.gameSaveFolderPath : undefined;
             case "rootPathOverride": return this.getProfileDir(profile);
             case "modsPathOverride": return this.getProfileModsDir(profile);
             case "savesPathOverride": return this.getProfileSaveDir(profile);
@@ -3304,6 +3320,66 @@ class ElectronLoader {
         throw new Error("Unable to open config file.");
     }
 
+    /** @returns {boolean | undefined} */
+    checkLinkSupported(
+        /** @type {AppProfile | AppBaseProfile | string | null | undefined} */ profile,
+        /** @type {keyof AppProfile} */ srcDir,
+        /** @type {Array<keyof AppProfile>} */ destDirs,
+        /** @type {boolean} */ symlink,
+        /** @type {"file" | "dir" | "junction" | undefined} */ symlinkType,
+        /** @type {boolean | undefined} */ checkBaseProfile
+    ) {
+        if (typeof profile === "string") {
+            profile = this.loadProfile(profile);
+        }
+
+        if (!profile) {
+            return undefined;
+        }
+
+        const srcPath = this.getProfileDirByKey(profile, srcDir);
+
+        if (!srcPath) {
+            return undefined;
+        }
+
+        const destPaths = destDirs.map(destDir => this.getProfileDirByKey(profile, destDir));
+        if (destPaths.some(destPath => destPath === undefined)) {
+            return undefined;
+        }
+
+        let result;
+        // Check if link is supported on this profile
+        result = this.#checkLinkSupported(
+            srcPath,
+            /** @type { string[] } */ (destPaths),
+            symlink,
+            symlinkType
+        );
+
+        // Check if link is also supported from base profile if required
+        if (result && checkBaseProfile && "baseProfile" in profile && !!profile.baseProfile) {
+            /** @type { AppBaseProfile | string | null } */ let baseProfile = profile.baseProfile;
+            if (typeof baseProfile === "string") {
+                baseProfile = this.loadProfile(baseProfile);
+            }
+
+            if (!!baseProfile) {
+                const baseSrcPath = this.getProfileDirByKey(baseProfile, srcDir);
+                if (!!baseSrcPath) {
+                    result = this.#checkLinkSupported(
+                        baseSrcPath,
+                        /** @type { string[] } */ (destPaths),
+                        symlink,
+                        symlinkType
+                    );
+                }
+            }
+        }
+
+        return result;
+    }
+
     /** @returns {GameDetails | undefined} */
     #getGameDetails(/** @type {GameId} */ gameId) {
         const gameDb = this.loadGameDatabase();
@@ -3485,7 +3561,7 @@ class ElectronLoader {
         if (!targetPath || !destPaths || destPaths.length === 0) {
             return false;
         }
-
+        
         let srcTestFile = "";
         let srcCreatedDir = "";
 
@@ -3519,10 +3595,6 @@ class ElectronLoader {
 
                     if (fs.lstatSync(destPath).isFile()) {
                         destPath = path.dirname(destPath);
-                    }
-
-                    if (fs.realpathSync(targetPath) === fs.realpathSync(destPath)) {
-                        return true;
                     }
 
                     destTestFile = path.resolve(path.join(destPath, ElectronLoader.PROFILE_LINK_SUPPORT_TEST_FILE));

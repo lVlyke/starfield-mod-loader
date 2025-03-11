@@ -159,7 +159,7 @@
     }
 
     @if (!baseProfileMode) {
-        <div>
+        <div class="checkbox-field">
             <mat-checkbox name="modLinkMode"
                         [disabled]="!profileForm.enabled || !modLinkModeSupported"
                         [ngModel]="modLinkModeSupported ? (initialProfile.modLinkMode ?? true) : false">
@@ -167,11 +167,27 @@
             </mat-checkbox>
 
             <mat-icon class="tooltip-icon" matTooltip="Deploy file links instead of copying files (much faster)">help</mat-icon>
+
+            @if (!modLinkModeSupported) {
+                @if (modLinkModeChildOnlySupported) {
+                    <mat-icon class="tooltip-icon"
+                            matInfo
+                            matTooltip="Link mode cannot be enabled with base profile '{{formModel.baseProfile}}'">
+                        warning
+                    </mat-icon>
+                } @else {
+                    <mat-icon class="tooltip-icon"
+                            matInfo
+                            matTooltip="Link mode not supported for this profile">
+                        warning
+                    </mat-icon>
+                }
+            }
         </div>
     }
 
     @if (!baseProfileMode && formModel.manageConfigFiles) {
-        <div>
+        <div class="checkbox-field">
             <mat-checkbox name="configLinkMode"
                         [attr.app-hidden]="true"
                         [disabled]="!profileForm.enabled || !configLinkModeSupported"
@@ -181,7 +197,7 @@
         </div>
     }
 
-    <div>
+    <div class="checkbox-field">
         <mat-checkbox name="manageConfigFiles"
                       [disabled]="!profileForm.enabled"
                       [ngModel]="initialProfile.manageConfigFiles">
@@ -191,7 +207,7 @@
     </div>
 
     @if (!baseProfileMode) {
-        <div>
+        <div class="checkbox-field">
             <mat-checkbox name="manageSaveFiles"
                           [disabled]="!profileForm.enabled || !manageSavesSupported"
                           [ngModel]="manageSavesSupported ? initialProfile.manageSaveFiles : false">
@@ -202,7 +218,7 @@
     }
 
     @if (!baseProfileMode && manageSteamCompatSymlinksSupported) {
-        <div>
+        <div class="checkbox-field">
             <mat-checkbox name="manageSteamCompatSymlinks"
                           [disabled]="!profileForm.enabled"
                           [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
@@ -215,7 +231,7 @@
     @if (!baseProfileMode) {
         @let gameDetails = gameDb[formModel.gameId!];
         @if (gameDetails?.archiveInvalidation) {
-            <div>
+            <div class="checkbox-field">
                 <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
                               [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
                               (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">

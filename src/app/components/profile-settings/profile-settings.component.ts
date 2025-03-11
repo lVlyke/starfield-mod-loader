@@ -63,6 +63,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     protected gameIds: GameId[] = [];
     protected modLinkModeSupported = false;
+    protected modLinkModeChildOnlySupported = false;
     protected configLinkModeSupported = false;
     protected manageSavesSupported = false;
     protected profileRootPathValid = false;
@@ -143,9 +144,21 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 profile: formModel as AppProfile,
                 srcDir: "modsPathOverride",
                 destDirs: ["gameModDir", "gameRootDir"],
-                symlink: false
+                symlink: false,
+                checkBaseProfile: false
             }))
-        ).subscribe(linkSupported => this.modLinkModeSupported = linkSupported);
+        ).subscribe(linkSupported => this.modLinkModeChildOnlySupported = !!linkSupported);
+
+        this.formModel$.pipe(
+            filter(formModel => !!formModel.name),
+            switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
+                profile: formModel as AppProfile,
+                srcDir: "modsPathOverride",
+                destDirs: ["gameModDir", "gameRootDir"],
+                symlink: false,
+                checkBaseProfile: true
+            }))
+        ).subscribe(linkSupported => this.modLinkModeSupported = !!linkSupported);
 
         // Check if config links are supported
         this.formModel$.pipe(
@@ -155,9 +168,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 srcDir: "configPathOverride",
                 destDirs: ["gameConfigFilePath"],
                 symlink: true,
-                symlinkType: "file"
+                symlinkType: "file",
+                checkBaseProfile: true
             }))
-        ).subscribe(linkSupported => this.configLinkModeSupported = linkSupported);
+        ).subscribe(linkSupported => this.configLinkModeSupported = !!linkSupported);
 
         // Check if save mgmt is supported
         combineLatest(stateRef.getAll("formModel", "initialProfile")).pipe(
@@ -167,9 +181,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 srcDir: "savesPathOverride",
                 destDirs: ["gameSaveFolderPath"],
                 symlink: true,
-                symlinkType: "junction"
+                symlinkType: "junction",
+                checkBaseProfile: false
             }))
-        ).subscribe(managedSavesSupported => this.manageSavesSupported = managedSavesSupported);
+        ).subscribe(managedSavesSupported => this.manageSavesSupported = !!managedSavesSupported);
 
         // Check if Steam compat symlinks are supported
         this.formModel$.pipe(

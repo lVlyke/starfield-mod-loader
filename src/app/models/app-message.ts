@@ -616,8 +616,9 @@ export namespace AppMessage {
             destDirs: Array<keyof AppProfile>;
             symlink: boolean;
             symlinkType?: "file" | "dir" | "junction";
+            checkBaseProfile?: boolean;
         };
-        result: boolean;
+        result: boolean | undefined;
     }
 
     export interface SteamCompatSymlinksSupported extends Base {

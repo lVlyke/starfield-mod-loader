@@ -234,12 +234,13 @@
         @if (deployedProfileName !== profile.name) {
 
             <mat-icon class="warning"
+                    matInfo
                     [matTooltip]="anotherActiveProfileWarnText"
                     [matTooltipDisabled]="!asTooltip">
                     warning
             </mat-icon>
             @if (!asTooltip) {
-                <span class="warning">{{ anotherActiveProfileWarnText }}</span>
+                <span matInfo class="warning">{{ anotherActiveProfileWarnText }}</span>
             }
         } @else if (!asTooltip) {
             Mods are {{ isProfileDeployed ? "enabled" : "disabled" }}

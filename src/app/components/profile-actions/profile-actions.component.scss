@@ -5,6 +5,11 @@
     align-items: center;
     justify-content: space-between;
 
+    .warning {
+        font-weight: 500;
+        font-style: normal;
+    }
+
     &[compact] {
         width: 100%;
 
