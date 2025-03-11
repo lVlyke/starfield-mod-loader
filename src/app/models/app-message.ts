@@ -180,6 +180,7 @@ export namespace AppMessage {
     export interface ShowAboutInfo extends Base {
         id: `${Prefix}:showAboutInfo`;
         data: {
+            appVersion: string;
             depsInfo: AppDependenciesInfo;
             depsLicenseText: string;
         };

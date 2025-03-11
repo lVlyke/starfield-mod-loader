@@ -26,12 +26,12 @@ export const DEPS_INFO_TOKEN = new InjectionToken<AppMessageData<"app:showAboutI
 })
 export class AppAboutInfoModal extends BaseComponent {
 
-    public licenses = {};
+    protected readonly today = new Date();
     
     constructor(
         cdRef: ChangeDetectorRef,
-        @Inject(DEPS_INFO_TOKEN) public readonly aboutData: AppMessageData<"app:showAboutInfo">,
-        @Inject(OverlayRefSymbol) public readonly overlayRef: OverlayHelpersRef,
+        @Inject(DEPS_INFO_TOKEN) protected readonly aboutData: AppMessageData<"app:showAboutInfo">,
+        @Inject(OverlayRefSymbol) protected readonly overlayRef: OverlayHelpersRef,
     ) {
         super({ cdRef });
     }
