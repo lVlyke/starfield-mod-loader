@@ -5,6 +5,7 @@ const fsPromises = require("fs").promises;
 
 const BUILD_DIR = "./dist";
 const PKG_DIR = "./out";
+const ICON_FILE = "./public/favicon.ico";
 const BUILD_ALL = process.argv.includes("--all");
 const RELEASE_MODE = process.argv.includes("--release");
 
@@ -27,7 +28,7 @@ const RELEASE_MODE = process.argv.includes("--release");
     await clearPkgDirTask;
     
     execSync([
-        "npx electron-packager ./dist starfield-mod-loader --out ./out --overwrite --no-tmpdir",
+        `npx electron-packager ${BUILD_DIR} starfield-mod-loader --out ${PKG_DIR} --overwrite --no-tmpdir --icon=${ICON_FILE}`,
         BUILD_ALL ? " --platform 'win32, linux' --arch 'ia32, x64, armv7l, arm64'" : ""
     ].join(""), { stdio: "inherit" });
 })();

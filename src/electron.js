@@ -32,7 +32,7 @@
  * @typedef {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef} GamePluginProfileRef;
  */
 
-const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell, nativeImage } = require("electron");
 const log = require("electron-log/main");
 const url = require("url");
 const path = require("path");
@@ -77,6 +77,7 @@ class ElectronLoader {
     static /** @type {string} */ PROFILE_MODS_STAGING_DIR = "_tmp";
     static /** @type {string} */ PROFILE_LINK_SUPPORT_TEST_FILE = ".sml_link_test";
     static /** @type {string} */ DEPLOY_EXT_BACKUP_DIR = ".sml.bak";
+    static APP_ICON_IMG = nativeImage.createFromPath(path.join(__dirname, "favicon.png"));
 
     static /** @type {string} */ APP_VERSION = (() => {
         try {
@@ -1075,6 +1076,7 @@ class ElectronLoader {
     initWindow() {
         // Create the browser window
         this.mainWindow = new BrowserWindow({
+            icon: ElectronLoader.APP_ICON_IMG,
             width: 1280,
             height: 720,
             webPreferences: {
