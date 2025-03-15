@@ -101,10 +101,10 @@ class ElectronLoader {
     /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
     constructor() {
-        log.initialize({ spyRendererConsole: true });
+        log.initialize();
         
         log.transports.console.level = false;
-        log.transports.ipc.level = DEBUG_MODE ? "debug" : "info";
+        log.transports.ipc.level = false;
         log.transports.file.level = DEBUG_MODE ? "debug" : "info";
         log.transports.file.resolvePathFn = () => "app.log";
 
@@ -125,6 +125,19 @@ class ElectronLoader {
                 if (BrowserWindow.getAllWindows().length === 0) {
                     this.initWindow();
                 }
+            });
+
+            // Send all log entries to the renderer process
+            log.hooks.push((message, transport) => {
+                if (transport === log.transports.file) {
+                    this.mainWindow.webContents.send("app:log", {
+                        level: message.level,
+                        text: this.#formatLogData(message.data),
+                        timestamp: message.date
+                    });
+                }
+    
+                return message;
             });
         });
 
@@ -3057,8 +3070,10 @@ class ElectronLoader {
 
         // Create helper symlink for easy access to backed up saves
         const backupDirHelperLink = `${deploySaveDir.replace(/[/\\]$/, "")}.original`;
-        if (fs.existsSync(savesBackupDir)) {
-            await fs.symlink(path.resolve(savesBackupDir), path.resolve(backupDirHelperLink), "dir");
+        if (this.#checkLinkSupported(path.resolve(savesBackupDir), [path.resolve(backupDirHelperLink)], true, "dir")) {
+            if (fs.existsSync(savesBackupDir)) {
+                await fs.symlink(path.resolve(savesBackupDir), path.resolve(backupDirHelperLink), "dir");
+            }
         }
 
         return [deploySaveDir, backupDirHelperLink];
@@ -3261,6 +3276,10 @@ class ElectronLoader {
                     const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => {
                         const backupSrc = path.join(extFilesBackupDir, backupFile);
                         const backupDest = path.join(path.dirname(extFilesBackupDir), backupFile);
+
+                        if (fs.existsSync(backupDest)) {
+                            fs.removeSync(backupDest);
+                        }
 
                         // Use hardlinks for faster file restoration in link mode
                         if (profile.modLinkMode && !fs.lstatSync(backupSrc).isDirectory()) {
@@ -3686,6 +3705,22 @@ class ElectronLoader {
         }
 
         return "";
+    }
+
+    /** @return {string} */
+    #formatLogData(logData) {
+        return logData?.map(arg => this.#formatLogArg(arg)).join(" ") ?? "";
+    }
+
+    /** @return {string} */
+    #formatLogArg(arg) {
+        if (arg instanceof Error) {
+            return arg.toString();
+        } else if (typeof arg === "object") {
+            return JSON.stringify(arg);
+        } else {
+            return arg.toString();
+        }
     }
 }
 

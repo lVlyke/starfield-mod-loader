@@ -10,6 +10,7 @@ import { GameId } from "./game-id";
 import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { ModImportRequest, ModImportResult } from "./mod-import-status";
 import { ModProfileRef } from "./mod-profile-ref";
+import { LogEntry } from "../util/logger";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -33,6 +34,12 @@ export namespace AppMessage {
     }
 
     // App messages:
+
+    export interface Log extends Base {
+        id: `${Prefix}:log`;
+        data: LogEntry;
+        result: LogEntry;
+    }
 
     export interface SyncUiState extends Base {
         id: `${Prefix}:syncUiState`;
@@ -217,7 +224,8 @@ export namespace AppMessage {
         result: string | undefined;
     }
 
-    export type AppMessage = SyncUiState
+    export type AppMessage = Log
+                           | SyncUiState
                            | ChooseDirectory
                            | ChooseFilePath
                            | VerifyPathExists
@@ -688,6 +696,7 @@ export namespace AppMessage {
     // Message record:
 
     export const record: Array<_AppMessage["id"]> = [
+        "app:log",
         "app:syncUiState",
         "app:chooseDirectory",
         "app:chooseFilePath",
