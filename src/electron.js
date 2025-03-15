@@ -2620,8 +2620,10 @@ class ElectronLoader {
 
         // Create helper symlink for easy access to backed up saves
         const backupDirHelperLink = `${deploySaveDir.replace(/[/\\]$/, "")}.original`;
-        if (fs.existsSync(savesBackupDir)) {
-            await fs.symlink(path.resolve(savesBackupDir), path.resolve(backupDirHelperLink), "dir");
+        if (this.#checkLinkSupported(path.resolve(savesBackupDir), [path.resolve(backupDirHelperLink)], true, "dir")) {
+            if (fs.existsSync(savesBackupDir)) {
+                await fs.symlink(path.resolve(savesBackupDir), path.resolve(backupDirHelperLink), "dir");
+            }
         }
 
         return [deploySaveDir, backupDirHelperLink];
@@ -2824,6 +2826,10 @@ class ElectronLoader {
                     const backupTransfers = fs.readdirSync(extFilesBackupDir).map((backupFile) => {
                         const backupSrc = path.join(extFilesBackupDir, backupFile);
                         const backupDest = path.join(path.dirname(extFilesBackupDir), backupFile);
+
+                        if (fs.existsSync(backupDest)) {
+                            fs.removeSync(backupDest);
+                        }
 
                         // Use hardlinks for faster file restoration in link mode
                         if (profile.modLinkMode && !fs.lstatSync(backupSrc).isDirectory()) {
