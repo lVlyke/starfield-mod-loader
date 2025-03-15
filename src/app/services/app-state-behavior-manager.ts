@@ -49,6 +49,11 @@ export class AppStateBehaviorManager {
             ))
         ).subscribe();
 
+        // Listen for log messages from the main process
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "app:log"),
+        ).subscribe(({ data }) => log[data.level](data.text));
+
         messageHandler.messages$.pipe(
             filter(message => message.id === "app:showPreferences"),
             switchMap(() => this.showAppPreferences().pipe(

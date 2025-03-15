@@ -95,10 +95,10 @@ class ElectronLoader {
     /** @type {Record<string, boolean>} */ ignorePathChanges = {};
 
     constructor() {
-        log.initialize({ spyRendererConsole: true });
+        log.initialize();
         
         log.transports.console.level = false;
-        log.transports.ipc.level = DEBUG_MODE ? "debug" : "info";
+        log.transports.ipc.level = false;
         log.transports.file.level = DEBUG_MODE ? "debug" : "info";
         log.transports.file.resolvePathFn = () => "app.log";
 
@@ -119,6 +119,19 @@ class ElectronLoader {
                 if (BrowserWindow.getAllWindows().length === 0) {
                     this.initWindow();
                 }
+            });
+
+            // Send all log entries to the renderer process
+            log.hooks.push((message, transport) => {
+                if (transport === log.transports.file) {
+                    this.mainWindow.webContents.send("app:log", {
+                        level: message.level,
+                        text: this.#formatLogData(message.data),
+                        timestamp: message.date
+                    });
+                }
+    
+                return message;
             });
         });
 
@@ -3236,6 +3249,22 @@ class ElectronLoader {
         }
 
         return "";
+    }
+
+    /** @return {string} */
+    #formatLogData(logData) {
+        return logData?.map(arg => this.#formatLogArg(arg)).join(" ") ?? "";
+    }
+
+    /** @return {string} */
+    #formatLogArg(arg) {
+        if (arg instanceof Error) {
+            return arg.toString();
+        } else if (typeof arg === "object") {
+            return JSON.stringify(arg);
+        } else {
+            return arg.toString();
+        }
     }
 }
 
