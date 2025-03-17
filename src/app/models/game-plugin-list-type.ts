@@ -1,5 +1,1 @@
-export enum GamePluginListType {
-    Default = "Default",
-    CreationEngine = "CreationEngine",
-    Gamebryo = "Gamebryo"
-}
+export type GamePluginListType = "Default" | "CreationEngine" | "Gamebryo" | "NetImmerse";

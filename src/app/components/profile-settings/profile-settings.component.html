@@ -79,7 +79,7 @@
             <mat-label>Game Installation</mat-label>
             <mat-select #gameInstallationModel="ngModel"
                         name="gameInstallation"
-                        [ngModel]="(!initialProfile && foundGameInstallations.length > 0) ? foundGameInstallations[0] : customGameInstaller">
+                        [ngModel]="(createMode && !copyMode && foundGameInstallations.length > 0) ? foundGameInstallations[0] : customGameInstaller">
                 @for (gameInstallation of foundGameInstallations; track gameInstallation.rootDir) {
                     <mat-option [value]="gameInstallation">
                         {{ gameInstallation.rootDir }}
@@ -229,10 +229,9 @@
 
     <!-- Archive Invalidation -->
     @if (!baseProfileMode) {
-        @let gameDetails = gameDb[formModel.gameId!];
-        @if (gameDetails?.archiveInvalidation) {
+        @if (currentGameDetails.archiveInvalidation) {
             <div class="checkbox-field">
-                <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$:formModel | async))"
+                <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (currentGameDetails | appGameConfigFilesFound$:formModel | async))"
                               [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
                               (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
                     Archive Invalidation

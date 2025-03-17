@@ -81,6 +81,127 @@
             "Oblivion.ini": "; The following section has been added automatically by Starfield Mod Loader. Place any additional changes after this section.\r\n[Archive]\r\nSArchiveList=Invalidation.bsa, Oblivion - Meshes.bsa, Oblivion - Textures - Compressed.bsa, Oblivion - Sounds.bsa, Oblivion - Voices1.bsa, Oblivion - Voices2.bsa, Oblivion - Misc.bsa\r\n\r\n"
         }
     },
+    "elder_scrolls_skyrim_le": {
+        "title": "Elder Scrolls: Skyrim LE",
+        "bkgColor": "#222222",
+        "fgColor": "#ffffff",
+        "installations": [
+            {
+                "steamId": ["28187", "72850"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Skyrim",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim\\Saves"
+            },
+            {
+                "steamId": ["28187", "72850"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Skyrim",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Skyrim\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim\\Saves"
+            },
+            {
+                "steamId": ["28187", "72850"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Skyrim",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Skyrim/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim/Saves"
+            }
+        ],
+        "gameBinary": ["TESV.exe", "skse_loader.exe"],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": ["esm", "esp"],
+        "saveFormats": ["ess"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Skyrim.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": true,
+        "scriptExtenders": [
+            {
+                "name": "SKSE",
+                "binaries": ["skse_loader.exe"],
+                "modPaths": ["SKSE"]
+            }
+        ],
+        "gameConfigFiles": [
+            "Skyrim.ini",
+            "SkyrimPrefs.ini"
+        ]
+    },
+    "elder_scrolls_skyrim_se": {
+        "title": "Elder Scrolls: Skyrim SE",
+        "bkgColor": "#222222",
+        "fgColor": "#ffffff",
+        "installations": [
+            {
+                "steamId": ["489830"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Skyrim Special Edition",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim Special Edition\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition\\Saves"
+            },
+            {
+                "steamId": ["489830"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Skyrim Special Edition",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim Special Edition\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Skyrim Special Edition\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim Special Edition\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim Special Edition\\Saves"
+            },
+            {
+                "steamId": ["489830"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Skyrim Special Edition",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Skyrim Special Edition/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim Special Edition",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim Special Edition/Saves"
+            }
+        ],
+        "gameBinary": ["SkyrimSE.exe", "skse64_loader.exe"],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": ["esm", "esl", "esp"],
+        "saveFormats": ["ess"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Skyrim.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": false,
+        "scriptExtenders": [
+            {
+                "name": "SKSE64",
+                "binaries": ["skse64_loader.exe"],
+                "modPaths": ["SKSE"]
+            }
+        ],
+        "gameConfigFiles": [
+            "Skyrim.ini",
+            "SkyrimCustom.ini",
+            "SkyrimPrefs.ini"
+        ]
+    },
     "fallout_4": {
         "title": "Fallout 4",
         "bkgColor": "#007300",

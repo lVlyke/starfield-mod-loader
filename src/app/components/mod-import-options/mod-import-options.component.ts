@@ -26,8 +26,8 @@ import {
     ManagedSubject
 } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
-import { BehaviorSubject, EMPTY, Observable, combineLatest } from "rxjs";
-import { filter, map, switchMap, take, tap } from "rxjs/operators";
+import { BehaviorSubject, EMPTY, Observable, combineLatest, from } from "rxjs";
+import { filter, map, mergeMap, switchMap, take, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { filterDefined } from "../../core/operators";
 import { ModImportRequest } from "../../models/mod-import-status";
@@ -140,8 +140,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     @DeclareState("fileDataInput")
     private _fileDataInput!: FileTreeNode[];
 
-    @DeclareState("detectedScriptExtender")
-    private _detectedScriptExtender?: GameDetails.ScriptExtender;
+    @DeclareState("detectedScriptExtenders")
+    private _detectedScriptExtenders: GameDetails.ScriptExtender[] = [];
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -242,7 +242,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                 modFilePaths,
                 filePathSeparator,
                 modSubdirRoot
-            }]) => gameDetails!.scriptExtenders!.find(scriptExtender => scriptExtender.modPaths.some((seModPath) => {
+            }]) => gameDetails!.scriptExtenders!.filter(scriptExtender => scriptExtender.modPaths.some((seModPath) => {
                 seModPath = this.normalizePath(seModPath, filePathSeparator, modSubdirRoot);
                 const normalizedModPaths = modFilePaths.map(({ filePath }) => {
                     return this.normalizePath(filePath, filePathSeparator, modSubdirRoot);
@@ -255,13 +255,16 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
 
                 return !isScriptExtender && normalizedModPaths.some(filePath => filePath.startsWith(seModPath));
             })))
-        ).subscribe(detectedScriptExtender => this._detectedScriptExtender = detectedScriptExtender);
+        ).subscribe(detectedScriptExtenders => this._detectedScriptExtenders = detectedScriptExtenders);
 
         // Warn user if a mod uses a script extender they don't appear to be using
-        combineLatest(stateRef.getAll("detectedScriptExtender", "activeProfile")).pipe(
-            filter(([detectedScriptExtender, activeProfile]) => !!detectedScriptExtender && AppProfile.isFullProfile(activeProfile)),
+        combineLatest(stateRef.getAll("detectedScriptExtenders", "activeProfile")).pipe(
+            filter(([detectedScriptExtenders, activeProfile]) => detectedScriptExtenders.length > 0 && AppProfile.isFullProfile(activeProfile)),
             take(1),
-            switchMap(([scriptExtender, activeProfile]) => profileManager.isUsingScriptExtender(scriptExtender!, activeProfile!).pipe(
+            switchMap(([detectedScriptExtenders, activeProfile]) => from(detectedScriptExtenders).pipe(
+                map(detectedScriptExtender => [detectedScriptExtender, activeProfile] as const)
+            )),
+            mergeMap(([scriptExtender, activeProfile]) => profileManager.isUsingScriptExtender(scriptExtender!, activeProfile!).pipe(
                 switchMap((usingScriptExtender) => {
                     if (usingScriptExtender) {
                         return EMPTY;
@@ -271,7 +274,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                         );
                     }
                 })
-            ))
+            )),
+            take(1)
         ).subscribe((action) => {
             if (action === DialogManager.CANCEL_ACTION) {
                 this.importRequest.importStatus = "CANCELED";
@@ -320,8 +324,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         ).subscribe();
     }
 
-    public get detectedScriptExtender(): GameDetails.ScriptExtender | undefined {
-        return this._detectedScriptExtender;
+    public get detectedScriptExtenders(): GameDetails.ScriptExtender[] {
+        return this._detectedScriptExtenders;
     }
 
     public get fileDataInput(): FileTreeNode[] {

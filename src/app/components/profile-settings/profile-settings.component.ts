@@ -58,6 +58,7 @@ import {
 } from "../../models/app-profile-form-field";
 import { AppProfileFormFieldComponent } from "../profile-form-field";
 import { AppGameInstallSettingsComponent } from "../game-install-settings";
+import { GameDetails } from "../../models/game-details";
 
 @Component({
     selector: "app-profile-settings",
@@ -123,6 +124,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public createMode = false;
 
     @Input()
+    public copyMode = false;
+
+    @Input()
     public baseProfileMode = false;
 
     @Input()
@@ -145,6 +149,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     @DeclareState("manageSteamCompatSymlinksSupported")
     protected _manageSteamCompatSymlinksSupported = false;
+
+    @DeclareState("currentGameDetails")
+    protected _currentGameDetails: GameDetails = GameDetails.empty();
 
     @DeclareState()
     protected gameIds: GameId[] = [];
@@ -226,6 +233,11 @@ export class AppProfileSettingsComponent extends BaseComponent {
         combineLatest(stateRef.getAll("initialProfile", "createMode", "form")).pipe(
             filter(([initialProfile, createMode]) => !createMode && !!initialProfile.locked),
         ).subscribe(([, , form]) => form.control.disable());
+
+        // Get game details for the selected game
+        combineLatest(stateRef.getAll("gameDb", "formModel")).subscribe(([gameDb, { gameId }]) => {
+            this._currentGameDetails = gameDb[gameId ?? GameId.UNKNOWN];
+        });
 
         // Check if mod links are supported
         this.formModel$.pipe(
@@ -324,6 +336,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         // Generate profile field input object
         combineLatest([this.formModel$, ...stateRef.getAll(
+            "currentGameDetails",
             "form",
             "baseProfileMode",
             "modLinkModeSupported",
@@ -332,6 +345,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         )]).pipe(
             map(([
                 profileModel,
+                gameDetails,
                 form,
                 baseProfileMode,
                 modLinkModeSupported,
@@ -339,6 +353,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 autofocusFieldId
             ]): AppProfileFormFieldInput => ({
                 profileModel,
+                gameDetails,
                 form,
                 baseProfileMode,
                 modLinkModeSupported,
@@ -350,10 +365,6 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     public get foundGameInstallations(): GameInstallation[]{
         return this._foundGameInstallations;
-    }
-
-    public get copyMode(): boolean {
-        return this.createMode && !!this.initialProfile;
     }
 
     public get modLinkModeSupported(): boolean {
@@ -378,6 +389,10 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
     public get manageSteamCompatSymlinksSupported(): boolean {
         return this._manageSteamCompatSymlinksSupported;
+    }
+
+    public get currentGameDetails(): GameDetails {
+        return this._currentGameDetails;
     }
 
     protected isFieldGroup(fieldEntry: AppProfileFormFieldEntry): fieldEntry is AppProfileFormFieldGroup {

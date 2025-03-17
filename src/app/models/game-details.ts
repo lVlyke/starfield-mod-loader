@@ -35,4 +35,19 @@ export namespace GameDetails {
     export interface Resources {
         mods: Record<string, string>;
     }
+
+    export function empty(): GameDetails {
+        return {
+            title: "",
+            installations: [],
+            pluginFormats: [],
+            saveFormats: [],
+            requireExternalPlugins: false,
+            gameBinary: []
+        };
+    }
+
+    export function hasPluginListPath(details: GameDetails): boolean {
+        return details.installations.some(installation => "pluginListPath" in installation);
+    }
 }

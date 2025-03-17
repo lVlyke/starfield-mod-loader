@@ -879,7 +879,7 @@ class ElectronLoader {
         ipcMain.handle("profile:deploy", async (_event, /** @type {import("./app/models/app-message").AppMessageData<"profile:deploy">} */ {
             profile, deployPlugins, normalizePathCasing
         }) => {
-            return this.deployProfile(profile, deployPlugins, normalizePathCasing);
+                return this.deployProfile(profile, deployPlugins, normalizePathCasing);
         });
 
         ipcMain.handle("profile:undeploy", async (
@@ -3019,7 +3019,7 @@ class ElectronLoader {
 
     /** @returns {Promise<string>} */
     async writePluginList(/** @type {AppProfile} */ profile) {
-        const pluginListPath = profile.gameInstallation.pluginListPath ? path.resolve(this.#expandPath(profile.gameInstallation.pluginListPath)) : "";
+        const pluginListPath = profile.gameInstallation.pluginListPath ? path.resolve(this.#expandPath(profile.gameInstallation.pluginListPath)) : undefined;
 
         if (pluginListPath) {
             fs.mkdirpSync(path.dirname(pluginListPath));
@@ -3182,9 +3182,10 @@ class ElectronLoader {
     /** @returns {Promise<string[]>} */
     async processDeployedFiles(/** @type {AppProfile} */ profile, /** @type {string[]} */ profileModFiles) {
         const gameDetails = this.#getGameDetails(profile.gameId);
+        /** @type {GamePluginListType[]} */ const timestampedPluginTypes = ["Gamebryo", "NetImmerse"];
 
-        // Gamebryo games require processing of plugin file timestamps to enforce load order
-        if (!!gameDetails && profile.plugins && gameDetails.pluginListType === "Gamebryo") {
+        // Some games require processing of plugin file timestamps to enforce load order
+        if (!!gameDetails?.pluginListType && profile.plugins && timestampedPluginTypes.includes(gameDetails.pluginListType)) {
             const gameModDir = path.resolve(this.#expandPath(profile.gameInstallation.modDir));
             let pluginTimestamp = Date.now() / 1000 | 0;
             profile.plugins.forEach((pluginRef) => {
@@ -3221,7 +3222,7 @@ class ElectronLoader {
             profileModFiles.push(... await this.deployMods(profile, true, normalizePathCasing));
             profileModFiles.push(... await this.deployMods(profile, false, normalizePathCasing));
 
-            if (deployPlugins && profile.plugins.length > 0) {
+            if (deployPlugins && !!profile.gameInstallation.pluginListPath && profile.plugins.length > 0) {
                 // Write plugin list
                 profileModFiles.push(await this.writePluginList(profile));
             }
@@ -3638,6 +3639,9 @@ class ElectronLoader {
         switch (listType ?? gameDetails?.pluginListType) {
             case "Gamebryo": {
                 return this.#createProfilePluginListGamebryo(profile);
+            }
+            case "NetImmerse": {
+                return "";
             }
             case "CreationEngine":
             case "Default": {

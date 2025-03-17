@@ -6,6 +6,7 @@ import {
     AppProfileFormFieldInput
 } from "../../models/app-profile-form-field";
 import { GameInstallation } from "../../models/game-installation";
+import { GameDetails } from "../../models/game-details";
 
 export type GameInstallFormField = AppProfileFormField<GameInstallation>;
 export type GameInstallFormFieldGroup = AppProfileFormFieldGroup<GameInstallation, keyof GameInstallation>;
@@ -16,6 +17,7 @@ export interface GameInstallFormFieldInput extends AppProfileFormFieldInput {
 }
 
 function GAME_INSTALLATION_FIELDS({
+    gameDetails,
     profileModel,
     form,
     modLinkModeSupported,
@@ -47,14 +49,14 @@ function GAME_INSTALLATION_FIELDS({
                 form.controls["modLinkMode"].setValue(!profileModel.modLinkMode);
             } : undefined
         },
-        { 
+        ...!!GameDetails.hasPluginListPath(gameDetails) ? [{ 
             formId: "pluginListPath",
             title: "Game Plugin List Path",
             fileTypes: ["txt"],
             path: true,
             readonly: !custom,
             required: true
-        },
+        } as GameInstallFormField] : [],
         {
             formId: "configFilePath",
             title: "Game Config Files Directory",

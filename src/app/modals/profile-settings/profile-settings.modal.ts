@@ -44,6 +44,9 @@ export class AppProfileSettingsModal extends BaseComponent {
     public createMode = false;
 
     @DeclareState()
+    public copyMode = false;
+
+    @DeclareState()
     public remedyMode: keyof AppProfile | keyof GameInstallation | false = false;
 
     @ViewChild(AppProfileSettingsComponent, { static: true })

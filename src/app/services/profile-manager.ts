@@ -251,24 +251,6 @@ export class ProfileManager {
             switchMap(([profile]) => this.setActiveGameAction(profile.defaultGameActions[0] ?? this.LAUNCH_GAME_ACTION))
         ).subscribe();
 
-        // When plugins are enabled, make sure the active profile gets a valid `pluginListPath`
-        combineLatest([
-            this.isPluginsEnabled$,
-            this.activeProfile$
-        ]).pipe(
-            map(([isPluginsEnabled, activeProfile]) => AppProfile.isFullProfile(activeProfile)
-                && isPluginsEnabled
-                && !!activeProfile
-                && !activeProfile.gameInstallation.pluginListPath
-            ),
-            distinctUntilChanged(),
-            filterTrue(),
-            withLatestFrom(this.activeProfile$),
-            switchMap(([, activeProfile]) => {
-                return this.showProfileWizard(activeProfile, { remedy: "pluginListPath" });
-            })
-        ).subscribe();
-
         // Handle automatic mod redeployment when the active profile is deployed
         this.activeProfile$.pipe(
             filterDefined(),
@@ -730,7 +712,7 @@ export class ProfileManager {
             name: profileName,
             deployed: false,
             rootPathOverride: undefined
-        }, { createMode: true, verifyProfile: false }).pipe(
+        }, { createMode: true, copyMode: true, verifyProfile: false }).pipe(
             switchMap((newProfile) => {
                 if (!!newProfile) {
                     // Copy profile files to the newly created profile if not using the existing folder
@@ -776,6 +758,7 @@ export class ProfileManager {
         profile?: Partial<AppProfile>,
         options: {
             createMode?: boolean,
+            copyMode?: boolean,
             verifyProfile?: boolean,
             remedy?: keyof AppProfile | keyof GameInstallation | false
         } = { createMode: !profile }
@@ -797,6 +780,7 @@ export class ProfileManager {
         }
 
         modContextMenuRef.component.instance.createMode = options.createMode ?? false;
+        modContextMenuRef.component.instance.copyMode = options.copyMode ?? false;
         modContextMenuRef.component.instance.profile = profile;
         modContextMenuRef.component.changeDetectorRef.detectChanges();
 
