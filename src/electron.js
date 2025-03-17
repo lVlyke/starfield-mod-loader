@@ -3877,7 +3877,11 @@ class ElectronLoader {
 
     /** @return {string} */
     #formatLogArg(arg) {
-        if (arg instanceof Error) {
+        if (arg === undefined) {
+            return "undefined";
+        } else if (arg === null) {
+            return "null";
+        } else if (arg instanceof Error) {
             return arg.toString();
         } else if (arg !== undefined && arg !== null && typeof arg === "object") {
             return JSON.stringify(arg);

@@ -472,7 +472,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
                     const gameDetails = this.gameDb[profile.gameId];
                     return forkJoin(gameDetails.gameConfigFiles!.map((configFile) => {
                         return this.profileManager.readConfigFile(profile, configFile, true).pipe(
-                            mergeMap(fileData => this.profileManager.updateConfigFile(configFile, fileData))
+                            mergeMap(fileData => this.profileManager.updateConfigFile(profile, configFile, fileData))
                         );
                     }));
                 }),

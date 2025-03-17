@@ -1213,11 +1213,8 @@ export class ProfileManager {
         return ElectronUtils.invoke("profile:readConfigFile", { profile, fileName, loadDefaults });
     }
 
-    public updateConfigFile(fileName: string, data: string): Observable<unknown> {
-        return runOnce(this.activeProfile$.pipe(
-            take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:updateConfigFile", { profile: profile!, fileName, data }))
-        ));
+    public updateConfigFile(profile: AppProfile, fileName: string, data: string): Observable<unknown> {
+        return runOnce(ElectronUtils.invoke("profile:updateConfigFile", { profile: profile!, fileName, data }));
     }
 
     public isArchiveInvalidationEnabled(): Observable<boolean> {

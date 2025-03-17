@@ -90,7 +90,7 @@ export class AppProfileConfigEditorComponent extends BaseComponent {
     }
 
     protected updateConfigFile(fileName: string, data: string): Observable<unknown> {
-        return runOnce(this.profileManager.updateConfigFile(fileName, data).pipe(
+        return runOnce(this.profileManager.updateConfigFile(this.profile, fileName, data).pipe(
             tap(() => this.markConfigUpdated())
         ));
     }
