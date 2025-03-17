@@ -49,13 +49,14 @@ import { AppProfileVerificationResultsModal } from "../modals/profile-verificati
 import { log } from "../util/logger";
 import { RelativeOrderedMap } from "../util/relative-ordered-map";
 import { ModSection } from "../models/mod-section";
+import { GameInstallation } from "../models/game-installation";
 
 @Injectable({ providedIn: "root" })
 export class ProfileManager {
 
     public readonly LAUNCH_GAME_ACTION: GameAction = {
         name: "Start Game",
-        actionScript: "${gameBinaryPath}"
+        actionScript: "${gameDetails.gameBinary[0]}"
     }
 
     public readonly appState$: Observable<AppData>;
@@ -229,6 +230,27 @@ export class ProfileManager {
             switchMap(() => this.reconcileActivePluginList())
         ).subscribe();
 
+        // Monitor root mod changes for new/removed mods and update the default actions list
+        this.activeProfile$.pipe(
+            filterDefined(),
+            map(profile => _.pick<AppProfile, keyof AppProfile>(profile, "rootMods", "externalFilesCache")),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            switchMap(() => this.getAvailableDefaultGameActions()),
+            switchMap(defaultActions => this.store.dispatch(new ActiveProfileActions.UpdateDefaultGameActions(defaultActions)))
+        ).subscribe();
+
+        // Monitor game action updates and set activeGameAction to the first default action if not set to a custom action
+        this.activeProfile$.pipe(
+            filterDefined(),
+            map(profile => _.pick<AppProfile, keyof AppProfile>(profile, "customGameActions", "defaultGameActions")),
+            distinctUntilChanged((a, b) => LangUtils.isEqual(a, b)),
+            withLatestFrom(this.activeGameAction$),
+            filter(([profile, activeGameAction]) => !activeGameAction || !profile.customGameActions?.find(action => {
+                return LangUtils.isEqual(activeGameAction, action);
+            })),
+            switchMap(([profile]) => this.setActiveGameAction(profile.defaultGameActions[0] ?? this.LAUNCH_GAME_ACTION))
+        ).subscribe();
+
         // When plugins are enabled, make sure the active profile gets a valid `pluginListPath`
         combineLatest([
             this.isPluginsEnabled$,
@@ -237,22 +259,13 @@ export class ProfileManager {
             map(([isPluginsEnabled, activeProfile]) => AppProfile.isFullProfile(activeProfile)
                 && isPluginsEnabled
                 && !!activeProfile
-                && !activeProfile.gamePluginListPath
+                && !activeProfile.gameInstallation.pluginListPath
             ),
             distinctUntilChanged(),
             filterTrue(),
-            withLatestFrom(this.activeGameDetails$),
-            switchMap(([, activeGameDetails]) => ElectronUtils.invoke("app:verifyPathExists", {
-                path: activeGameDetails?.pluginListPaths ?? [],
-                dirname: true
-            })),
             withLatestFrom(this.activeProfile$),
-            switchMap(([pluginListPath, activeProfile]) => {
-                if (!!pluginListPath) {
-                    return store.dispatch(new ActiveProfileActions.setGamePluginListPath(pluginListPath));
-                } else {
-                    return this.showProfileWizard(activeProfile, { remedy: "gamePluginListPath" });
-                }
+            switchMap(([, activeProfile]) => {
+                return this.showProfileWizard(activeProfile, { remedy: "pluginListPath" });
             })
         ).subscribe();
 
@@ -268,12 +281,7 @@ export class ProfileManager {
                     _.pick<AppProfile, keyof AppProfile>(profile!,
                         "gameId",
                         "name",
-                        "gameRootDir",
-                        "gameModDir",
-                        "gamePluginListPath",
-                        "gameConfigFilePath",
-                        "gameSaveFolderPath",
-                        "steamGameId",
+                        "gameInstallation",
                         "mods",
                         "rootMods",
                         "plugins",
@@ -288,6 +296,7 @@ export class ProfileManager {
                         "manageSteamCompatSymlinks",
                         "modLinkMode",
                         "configLinkMode",
+                        "steamCustomGameId"
                     ),
     
                     // Monitor these app settings:
@@ -644,10 +653,6 @@ export class ProfileManager {
         ));
     }
 
-    public updateModVerification(root: boolean, modName: string, verificationResult: AppProfile.CollectedVerificationResult): Observable<any> {
-        return this.store.dispatch(new ActiveProfileActions.UpdateModVerification(root, modName, verificationResult));
-    }
-
     public updateModVerifications(root: boolean, modVerificationResults: AppProfile.CollectedVerificationResult): Observable<any> {
         return this.store.dispatch(new ActiveProfileActions.UpdateModVerifications(root, modVerificationResults));
     }
@@ -772,7 +777,7 @@ export class ProfileManager {
         options: {
             createMode?: boolean,
             verifyProfile?: boolean,
-            remedy?: boolean | (keyof AppProfile)
+            remedy?: keyof AppProfile | keyof GameInstallation | false
         } = { createMode: !profile }
     ): Observable<AppProfile> {
         profile ??= AppProfile.create("New Profile");
@@ -1112,15 +1117,37 @@ export class ProfileManager {
         return this.store.dispatch(new ActiveProfileActions.UpdateModsInSection(root, section, enabled))
     }
 
-    public readModFilePaths(modName: string, normalizePaths?: boolean): Observable<string[]> {
+    public readModFilePaths(modName: string, modRef: ModProfileRef, normalizePaths?: boolean): Observable<string[]> {
         return this.activeProfile$.pipe(
             take(1),
             switchMap(activeProfile => ElectronUtils.invoke("profile:readModFilePaths", {
                 modName,
+                modRef,
                 profile: activeProfile!,
                 normalizePaths
             }))
         );
+    }
+
+    public isUsingScriptExtender(scriptExtender: GameDetails.ScriptExtender, profile: AppProfile): Observable<boolean> {
+        // First check if script extender exists in external root dir files
+        let usingScriptExtender = !!profile.externalFilesCache?.gameDirFiles?.some((externalFile) => {
+            return scriptExtender!.binaries.find(binary => externalFile.endsWith(LangUtils.normalizeFilePath(binary, "/")));
+        });
+
+        let usingScriptExtender$ = of(usingScriptExtender);
+        // Next, check if script extender exists in root mod files
+        if (!usingScriptExtender && profile.rootMods.length > 0) {
+            usingScriptExtender$ = forkJoin(profile.rootMods.map(([modName, modRef]) => {
+                return this.readModFilePaths(modName, modRef, true);
+            })).pipe(
+                map(modFileList => modFileList.some((files) => files.some((file) => {
+                    return scriptExtender.binaries.find(binary => file.endsWith(LangUtils.normalizeFilePath(binary, "/")));
+                })))
+            );
+        }
+
+        return usingScriptExtender$;
     }
 
     public manageExternalPlugins(manageExternalPlugins: boolean): Observable<void> {
@@ -1243,7 +1270,10 @@ export class ProfileManager {
         return runOnce(combineLatest([this.activeProfile$, this.activeGameAction$]).pipe(
             take(1),
             switchMap(([activeProfile, activeGameAction]) => {
-                const resolvedGameAction = gameAction ?? activeGameAction ?? this.LAUNCH_GAME_ACTION;
+                const defaultAction = activeProfile!.defaultGameActions.length > 0
+                    ? activeProfile!.defaultGameActions[0]
+                    : this.LAUNCH_GAME_ACTION;
+                const resolvedGameAction = gameAction ?? activeGameAction ?? defaultAction;
 
                 return ElectronUtils.invoke("profile:runGameAction", {
                     profile: activeProfile!,
@@ -1255,6 +1285,13 @@ export class ProfileManager {
                 return of(undefined);
             })
         ));
+    }
+
+    public getAvailableDefaultGameActions(): Observable<GameAction[]> {
+        return this.activeProfile$.pipe(
+            take(1),
+            switchMap(profile => ElectronUtils.invoke("profile:resolveDefaultGameActions", { profile: profile! }))
+        );
     }
 
     public resolveGameBinaryVersion(): Observable<string | undefined> {
@@ -1271,7 +1308,7 @@ export class ProfileManager {
         )));
     }
 
-    public showProfileDirInFileExplorer(profileKey: keyof AppProfile): Observable<unknown> {
+    public showProfileDirInFileExplorer(profileKey: keyof AppProfile | keyof GameInstallation): Observable<unknown> {
         return runOnce(this.activeProfile$.pipe(
             take(1),
             switchMap(profile => ElectronUtils.invoke("profile:showProfileDirInFileExplorer", { profile: profile!, profileKey })
@@ -1295,11 +1332,11 @@ export class ProfileManager {
     }
 
     public showGameModDirInFileExplorer(): Observable<unknown> {
-        return this.showProfileDirInFileExplorer("gameModDir");
+        return this.showProfileDirInFileExplorer("modDir");
     }
 
     public showGameRootDirInFileExplorer(): Observable<unknown> {
-        return this.showProfileDirInFileExplorer("gameRootDir");
+        return this.showProfileDirInFileExplorer("rootDir");
     }
 
     public showProfileBackupsInFileExplorer(): Observable<unknown> {
@@ -1326,15 +1363,15 @@ export class ProfileManager {
             switchMap(profile => ElectronUtils.invoke("profile:showProfileConfigBackupsInFileExplorer", { profile: profile! })
         )));
     }
-
-    public openGameConfigFile(configPaths: string[]): Observable<unknown> {
-        return runOnce(ElectronUtils.invoke("profile:openGameConfigFile", { configPaths }));
-    }
     
-    public openProfileConfigFile(configFileName: string): Observable<unknown> {
+    public openProfileConfigFile(configFileName: string, includeGameFiles?: boolean): Observable<unknown> {
         return runOnce(this.activeProfile$.pipe(
             take(1),
-            switchMap(profile => ElectronUtils.invoke("profile:openProfileConfigFile", { profile: profile!, configFileName })
+            switchMap(profile => ElectronUtils.invoke("profile:openProfileConfigFile", {
+                profile: profile!,
+                includeGameFiles,
+                configFileName
+            })
         )));
     }
 

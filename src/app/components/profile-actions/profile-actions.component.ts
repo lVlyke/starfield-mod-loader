@@ -6,7 +6,6 @@ import { MatTooltip } from "@angular/material/tooltip";
 import { MatIcon } from "@angular/material/icon";
 import { MatCard, MatCardContent } from "@angular/material/card";
 import { MatActionList, MatListItem } from "@angular/material/list";
-import { MatLine } from "@angular/material/core";
 import { Observable, combineLatest } from "rxjs";
 import { AsyncState, ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { Store } from "@ngxs/store";
@@ -26,6 +25,7 @@ import { AppDialogs } from "../../services/app-dialogs";
 import { AppProfileActiveModCountPipe } from "../../pipes/profile-active-mod-count.pipe";
 import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
 import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found.pipe";
+import { GameInstallation } from "../../models/game-installation";
 
 @Component({
     selector: "app-profile-actions",
@@ -34,7 +34,7 @@ import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         AsyncPipe,
-        KeyValuePipe,
+        //KeyValuePipe,
         NgTemplateOutlet,
         CdkPortal,
 
@@ -45,7 +45,7 @@ import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found
         MatCardContent,
         MatActionList,
         MatListItem,
-        MatLine,
+        //MatLine,
         MatIconButton,
 
         AppProfileActiveModCountPipe,
@@ -71,11 +71,11 @@ export class AppProfileActionsComponent extends BaseComponent {
         ["backupsPathOverride", "Backups Directory"]
     ];
 
-    protected readonly gameFolderKeys: [keyof AppProfile, string][] = [
-        ["gameRootDir", "Game Directory"],
-        ["gameModDir", "Game Data Directory"],
-        ["gameConfigFilePath", "Config Directory"],
-        ["gameSaveFolderPath", "Saves Directory"]
+    protected readonly gameFolderKeys: [keyof GameInstallation, string][] = [
+        ["rootDir", "Game Directory"],
+        ["modDir", "Game Data Directory"],
+        ["configFilePath", "Config Directory"],
+        ["saveFolderPath", "Saves Directory"]
     ];
 
     @AsyncState()
@@ -109,7 +109,7 @@ export class AppProfileActionsComponent extends BaseComponent {
     protected gameDetails?: GameDetails;
 
     @DeclareState()
-    protected gameConfigFiles?: Record<string, string[]>;
+    protected gameConfigFiles?: string[];
 
     @DeclareState()
     protected gameConfigFileMenuRef?: OverlayHelpersRef;

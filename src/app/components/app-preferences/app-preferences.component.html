@@ -22,13 +22,6 @@
         </span>
 
         <mat-form-field appearance="fill">
-            <mat-label>
-                Steam Compat Data Root
-            </mat-label>
-            <input matInput type="text" name="steamCompatDataRoot" [(ngModel)]="formModel.steamCompatDataRoot">
-        </mat-form-field>
-
-        <mat-form-field appearance="fill">
             <mat-label>App Theme</mat-label>
             <mat-select name="theme" [(ngModel)]="formModel.theme">
                 @for (theme of themes; track theme) {

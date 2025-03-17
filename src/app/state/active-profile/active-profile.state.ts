@@ -102,7 +102,7 @@ export class ActiveProfileState {
         context: ActiveProfileState.Context,
         { root, modName, verificationResult }: ActiveProfileActions.UpdateModVerification
     ): void {
-        this._updateModVerifications(context, root, { [modName]: verificationResult });
+        this._updateModVerifications(context, root, verificationResult ? { [modName]: verificationResult } : {});
     }
 
     @Action(ActiveProfileActions.UpdateModVerifications)
@@ -524,7 +524,10 @@ export class ActiveProfileState {
     }
 
     @Action(ActiveProfileActions.RemoveCustomGameAction)
-    public removeCustomGameAction(context: ActiveProfileState.Context, { gameActionIndex }: ActiveProfileActions.RemoveCustomGameAction): void {
+    public removeCustomGameAction(
+        context: ActiveProfileState.Context,
+        { gameActionIndex }: ActiveProfileActions.RemoveCustomGameAction
+    ): void {
         const state = _.cloneDeep(context.getState()!);
 
         if (state.customGameActions && gameActionIndex < state.customGameActions.length) {
@@ -536,13 +539,18 @@ export class ActiveProfileState {
         context.setState(state);
     }
 
-    @Action(ActiveProfileActions.setDeployed)
-    public setDeployed(context: ActiveProfileState.Context, state: ActiveProfileActions.DeployedAction): void {
-        context.patchState(state);
+    @Action(ActiveProfileActions.UpdateDefaultGameActions)
+    public updateDefaultGameActions(
+        context: ActiveProfileState.Context,
+        { gameActions }: ActiveProfileActions.UpdateDefaultGameActions
+    ): void {
+        context.patchState({
+            defaultGameActions: gameActions
+        });
     }
 
-    @Action(ActiveProfileActions.setGamePluginListPath)
-    public setGamePluginListPath(context: ActiveProfileState.Context, state: ActiveProfileActions.GamePluginListPathAction): void {
+    @Action(ActiveProfileActions.setDeployed)
+    public setDeployed(context: ActiveProfileState.Context, state: ActiveProfileActions.DeployedAction): void {
         context.patchState(state);
     }
 
@@ -585,7 +593,7 @@ export class ActiveProfileState {
     private _updateModVerifications(
         context: ActiveProfileState.Context,
         root: boolean,
-        modVerificationResults: Record<string, AppProfile.VerificationResult | undefined>
+        modVerificationResults: AppProfile.VerificationResultRecord
     ): void {
         const state = _.cloneDeep(context.getState()!);
         const modList = root ? state.rootMods : state.mods;
@@ -594,7 +602,9 @@ export class ActiveProfileState {
             const mod = RelativeOrderedMap.get(modList, modName);
 
             if (!!mod) {
-                if (verificationResult?.error) {
+                if ("results" in verificationResult) {
+                    // TODO - Should never happen
+                } else if (verificationResult?.error) {
                     mod.verificationError = verificationResult;
                 } else {
                     delete mod.verificationError;

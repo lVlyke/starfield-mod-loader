@@ -11,33 +11,47 @@
     },
     "elder_scrolls_oblivion": {
         "title": "Elder Scrolls: Oblivion",
-        "steamId": "22330",
         "bkgColor": "#e0dac5",
         "fgColor": "#050700",
-        "modDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Oblivion\\Data",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Oblivion\\Data",
-            "%PROGRAMFILES(X86)%\\Bethesda Softworks\\Oblivion\\Data",
-            "~/.local/share/Steam/steamapps/common/Oblivion/Data"
-        ],
-        "rootDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Oblivion",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Oblivion",
-            "%PROGRAMFILES(X86)%\\Bethesda Softworks\\Oblivion",
-            "C:\\XboxGames\\Oblivion\\Content",
-            "~/.local/share/Steam/steamapps/common/Oblivion"
-        ],
-        "pluginListPaths": [
-            "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/AppData/Local/Oblivion/Plugins.txt"
-        ],
-        "configFilePaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Oblivion",
-            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion"
-        ],
-        "saveFolderPaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves",
-            "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion/Saves"
+        "installations": [
+            {
+                "steamId": ["22330"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Oblivion",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Oblivion",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves"
+            },
+            {
+                "steamId": ["22330"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Oblivion",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Oblivion",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves"
+            },
+            {
+                "rootDir": "%PROGRAMFILES(X86)%\\Bethesda Softworks\\Oblivion",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Oblivion",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Oblivion\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Oblivion\\Plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Oblivion",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Saves"
+            },
+            {
+                "steamId": ["22330"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Oblivion",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Oblivion/Plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion/Saves"
+            }
         ],
         "gameBinary": ["Oblivion.exe", "obse_loader.exe"],
         "pluginListType": "Gamebryo",
@@ -57,12 +71,7 @@
                 "modPaths": ["OBSE"]
             }
         ],
-        "gameConfigFiles": {
-            "Oblivion.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Oblivion\\Oblivion.ini",
-                "~/.local/share/Steam/steamapps/compatdata/22330/pfx/drive_c/users/steamuser/Documents/My Games/Oblivion/Oblivion.ini"
-            ]
-        },
+        "gameConfigFiles": ["Oblivion.ini"],
         "resources": {
             "mods": {
                 "elder_scrolls_oblivion/Invalidation.bsa": "Invalidation.bsa"
@@ -74,31 +83,40 @@
     },
     "fallout_4": {
         "title": "Fallout 4",
-        "steamId": "377160",
         "bkgColor": "#007300",
         "fgColor": "#ffffff",
-        "modDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4\\Data",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4\\Data",
-            "~/.local/share/Steam/steamapps/common/Fallout 4/Data"
-        ],
-        "rootDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
-            "C:\\XboxGames\\Fallout 4\\Content",
-            "~/.local/share/Steam/steamapps/common/Fallout 4"
-        ],
-        "pluginListPaths": [
-            "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt"
-        ],
-        "configFilePaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Fallout4",
-            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4"
-        ],
-        "saveFolderPaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Saves",
-            "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Saves"
+        "installations": [
+            {
+                "steamId": ["377160"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Saves"
+            },
+            {
+                "steamId": ["377160"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Fallout 4\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Saves"
+            },
+            {
+                "steamId": ["377160"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Fallout 4",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Fallout4/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Saves"
+            }
         ],
         "gameBinary": ["Fallout4.exe", "f4se_loader.exe"],
         "pluginListType": "CreationEngine",
@@ -118,48 +136,48 @@
                 "modPaths": ["F4SE"]
             }
         ],
-        "gameConfigFiles": {
-            "Fallout4.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4.ini",
-                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4.ini"
-            ],
-            "Fallout4Custom.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Custom.ini",
-                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Custom.ini"
-            ],
-            "Fallout4Prefs.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Fallout4\\Fallout4Prefs.ini",
-                "~/.local/share/Steam/steamapps/compatdata/377160/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4/Fallout4Prefs.ini"
-            ]
-        }
+        "gameConfigFiles": [
+            "Fallout4.ini",
+            "Fallout4Custom.ini",
+            "Fallout4Prefs.ini"
+        ]
     },
     "fallout_new_vegas": {
         "title": "Fallout: New Vegas",
-        "steamId": "22380",
         "bkgColor": "#ae260e",
         "fgColor": "#ffffff",
-        "modDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas\\Data",
-            "~/.local/share/Steam/steamapps/common/Fallout New Vegas/Data"
-        ],
-        "rootDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas",
-            "C:\\XboxGames\\Fallout New Vegas\\Content",
-            "~/.local/share/Steam/steamapps/common/Fallout New Vegas"
-        ],
-        "pluginListPaths": [
-            "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/AppData/Local/FalloutNV/plugins.txt"
-        ],
-        "configFilePaths": [
-            "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
-            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV"
-        ],
-        "saveFolderPaths": [
-            "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Saves",
-            "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/Saves"
+        "installations": [
+            {
+                "steamId": ["22380"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout New Vegas",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Saves"
+            },
+            {
+                "steamId": ["22380"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout New Vegas",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Fallout New Vegas\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\FalloutNV\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Saves"
+            },
+            {
+                "steamId": ["22380"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Fallout New Vegas",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/FalloutNV/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/Saves"
+            }
         ],
         "gameBinary": ["FalloutNV.exe", "nvse_loader.exe"],
         "pluginListType": "Gamebryo",
@@ -179,20 +197,11 @@
                 "modPaths": ["NVSE"]
             }
         ],
-        "gameConfigFiles": {
-            "Fallout.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\Fallout.ini",
-                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/Fallout.ini"
-            ],
-            "FalloutCustom.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\FalloutCustom.ini",
-                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/FalloutCustom.ini"
-            ],
-            "FalloutPrefs.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\FalloutNV\\FalloutPrefs.ini",
-                "~/.local/share/Steam/steamapps/compatdata/22380/pfx/drive_c/users/steamuser/Documents/My Games/FalloutNV/FalloutPrefs.ini"
-            ]
-        },
+        "gameConfigFiles": [
+            "Fallout.ini",
+            "FalloutCustom.ini",
+            "FalloutPrefs.ini"
+        ],
         "resources": {
             "mods": {
                 "fallout_new_vegas/Invalidation.bsa": "Invalidation.bsa"
@@ -204,33 +213,40 @@
     },
     "starfield": {
         "title": "Starfield",
-        "steamId": "1716740",
         "bkgColor": "#be6326",
         "fgColor": "#ffffff",
-        "modDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield\\Data",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield\\Data",
-            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Data",
-            "~/.local/share/Steam/steamapps/common/Starfield/Data",
-            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Data"
-        ],
-        "rootDirs": [
-            "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
-            "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
-            "C:\\XboxGames\\Starfield\\Content",
-            "~/.local/share/Steam/steamapps/common/Starfield"
-        ],
-        "pluginListPaths": [
-            "%LOCALAPPDATA%\\Starfield\\plugins.txt",
-            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt"
-        ],
-        "configFilePaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Starfield",
-            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield"
-        ],
-        "saveFolderPaths": [
-            "%USERPROFILE%\\Documents\\My Games\\Starfield\\Saves",
-            "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Saves"
+        "installations": [
+            {
+                "steamId": ["1716740"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Starfield",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Starfield\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Starfield",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Starfield\\Saves"
+            },
+            {
+                "steamId": ["1716740"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Starfield",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Starfield\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Starfield",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Starfield\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Starfield\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Starfield\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Starfield",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Starfield\\Saves"
+            },
+            {
+                "steamId": ["1716740"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Starfield",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Starfield/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Starfield",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Saves"
+            }
         ],
         "gameBinary": ["Starfield.exe", "sfse_loader.exe"],
         "pluginListType": "CreationEngine",
@@ -250,19 +266,10 @@
                 "modPaths": ["SFSE"]
             }
         ],
-        "gameConfigFiles": {
-            "Starfield.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Starfield\\Starfield.ini",
-                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/Starfield.ini"
-            ],
-            "StarfieldCustom.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldCustom.ini",
-                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldCustom.ini"
-            ],
-            "StarfieldPrefs.ini": [
-                "%USERPROFILE%\\Documents\\My Games\\Starfield\\StarfieldPrefs.ini",
-                "~/.local/share/Steam/steamapps/compatdata/1716740/pfx/drive_c/users/steamuser/Documents/My Games/Starfield/StarfieldPrefs.ini"
-            ]
-        }
+        "gameConfigFiles": [
+            "Starfield.ini",
+            "StarfieldCustom.ini",
+            "StarfieldPrefs.ini"
+        ]
     }
 }

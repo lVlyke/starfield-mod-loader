@@ -18,4 +18,10 @@ export namespace LangUtils {
             return undefined;
         });
     }
+
+    export function normalizeFilePath(path: string, sep: string): string {
+        return path
+            .toLowerCase()
+            .replace(/[/\\]/g, sep);
+    }
 }

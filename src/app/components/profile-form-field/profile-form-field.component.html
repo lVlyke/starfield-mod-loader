@@ -1,0 +1,50 @@
+<mat-form-field appearance="fill">
+    <mat-label>{{ field.title }}</mat-label>
+
+    @if (field.linkable) {
+        <button mat-icon-button 
+                matPrefix
+                type="button"
+                [attr.editable]="field.linkFn"
+                [disabledInteractive]="!field.linkFn"
+                [disabled]="disabled"
+                [color]="field.linked ? 'accent' : null"
+                (click)="field.linkFn ? field.linkFn(field) : null; $event.stopPropagation()">
+            <mat-icon>{{ field.linked ? "link" : "link_off" }}</mat-icon>
+        </button>
+    }
+
+    <input #fieldModel="ngModel"
+        matInput
+        type="text"
+        [name]="field.formId.toString()"
+        [readonly]="!!field.readonly"
+        [disabled]="disabled || !!field.readonly"
+        [required]="field.required"
+        [(ngModel)]="value"
+        (ngModelChange)="valueChange$.emit(value)"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="!!field.autofocus">
+
+    <button mat-icon-button 
+            matSuffix
+            type="button"
+            color="accent"
+            matTooltip="Choose {{ field.fileTypes ? 'File' : 'Directory' }}"
+            [disabled]="disabled || field.readonly"
+            [attr.hidden]="!field.path || null"
+            (click)="choosePath(fieldModel, field.fileTypes); $event.stopPropagation()">
+        <mat-icon>folder</mat-icon>
+    </button>
+
+    @if (field.hint) {
+        <mat-icon matSuffix [matTooltip]="field.hint">
+            help
+        </mat-icon>
+    }
+
+    @if (fieldModel.errors?.["invalidProfileRoot"]) {
+        <mat-error>
+            Invalid directory
+        </mat-error>
+    }
+</mat-form-field>

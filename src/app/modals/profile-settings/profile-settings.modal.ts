@@ -12,6 +12,7 @@ import { filterDefined } from "../../core/operators";
 import { AppProfile } from "../../models/app-profile";
 import { AppProfileSettingsComponent } from "../../components/profile-settings";
 import { OverlayHelpersRef, OverlayRefSymbol } from "../../services/overlay-helpers";
+import { GameInstallation } from "../../models/game-installation";
 
 @Component({
     templateUrl: "./profile-settings.modal.html",
@@ -43,7 +44,7 @@ export class AppProfileSettingsModal extends BaseComponent {
     public createMode = false;
 
     @DeclareState()
-    public remedyMode: (keyof AppProfile) | boolean = false;
+    public remedyMode: keyof AppProfile | keyof GameInstallation | false = false;
 
     @ViewChild(AppProfileSettingsComponent, { static: true })
     public readonly profileSettingsComponent!: AppProfileSettingsComponent;

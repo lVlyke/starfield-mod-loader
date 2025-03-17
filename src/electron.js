@@ -15,7 +15,6 @@
  * @typedef {import("./app/models/app-profile").AppProfileModOrderBackup} AppProfileModOrderBackup;
  * @typedef {import("./app/models/app-profile").AppProfileDescription} AppProfileDescription;
  * @typedef {import("./app/models/app-profile").AppProfileExternalFiles} AppProfileExternalFiles;
- * @typedef {import("./app/models/app-profile").AppProfileDefaultablePaths} AppProfileDefaultablePaths;
  * @typedef {import("./app/models/app-profile").AppProfileSave} AppProfileSave;
  * @typedef {import("./app/models/mod-import-status").ModImportStatus} ModImportStatus;
  * @typedef {import("./app/models/mod-import-status").ModImportRequest} ModImportRequest;
@@ -23,6 +22,7 @@
  * @typedef {import("./app/models/app-settings-user-cfg").AppSettingsUserCfg} AppSettingsUserCfg;
  * @typedef {import("./app/models/game-database").GameDatabase} GameDatabase;
  * @typedef {import("./app/models/game-id").GameId} GameId;
+ * @typedef {import("./app/models/game-installation").GameInstallation} GameInstallation;
  * @typedef {import("./app/models/game-details").GameDetails} GameDetails;
  * @typedef {import("./app/models/game-plugin-list-type").GamePluginListType} GamePluginListType;
  * @typedef {import("./app/models/mod-profile-ref").ModProfileRef} ModProfileRef;
@@ -30,6 +30,7 @@
  * @typedef {import("./app/models/fomod").Fomod.ModuleInfo} FomodModuleInfo;
  * @typedef {import("./app/models/fomod").Fomod.ModuleConfig} FomodModuleConfig;
  * @typedef {import("./app/models/game-plugin-profile-ref").GamePluginProfileRef} GamePluginProfileRef;
+ * @typedef {import("./app/models/game-action").GameAction} GameAction;
  */
 
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell, nativeImage } = require("electron");
@@ -56,7 +57,6 @@ const BUILD_DATE_FILE = `${__dirname}/lastbuild.txt`;
 
 class ElectronLoader {
 
-    static /** @type {string} */ STEAM_DEFAULT_COMPAT_DATA_ROOT = "~/.local/share/Steam/steamapps/compatdata";
     static /** @type {string} */ STEAM_COMPAT_STEAMUSER_DIR = "pfx/drive_c/users/steamuser";
     static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
     static /** @type {string} */ APP_PROFILES_DIR = "profiles";
@@ -434,45 +434,62 @@ class ElectronLoader {
             const VERIFY_FAIL = { error: true, found: false };
 
             const profileExistsResult = this.verifyProfilePathExists(this.getProfileDir(profile));
-            const baseProfileResult = profile.baseProfile ? this.verifyProfilePathExists(this.getProfileDir(profile.baseProfile)) : VERIFY_SUCCESS;
             const modResult = this.verifyProfileMods(false, profile);
             const rootModResult = this.verifyProfileMods(true, profile);
-            const gameModDirResult = "gameModDir" in profile ? this.verifyProfilePathExists(profile.gameModDir) : VERIFY_SUCCESS;
-            const gameRootDirResult = "gameRootDir" in profile ? this.verifyProfilePathExists(profile.gameRootDir) : VERIFY_SUCCESS;
-            const gameBinaryPathResult = "gameBinaryPath" in profile ? this.verifyProfilePathExists(profile.gameBinaryPath) : VERIFY_SUCCESS;
-            const gamePluginListPathResult = profile.gamePluginListPath ? this.verifyProfilePathExists(path.dirname(profile.gamePluginListPath)) : VERIFY_SUCCESS;
-            const gameConfigFilePathResult = profile.gameConfigFilePath ? this.verifyProfilePathExists(profile.gameConfigFilePath) : VERIFY_SUCCESS;
-            const gameSaveFolderPathResult = profile.gameSaveFolderPath ? this.verifyProfilePathExists(profile.gameSaveFolderPath) : VERIFY_SUCCESS;
-            const rootPathOverrideResult = profile.rootPathOverride ? this.verifyProfilePathExists(profile.rootPathOverride) : VERIFY_SUCCESS;
-            const modsPathOverrideResult = profile.modsPathOverride ? this.verifyProfilePathExists(profile.modsPathOverride) : VERIFY_SUCCESS;
-            const configPathOverrideResult = profile.configPathOverride ? this.verifyProfilePathExists(profile.configPathOverride) : VERIFY_SUCCESS;
-            const savesPathOverrideResult = profile.savesPathOverride ? this.verifyProfilePathExists(profile.savesPathOverride) : VERIFY_SUCCESS;
-            const backupsPathOverrideResult = profile.backupsPathOverride ? this.verifyProfilePathExists(profile.backupsPathOverride) : VERIFY_SUCCESS;
+            const baseProfileResult = profile.baseProfile
+                ? this.verifyProfilePathExists(this.getProfileDir(profile.baseProfile))
+                : VERIFY_SUCCESS;
+            const gameModDirResult = "gameInstallation" in profile
+                ? this.verifyProfilePathExists(profile.gameInstallation.modDir)
+                : VERIFY_SUCCESS;
+            const gameRootDirResult = "gameInstallation" in profile
+                ? this.verifyProfilePathExists(profile.gameInstallation.rootDir)
+                : VERIFY_SUCCESS;
+            const gamePluginListPathResult = "gameInstallation" in profile && profile.gameInstallation.pluginListPath
+                ? this.verifyProfilePathExists(path.dirname(profile.gameInstallation.pluginListPath))
+                : VERIFY_SUCCESS;
+            const gameConfigFilePathResult = "gameInstallation" in profile
+                ? this.verifyProfilePathExists(profile.gameInstallation.configFilePath)
+                : VERIFY_SUCCESS;
+            const gameSaveFolderPathResult = "gameInstallation" in profile
+                ? this.verifyProfilePathExists(profile.gameInstallation.saveFolderPath)
+                : VERIFY_SUCCESS;
+            const rootPathOverrideResult = profile.rootPathOverride
+                ? this.verifyProfilePathExists(profile.rootPathOverride)
+                : VERIFY_SUCCESS;
+            const modsPathOverrideResult = profile.modsPathOverride
+                ? this.verifyProfilePathExists(profile.modsPathOverride)
+                : VERIFY_SUCCESS;
+            const configPathOverrideResult = profile.configPathOverride
+                ? this.verifyProfilePathExists(profile.configPathOverride)
+                : VERIFY_SUCCESS;
+            const savesPathOverrideResult = profile.savesPathOverride
+                ? this.verifyProfilePathExists(profile.savesPathOverride)
+                : VERIFY_SUCCESS;
+            const backupsPathOverrideResult = profile.backupsPathOverride
+                ? this.verifyProfilePathExists(profile.backupsPathOverride)
+                : VERIFY_SUCCESS;
             const modLinkModeResult = ("gameModDir" in profile && profile.modLinkMode) ? (this.checkLinkSupported(
                 profile,
                 "modsPathOverride",
-                ["gameModDir", "gameRootDir"],
+                ["modDir", "rootDir"],
                 false,
                 undefined,
                 true
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-            const configLinkModeResult = ("gameConfigFilePath" in profile && profile.configLinkMode) ? (this.#checkLinkSupported(
+            const configLinkModeResult = ("gameInstallation" in profile && profile.configLinkMode) ? (this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "configPathOverride") ?? "",
-                [this.getProfileDirByKey(profile, "gameConfigFilePath") ?? ""],
+                [this.getProfileDirByKey(profile, "configFilePath") ?? ""],
                 true,
                 "file"
             ) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-            const manageSaveFilesResult = ("gameSaveFolderPath" in profile && profile.manageSaveFiles) ? ((profile.deployed || this.#checkLinkSupported(
+            const manageSaveFilesResult = ("gameInstallation" in profile && profile.manageSaveFiles) ? ((profile.deployed || this.#checkLinkSupported(
                 this.getProfileDirByKey(profile, "savesPathOverride") ?? "",
                 // Use `gameSaveFolderPath` parent dir in case a deploy is active
-                [path.join(this.getProfileDirByKey(profile, "gameSaveFolderPath") ?? "", "..")], 
+                [path.join(this.getProfileDirByKey(profile, "saveFolderPath") ?? "", "..")], 
                 true,
                 "junction"
             )) ? VERIFY_SUCCESS : VERIFY_FAIL) : VERIFY_SUCCESS;
-
-            if (!profile.deployed) {
-                gameBinaryPathResult.error = false;
-            }
             
             if (!profile.deployed || !profile.plugins?.length) {
                 gamePluginListPathResult.error = false;
@@ -481,13 +498,16 @@ class ElectronLoader {
             const preparedResult = {
                 name: VERIFY_SUCCESS,
                 gameId: VERIFY_SUCCESS, // TODO
-                gameRootDir: gameRootDirResult,
-                gameModDir: gameModDirResult,
-                gameBinaryPath: gameBinaryPathResult,
-                gamePluginListPath: gamePluginListPathResult,
-                gameConfigFilePath: gameConfigFilePathResult,
-                gameSaveFolderPath: gameSaveFolderPathResult,
-                steamGameId: VERIFY_SUCCESS, // TODO
+                gameInstallation: {
+                    results: {
+                        rootDir: gameRootDirResult,
+                        modDir: gameModDirResult,
+                        pluginListPath: gamePluginListPathResult,
+                        configFilePath: gameConfigFilePathResult,
+                        saveFolderPath: gameSaveFolderPathResult
+                    }
+                },
+                steamCustomGameId: VERIFY_SUCCESS, // TODO
                 rootPathOverride: rootPathOverrideResult,
                 modsPathOverride: modsPathOverrideResult,
                 configPathOverride: configPathOverrideResult,
@@ -495,7 +515,7 @@ class ElectronLoader {
                 backupsPathOverride: backupsPathOverrideResult,
                 mods: modResult,
                 rootMods: rootModResult,
-                plugins: { ...VERIFY_SUCCESS, results: {} }, // TODO
+                plugins: { results: {} }, // TODO
                 externalFilesCache: VERIFY_SUCCESS,
                 manageExternalPlugins: VERIFY_SUCCESS,
                 manageConfigFiles: VERIFY_SUCCESS,
@@ -506,53 +526,31 @@ class ElectronLoader {
                 deployed: VERIFY_SUCCESS,
                 locked: VERIFY_SUCCESS,
                 baseProfile: baseProfileResult,
+                defaultGameActions: VERIFY_SUCCESS, // TODO
                 customGameActions: VERIFY_SUCCESS, // TODO
                 activeGameAction: VERIFY_SUCCESS, // TODO
                 rootModSections: VERIFY_SUCCESS, // TODO
                 modSections: VERIFY_SUCCESS // TODO
             };
 
+            function hasVerificationError(result) {
+                return "results" in result
+                    ? Object.values(result.results).some(result => hasVerificationError(result))
+                    : result.error;
+            }
+
             return {
                 properties: preparedResult,
-                error: Object.values(preparedResult).some(curResult => curResult.error),
+                error: hasVerificationError({ results: preparedResult }),
                 found: profileExistsResult.found
             };
         });
 
-        ipcMain.handle("app:findBestProfileDefaults", /** @returns { Promise<Partial<AppProfileDefaultablePaths>> } */ async (
+        ipcMain.handle("app:findGameInstallations", /** @returns { Promise<GameInstallation[]> } */ async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"app:findBestProfileDefaults">} */ { gameId }
+            /** @type {import("./app/models/app-message").AppMessageData<"app:findGameInstallations">} */ { gameId }
         ) => {
-            const gameDb = this.loadGameDatabase();
-            const gameDetails = gameDb[gameId];
-            const result = {};
-
-            if (gameDetails?.modDirs) {
-                result.gameModDir = this.#firstValidPath(gameDetails.modDirs);
-            }
-
-            if (gameDetails?.rootDirs) {
-                result.gameRootDir = this.#firstValidPath(gameDetails.rootDirs);
-            }
-
-            if (!!gameDetails?.gameBinary && result.gameRootDir !== undefined) {
-                const binaryPath = result.gameRootDir;
-                result.gameBinaryPath = this.#firstValidPath(gameDetails.gameBinary.reverse().map(binaryName => path.join(binaryPath, binaryName)));
-            }
-
-            if (gameDetails?.pluginListPaths) {
-                result.gamePluginListPath = this.#firstValidPath(gameDetails.pluginListPaths, listPath => path.dirname(listPath));
-            }
-
-            if (gameDetails?.configFilePaths) {
-                result.gameConfigFilePath = this.#firstValidPath(gameDetails.configFilePaths);
-            }
-
-            if (gameDetails?.saveFolderPaths) {
-                result.gameSaveFolderPath = this.#firstValidPath(gameDetails.saveFolderPaths, listPath => path.dirname(listPath));
-            }
-
-            return result;
+            return this.#findAvailableGameInstallations(gameId);
         });
 
         ipcMain.handle("app:checkLinkSupported", (
@@ -676,7 +674,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:deleteMod">} */ { profile, modName }
         ) => {
-            const modDirPath = this.getProfileModDir(profile, modName);
+            const modDirPath = this.getProfileOwnModDir(profile, modName);
             log.info("Deleting mod: ", modDirPath);
 
             await fs.remove(modDirPath);
@@ -686,17 +684,22 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:renameMod">} */ { profile, modCurName, modNewName }
         ) => {
-            const modCurDir = this.getProfileModDir(profile, modCurName);
-            const modNewDir = this.getProfileModDir(profile, modNewName);
+            const modCurDir = this.getProfileOwnModDir(profile, modCurName);
+            const modNewDir = this.getProfileOwnModDir(profile, modNewName);
 
             await fs.move(modCurDir, modNewDir);
         });
 
         ipcMain.handle("profile:readModFilePaths", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:readModFilePaths">} */ { profile, modName, normalizePaths }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:readModFilePaths">} */ {
+                profile,
+                modName,
+                modRef,
+                normalizePaths
+            }
         ) => {
-            return this.readModFilePaths(profile, modName, normalizePaths);
+            return this.readModFilePaths(profile, modName, modRef, normalizePaths);
         });
 
         ipcMain.handle("profile:findPluginFiles", async (
@@ -890,12 +893,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:showModInFileExplorer">} */ { profile, modName, modRef }
         ) => {
-            let modDirPath;
-            if (modRef.baseProfile && profile.baseProfile) {
-                modDirPath = this.getProfileModDir(profile.baseProfile, modName);
-            } else {
-                modDirPath = this.getProfileModDir(profile, modName);
-            }
+            const modDirPath = this.getProfileModDir(profile, modName, modRef);
 
             shell.openPath(path.resolve(modDirPath));
         });
@@ -944,36 +942,34 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:runGameAction">} */ { profile, gameAction }
         ) => {
-            profile.gameRootDir = this.#expandPath(profile.gameRootDir);
-
-            // If game binary path is relative, use the `gameRootDir` as the binary dir
-            if (!path.isAbsolute(profile.gameBinaryPath)) {
-                profile.gameBinaryPath = path.join(profile.gameRootDir, this.#expandPath(profile.gameBinaryPath));
-            }
-
+            const gameDetails = this.#getGameDetails(profile.gameId);
             // Substitute variables for profile
-            const gameActionCmd = _.template(gameAction.actionScript)(profile);
+            const gameActionCmd = _.template(gameAction.actionScript)({ ...profile, gameDetails });
             
             // Run the action
             try {
-                exec(gameActionCmd, { cwd: profile.gameRootDir });
+                exec(gameActionCmd, { cwd: profile.gameInstallation.rootDir });
             } catch(error) {
                 throw new Error(error.toString());
             }
         });
 
-        ipcMain.handle("profile:openGameConfigFile", async (
+        ipcMain.handle("profile:resolveDefaultGameActions", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:openGameConfigFile">} */ { configPaths }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:resolveDefaultGameActions">} */ { profile }
         ) => {
-            await this.openGameConfigFile(configPaths);
+            return this.resolveDefaultGameActions(profile);
         });
 
         ipcMain.handle("profile:openProfileConfigFile", async (
             _event,
-            /** @type {import("./app/models/app-message").AppMessageData<"profile:openProfileConfigFile">} */ { profile, configFileName }
+            /** @type {import("./app/models/app-message").AppMessageData<"profile:openProfileConfigFile">} */ {
+                profile,
+                configFileName,
+                includeGameFiles
+            }
         ) => {
-            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName, false);
+            const profileConfigFilePath = this.resolveGameConfigFilePath(profile, configFileName, !!includeGameFiles);
 
             if (!!profileConfigFilePath && fs.existsSync(profileConfigFilePath)) {
                 return shell.openPath(path.resolve(profileConfigFilePath));
@@ -1018,19 +1014,18 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:steamCompatSymlinksSupported">} */ { profile }
         ) => {
-            const gameDetails = this.#getGameDetails(profile.gameId);
-            if (!gameDetails?.steamId || !profile.steamGameId) {
+            if (!profile.gameInstallation?.steamId || !profile.steamCustomGameId) {
                 return false;
             }
 
-            const gameCompatSteamuserDir = this.#getGameSteamCompatSteamuserDir(gameDetails);
-            const userCompatSteamuserDir = this.#getUserSteamCompatSteamuserDir(profile);
+            const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDirForGameInstallation(profile.gameInstallation);
+            const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation.rootDir, profile.steamCustomGameId);
 
-            if (!gameCompatSteamuserDir || !userCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(userCompatSteamuserDir)) {
+            if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
                 return false;
             }
 
-            return this.#checkLinkSupported(userCompatSteamuserDir, [gameCompatSteamuserDir], true, "dir");
+            return this.#checkLinkSupported(gameCompatSteamuserDir, [customCompatSteamuserDir], true, "dir");
         });
 
         ipcMain.handle("profile:readConfigFile", async (
@@ -1065,7 +1060,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:resolveGameBinaryVersion">} */ { profile }
         ) => {
-            if (!profile.gameRootDir) {
+            if (!profile.gameInstallation.rootDir) {
                 return undefined;
             }
 
@@ -1074,12 +1069,12 @@ class ElectronLoader {
                 return undefined;
             }
 
-            const gameBinaryName = gameDetails.gameBinary.find(binaryName => fs.existsSync(path.join(profile.gameRootDir, binaryName)));
+            const gameBinaryName = gameDetails.gameBinary.find(binaryName => fs.existsSync(path.join(profile.gameInstallation.rootDir, binaryName)));
             if (!gameBinaryName) {
                 return undefined;
             }
 
-            const gameBinaryPath = path.join(profile.gameRootDir, gameBinaryName);
+            const gameBinaryPath = path.join(profile.gameInstallation.rootDir, gameBinaryName);
             const gameBinaryVersionInfo = winVersionInfo(gameBinaryPath);
             
             return gameBinaryVersionInfo?.FileVersion;
@@ -1393,21 +1388,21 @@ class ElectronLoader {
 
     /** @returns {string} */
     getProfileConfigDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
-        return profile.configPathOverride !== undefined
+        return !_.isNil(profile.configPathOverride)
             ? this.#resolveFullProfileDir(profile, profile.configPathOverride)
             : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_CONFIG_DIR);
     }
 
     /** @returns {string} */
     getProfileSaveDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
-        return profile.savesPathOverride !== undefined
+        return !_.isNil(profile.savesPathOverride)
             ? this.#resolveFullProfileDir(profile, profile.savesPathOverride)
             : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_SAVE_DIR);
     }
 
     /** @returns {string} */
     getProfileModsDir(/** @type {AppProfile | AppBaseProfile} */ profile) {
-        return profile.modsPathOverride !== undefined
+        return !_.isNil(profile.modsPathOverride)
             ? this.#resolveFullProfileDir(profile, profile.modsPathOverride)
             : path.join(this.getProfileDir(profile), ElectronLoader.PROFILE_MODS_DIR);
     }
@@ -1418,8 +1413,22 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
-    getProfileModDir(/** @type {AppProfile | AppBaseProfile} */ profile, /** @type {string} */ modName) {
+    getProfileOwnModDir(
+        /** @type {AppProfile | AppBaseProfile} */ profile,
+        /** @type {string} */ modName
+    ) {
         return path.join(this.getProfileModsDir(profile), modName);
+    }
+
+    getProfileModDir(
+        /** @type {AppProfile | AppBaseProfile} */ profile,
+        /** @type {string} */ modName,
+        /** @type {ModProfileRef} */ modRef
+    ) {
+        const modProfile = (modRef.baseProfile && "baseProfile" in profile && profile.baseProfile)
+            ? profile.baseProfile
+            : profile;
+        return this.getProfileOwnModDir(modProfile, modName);
     }
 
     /** @returns {string} */
@@ -1454,13 +1463,15 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    getProfileDirByKey(/** @type { AppProfile | AppBaseProfile } */ profile, /** @type { keyof AppProfile } */ pathKey) {
+    getProfileDirByKey(
+        /** @type { AppProfile | AppBaseProfile } */ profile,
+        /** @type { keyof AppProfile | keyof GameInstallation } */ pathKey
+    ) {
         switch (pathKey) {
-            case "gameModDir": return pathKey in profile ? profile.gameModDir : undefined;
-            case "gameRootDir": return pathKey in profile ? profile.gameRootDir : undefined;
-            case "gameBinaryPath": return pathKey in profile ? profile.gameBinaryPath : undefined;
-            case "gameConfigFilePath": return pathKey in profile ? profile.gameConfigFilePath : undefined;
-            case "gameSaveFolderPath": return pathKey in profile ? profile.gameSaveFolderPath : undefined;
+            case "modDir": return "gameInstallation" in profile ? profile.gameInstallation.modDir : undefined;
+            case "rootDir": return "gameInstallation" in profile ? profile.gameInstallation.rootDir: undefined;
+            case "configFilePath": return "gameInstallation" in profile ? profile.gameInstallation.configFilePath : undefined;
+            case "saveFolderPath": return "gameInstallation" in profile ? profile.gameInstallation.saveFolderPath : undefined;
             case "rootPathOverride": return this.getProfileDir(profile);
             case "modsPathOverride": return this.getProfileModsDir(profile);
             case "savesPathOverride": return this.getProfileSaveDir(profile);
@@ -1493,6 +1504,9 @@ class ElectronLoader {
         // Ensure mod lists exist
         profile.mods ??= [];
         profile.rootMods ??= [];
+
+        // Ensure default actions exist
+        profile.defaultGameActions ??= [];
 
         // Resolve profile's `rootPathOverride` if applicable
         const realProfilePath = fs.realpathSync(profilePath);
@@ -1533,13 +1547,53 @@ class ElectronLoader {
             }
         }
 
+        // BC: <0.11.0
+        if ("gameRootDir" in profile)
+        {
+            profile.gameInstallation = {};
+
+            if ("gameRootDir" in profile) {
+                profile.gameInstallation.rootDir = profile.gameRootDir;
+                delete profile.gameRootDir;
+            }
+
+            if ("gameModDir" in profile) {
+                profile.gameInstallation.modDir = profile.gameModDir;
+                delete profile.gameModDir;
+            }
+
+            if ("gamePluginListPath" in profile) {
+                profile.gameInstallation.pluginListPath = profile.gamePluginListPath;
+                delete profile.gamePluginListPath;
+            }
+
+            if ("gameConfigFilePath" in profile) {
+                profile.gameInstallation.configFilePath = profile.gameConfigFilePath;
+                delete profile.gameConfigFilePath;
+            }
+
+            if ("gameSaveFolderPath" in profile) {
+                profile.gameInstallation.saveFolderPath = profile.gameSaveFolderPath;
+                delete profile.gameSaveFolderPath;
+            }
+
+            if ("steamGameId" in profile) {
+                profile.steamCustomGameId = profile.steamGameId;
+                delete profile.steamGameId;
+            }
+
+            if ("gameBinaryPath" in profile) {
+                delete profile.gameBinaryPath;
+            }
+        }
+
         if (profile.baseProfile) {
             // TODO - Allow loading base profile from custom path?
             profile.baseProfile = this.loadProfileFromPath(profile.baseProfile, this.getDefaultProfileDir(profile.baseProfile));
         }
 
         // Check if profile is deployed
-        if ("gameModDir" in profile) {
+        if ("gameInstallation" in profile) {
             // Update deployment status
             profile.deployed = this.isProfileDeployed(profile);
         }
@@ -1807,7 +1861,7 @@ class ElectronLoader {
         }
 
         const gameDetails = this.#getGameDetails(profile.gameId);
-        const gameConfigFiles = Object.keys(gameDetails?.gameConfigFiles ?? {});
+        const gameConfigFiles = gameDetails?.gameConfigFiles ?? [];
         const configDir = this.getProfileConfigDir(profile);
         fs.mkdirpSync(configDir);
 
@@ -2374,7 +2428,7 @@ class ElectronLoader {
                 return enabledModFiles;
             }, new Map());
 
-            const modProfilePath = this.getProfileModDir(profile, modName);
+            const modProfilePath = this.getProfileOwnModDir(profile, modName);
 
             if (mergeStrategy === "REPLACE") {
                 // Clear the mod dir for the profile
@@ -2450,8 +2504,6 @@ class ElectronLoader {
         const modList = root ? profile.rootMods : profile.mods;
         const baseProfileModList = root ? profile.baseProfile?.rootMods ?? [] : profile.baseProfile?.mods ?? [];
 
-        let hasError = false;
-
         function recordResult(results, modName, result) {
             const existingResult = results[modName] ?? {
                 error: false,
@@ -2488,8 +2540,6 @@ class ElectronLoader {
                 found: true,
                 reason: `Mod "${modName}" already exists in base profile "${profile.baseProfile?.name}"`
             });
-
-            hasError ||= !modExists || modConflictsWithBase;
             return result;
         }, {});
 
@@ -2502,8 +2552,6 @@ class ElectronLoader {
             ].some(modList => modList.find(([profileModName]) => modName === profileModName));
             const modHasError = !modExistsInProfile;
 
-            hasError ||= modHasError;
-
             recordResult(result, modName, {
                 error: modHasError,
                 found: true,
@@ -2513,11 +2561,7 @@ class ElectronLoader {
             return result;
         }, profileCheckResults);
 
-        return {
-            error: hasError,
-            found: true,
-            results: profileCheckResults
-        };
+        return { results: profileCheckResults };
     }
 
     /** @returns {AppProfileVerificationResult} */
@@ -2534,7 +2578,7 @@ class ElectronLoader {
      * @returns {boolean}
      * */
     isSimilarProfileDeployed(/** @type {AppProfile} */ profile) {
-        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
+        const metaFilePath = this.#expandPath(path.join(profile.gameInstallation.modDir, ElectronLoader.PROFILE_METADATA_FILE));
         return fs.existsSync(metaFilePath);
     }
 
@@ -2548,7 +2592,7 @@ class ElectronLoader {
 
     /** @returns {ModDeploymentMetadata | undefined} */
     readProfileDeploymentMetadata(/** @type {AppProfile} */ profile) {
-        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
+        const metaFilePath = this.#expandPath(path.join(profile.gameInstallation.modDir, ElectronLoader.PROFILE_METADATA_FILE));
         const metaFileExists = fs.existsSync(metaFilePath);
 
         if (!metaFileExists) {
@@ -2560,18 +2604,18 @@ class ElectronLoader {
 
     /** @returns {void} */
     writeProfileDeploymentMetadata(/** @type {AppProfile} */ profile, /** @type {ModDeploymentMetadata} */ deploymentMetadata) {
-        const metaFilePath = this.#expandPath(path.join(profile.gameModDir, ElectronLoader.PROFILE_METADATA_FILE));
+        const metaFilePath = this.#expandPath(path.join(profile.gameInstallation.modDir, ElectronLoader.PROFILE_METADATA_FILE));
 
         return fs.writeFileSync(metaFilePath, JSON.stringify(deploymentMetadata));
     }
 
     /** @returns {Promise<AppProfileExternalFiles>} */
     async findProfileExternalFiles(/** @type {AppProfile} */ profile) {
-        if (!!profile.gameModDir && !!profile.gameRootDir) {
+        if (!!profile.gameInstallation) {
             // Scan game dir for external files
             return {
-                modDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameModDir, true),
-                gameDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameRootDir, false),
+                modDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameInstallation.modDir, true),
+                gameDirFiles: await this.findProfileExternalFilesInDir(profile, profile.gameInstallation.rootDir, false),
                 pluginFiles: await this.findProfileExternalPluginFiles(profile)
             };
         } else {
@@ -2631,7 +2675,7 @@ class ElectronLoader {
     /** @returns {Promise<Array<string>>} */
     async findProfileExternalPluginFiles(/** @type {AppProfile} */ profile) {
         const gameDetails = this.#getGameDetails(profile.gameId);
-        const gameModDir = this.#expandPath(profile.gameModDir);
+        const gameModDir = this.#expandPath(profile.gameInstallation.modDir);
         let externalFiles = await this.findProfileExternalFilesInDir(profile, gameModDir, false);
 
         externalFiles = externalFiles.filter((modFile) => {
@@ -2651,9 +2695,10 @@ class ElectronLoader {
     readModFilePaths(
         /** @type {AppProfile} */ profile,
         /** @type {string} */ modName,
+        /** @type {ModProfileRef} */ modRef,
         /** @type {boolean | undefined} */ normalizePaths
     ) {
-        const modDirPath = this.getProfileModDir(profile, modName);
+        const modDirPath = this.getProfileModDir(profile, modName, modRef);
         let files = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: true });
 
         if (normalizePaths) {
@@ -2661,6 +2706,38 @@ class ElectronLoader {
         }
 
         return files;
+    }
+
+    /** @returns {GameAction[]} */
+    resolveDefaultGameActions(/** @type {AppProfile} */ profile) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+
+        // Find available game binaries and add them as actions
+        return gameDetails?.gameBinary.reverse().reduce((/** @type {GameAction[]} */ gameActions, gameBinary) => {
+            let binaryExists = !!profile.externalFilesCache?.gameDirFiles?.some((externalFile) => {
+                return externalFile.endsWith(gameBinary);
+            });
+
+            binaryExists ||= profile.rootMods.some(([modName, modRef]) => {
+                if (!modRef.enabled) {
+                    return false;
+                }
+
+                const modFiles = this.readModFilePaths(profile, modName, modRef, true);
+                return modFiles.some((modFile) => {
+                    return modFile.endsWith(gameBinary);
+                })
+            });
+    
+            if (binaryExists) {
+                gameActions.push({
+                    name: `Start ${path.parse(gameBinary).name}`,
+                    actionScript: gameBinary
+                });
+            }
+
+            return gameActions;
+        }, []) ?? [];
     }
 
     /** @returns {string | undefined} */
@@ -2693,19 +2770,8 @@ class ElectronLoader {
             }
         }
 
-        if (includeGameFiles) {
-            if ("gameConfigFilePath" in profile && !!profile.gameConfigFilePath) {
-                return path.join(profile.gameConfigFilePath, configFileName);
-            }
-
-            const gameDetails = this.#getGameDetails(profile.gameId);
-            const configFilePaths = gameDetails?.gameConfigFiles?.[configFileName] ?? [];
-            for (let configFilePath of configFilePaths) {
-                configFilePath = this.#expandPath(configFilePath);
-                if (fs.existsSync(configFilePath)) {
-                    return configFilePath;
-                }
-            }
+        if (includeGameFiles && "gameInstallation" in profile) {
+            return path.join(profile.gameInstallation.configFilePath, configFileName);
         }
 
         return undefined;
@@ -2785,7 +2851,7 @@ class ElectronLoader {
                     // TODO - Apply normalization rules to `resourceDest`
                 }
 
-                const destFilePath = this.#expandPath(path.join(profile.gameModDir, resourceDest));
+                const destFilePath = this.#expandPath(path.join(profile.gameInstallation.modDir, resourceDest));
 
                 if (fs.existsSync(destFilePath)) {
                     return;
@@ -2817,7 +2883,7 @@ class ElectronLoader {
         return profile.mods
             .filter(mod => mod[1].enabled)
             .reduce((/** @type {GamePluginProfileRef[]} */ plugins, [modId, modRef]) => {
-                const modDirPath = this.getProfileModDir(profile, modId);
+                const modDirPath = this.getProfileModDir(profile, modId, modRef);
                 
                 if (fs.existsSync(modDirPath)) {
                     const modFiles = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: false });
@@ -2860,7 +2926,7 @@ class ElectronLoader {
         /** @type {boolean} */ normalizePathCasing
     ) {
         const profileModFiles = [];
-        const relModDir = this.#expandPath(root ? profile.gameRootDir : profile.gameModDir);
+        const relModDir = this.#expandPath(root ? profile.gameInstallation.rootDir : profile.gameInstallation.modDir);
         const gameModDir = path.resolve(relModDir);
         const extFilesBackupDir = path.join(relModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const extFilesList = await this.findProfileExternalFilesInDir(profile, relModDir, !root);
@@ -2879,10 +2945,7 @@ class ElectronLoader {
         for (const [modName, mod] of deployableModFiles) {
             if (mod.enabled) {
                 const copyTasks = [];
-                const modDirPath = this.getProfileModDir(mod.baseProfile
-                    ? /** @type {AppBaseProfile} */ (profile.baseProfile)
-                    : profile,
-                modName);
+                const modDirPath = this.getProfileModDir(profile, modName, mod);
                 const modFilesToCopy = await fs.readdir(modDirPath, { encoding: "utf-8", recursive: true });
 
                 // Copy data files to mod base dir
@@ -2956,7 +3019,7 @@ class ElectronLoader {
 
     /** @returns {Promise<string>} */
     async writePluginList(/** @type {AppProfile} */ profile) {
-        const pluginListPath = profile.gamePluginListPath ? path.resolve(this.#expandPath(profile.gamePluginListPath)) : "";
+        const pluginListPath = profile.gameInstallation.pluginListPath ? path.resolve(this.#expandPath(profile.gameInstallation.pluginListPath)) : "";
 
         if (pluginListPath) {
             fs.mkdirpSync(path.dirname(pluginListPath));
@@ -2986,10 +3049,10 @@ class ElectronLoader {
 
     /** @returns {Promise<string[]>} */
     async writeConfigFiles(/** @type {AppProfile} */ profile) {
-        const deployConfigDir = profile.gameConfigFilePath ? this.#expandPath(profile.gameConfigFilePath) : undefined;
+        const deployConfigDir = profile.gameInstallation.configFilePath ? this.#expandPath(profile.gameInstallation.configFilePath) : undefined;
 
         if (!deployConfigDir || !fs.existsSync(deployConfigDir)) {
-            throw new Error(`Unable to write config files: Profile's Game Config File Path "${profile.gameConfigFilePath}" is not valid.`);
+            throw new Error(`Unable to write config files: Profile's Game Config File Path "${profile.gameInstallation.configFilePath}" is not valid.`);
         }
 
         const gameDetails = this.#getGameDetails(profile.gameId);
@@ -3001,7 +3064,7 @@ class ElectronLoader {
         }
 
         const profileConfigFiles = gameDetails?.gameConfigFiles
-            ? Object.keys(gameDetails?.gameConfigFiles)
+            ? gameDetails.gameConfigFiles
             : fs.readdirSync(profileConfigDir);
         
         const writtenConfigFiles = [];
@@ -3043,10 +3106,10 @@ class ElectronLoader {
 
     /** @returns {Promise<string[]>} */
     async writeSaveFiles(/** @type {AppProfile} */ profile) {
-        const deploySaveDir = profile.gameSaveFolderPath ? path.resolve(this.#expandPath(profile.gameSaveFolderPath)) : undefined;
+        const deploySaveDir = profile.gameInstallation.saveFolderPath ? path.resolve(this.#expandPath(profile.gameInstallation.saveFolderPath)) : undefined;
 
         if (!deploySaveDir || !fs.existsSync(deploySaveDir)) {
-            throw new Error(`Unable to write save files: Profile's Save Folder Path "${profile.gameSaveFolderPath}" is not valid.`);
+            throw new Error(`Unable to write save files: Profile's Save Folder Path "${profile.gameInstallation.saveFolderPath}" is not valid.`);
         }
 
         const rootBackupDir = path.join(path.dirname(deploySaveDir), ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
@@ -3083,37 +3146,37 @@ class ElectronLoader {
     async writeSteamCompatSymlinks(/** @type {AppProfile} */ profile) {
         const gameDetails = this.#getGameDetails(profile.gameId);
 
-        if (!gameDetails?.steamId || !profile.steamGameId) {
+        if (!profile.gameInstallation.steamId || !profile.steamCustomGameId) {
             return [];
         }
 
-        const gameCompatSteamuserDir = this.#getGameSteamCompatSteamuserDir(gameDetails);
-        const userCompatSteamuserDir = this.#getUserSteamCompatSteamuserDir(profile);
+        const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDirForGameInstallation(profile.gameInstallation);
+        const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation.rootDir, profile.steamCustomGameId);
 
-        if (!gameCompatSteamuserDir || !userCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(userCompatSteamuserDir)) {
+        if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
             return [];
         }
 
-        if (gameCompatSteamuserDir === userCompatSteamuserDir) {
+        if (gameCompatSteamuserDir === customCompatSteamuserDir) {
             return [];
         }
 
-        const userCompatRoot = this.#getUserSteamCompatRoot(profile);
-        if (!userCompatRoot) {
+        const customCompatRoot = this.#getSteamCompatRoot(profile.gameInstallation.rootDir, profile.steamCustomGameId);
+        if (!customCompatRoot) {
             return [];
         }
 
-        const rootBackupDir = path.join(userCompatRoot, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
+        const rootBackupDir = path.join(customCompatRoot, ElectronLoader.DEPLOY_EXT_BACKUP_DIR);
         const userDirBackupDir = path.join(rootBackupDir, ElectronLoader.STEAM_COMPAT_STEAMUSER_DIR);
 
         // Backup existing steamuser dir
         fs.mkdirpSync(rootBackupDir);
-        fs.moveSync(userCompatSteamuserDir, userDirBackupDir);
+        fs.moveSync(customCompatSteamuserDir, userDirBackupDir);
 
         // Symlink the user steamuser dir to the game steamuser dir
-        fs.ensureSymlinkSync(gameCompatSteamuserDir, userCompatSteamuserDir, "dir");
+        fs.ensureSymlinkSync(gameCompatSteamuserDir, customCompatSteamuserDir, "dir");
 
-        return [path.resolve(userCompatSteamuserDir)];
+        return [path.resolve(customCompatSteamuserDir)];
     }
 
     /** @returns {Promise<string[]>} */
@@ -3122,7 +3185,7 @@ class ElectronLoader {
 
         // Gamebryo games require processing of plugin file timestamps to enforce load order
         if (!!gameDetails && profile.plugins && gameDetails.pluginListType === "Gamebryo") {
-            const gameModDir = path.resolve(this.#expandPath(profile.gameModDir));
+            const gameModDir = path.resolve(this.#expandPath(profile.gameInstallation.modDir));
             let pluginTimestamp = Date.now() / 1000 | 0;
             profile.plugins.forEach((pluginRef) => {
                 // Set plugin order using the plugin file's "last modified" timestamp
@@ -3146,7 +3209,7 @@ class ElectronLoader {
 
         try {
             // Ensure the mod base dir exists
-            fs.mkdirpSync(this.#expandPath(profile.gameModDir));
+            fs.mkdirpSync(this.#expandPath(profile.gameInstallation.modDir));
 
             if (this.isSimilarProfileDeployed(profile)) {
                 await this.undeployProfile(profile);
@@ -3236,8 +3299,8 @@ class ElectronLoader {
                 log.warn("The profile being undeployed is orphaned. Data loss may occur.");
             }
 
-            const gameModDir = this.#expandPath(profile.gameModDir);
-            const gameRootDir = this.#expandPath(profile.gameRootDir);
+            const gameModDir = this.#expandPath(profile.gameInstallation.modDir);
+            const gameRootDir = this.#expandPath(profile.gameInstallation.rootDir);
 
             // Only remove files managed by this profile
             const undeployJobs = deploymentMetadata.profileModFiles.map(async (existingFile) => {
@@ -3251,7 +3314,7 @@ class ElectronLoader {
 
                 // Recursively remove empty parent directories
                 let existingDir = path.dirname(fullExistingPath);
-                while (existingDir !== profile.gameModDir && fs.existsSync(existingDir) && fs.readdirSync(existingDir).length === 0) {
+                while (existingDir !== profile.gameInstallation.modDir && fs.existsSync(existingDir) && fs.readdirSync(existingDir).length === 0) {
                     fs.rmdirSync(existingDir);
                     existingDir = path.dirname(existingDir);
                 }
@@ -3260,14 +3323,16 @@ class ElectronLoader {
             // Wait for all files to be removed
             await Promise.all(undeployJobs);
 
-            const userSteamCompatRoot = this.#getUserSteamCompatRoot(profile);
+            const customSteamCompatRoot = !!profile.steamCustomGameId
+                ? this.#getSteamCompatRoot(profile.gameInstallation.rootDir, profile.steamCustomGameId)
+                : undefined;
 
             const extFilesBackupDirs = _.uniq([
                 path.join(gameModDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
                 path.join(gameRootDir, ElectronLoader.DEPLOY_EXT_BACKUP_DIR),
-                ... profile.gameConfigFilePath ? [path.join(profile.gameConfigFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
-                ... profile.gameSaveFolderPath ? [path.join(path.dirname(profile.gameSaveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
-                ... userSteamCompatRoot ? [path.join(userSteamCompatRoot, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
+                ... profile.gameInstallation.configFilePath ? [path.join(profile.gameInstallation.configFilePath, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
+                ... profile.gameInstallation.saveFolderPath ? [path.join(path.dirname(profile.gameInstallation.saveFolderPath), ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
+                ... customSteamCompatRoot ? [path.join(customSteamCompatRoot, ElectronLoader.DEPLOY_EXT_BACKUP_DIR)] : [],
             ]);
             
             // Restore original external files, if any were moved
@@ -3338,30 +3403,11 @@ class ElectronLoader {
         this.mainWindow.webContents.send("app:showAboutInfo", this.getAppAboutInfo());
     }
 
-    /** @returns {Promise<string>} */
-    async openGameConfigFile(/** @type {string[]} */ cfgPaths) {
-        for (const cfgPath of cfgPaths) {
-            try {
-                const preparedPath = path.resolve(this.#expandPath(cfgPath));
-
-                if (fs.existsSync(preparedPath)) {
-                    const result = await shell.openPath(preparedPath);
-
-                    if (!result) {
-                        return result;
-                    }
-                }
-            } catch (_e) {}
-        }
-
-        throw new Error("Unable to open config file.");
-    }
-
     /** @returns {boolean | undefined} */
     checkLinkSupported(
         /** @type {AppProfile | AppBaseProfile | string | null | undefined} */ profile,
         /** @type {keyof AppProfile} */ srcDir,
-        /** @type {Array<keyof AppProfile>} */ destDirs,
+        /** @type {Array<keyof AppProfile | keyof GameInstallation>} */ destDirs,
         /** @type {boolean} */ symlink,
         /** @type {"file" | "dir" | "junction" | undefined} */ symlinkType,
         /** @type {boolean | undefined} */ checkBaseProfile
@@ -3423,21 +3469,146 @@ class ElectronLoader {
         return gameDb[gameId];
     }
 
-    /** @returns {string | undefined} */
-    #getGameSteamCompatRoot(/** @type {GameDetails} */ gameDetails) {
-        const appSettings = this.loadSettings();
-        const compatDataRoot = appSettings.steamCompatDataRoot || ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT;
-        
-        if (!gameDetails?.steamId || !compatDataRoot) {
-            return undefined;
+    /** @returns {string} */
+    #expandSteamCompatRootPath(/** @type {string} */ dir, /** @type {string} */ compatRoot) {
+        if (dir.startsWith("$")) {
+            dir = dir.replace(/\$/, "");
+            dir = path.join(compatRoot, dir);
         }
 
-        return this.#expandPath(path.join(compatDataRoot, gameDetails.steamId));
+        return dir;
+    }
+
+    /** @returns {GameInstallation[]} */
+    #findAvailableGameInstallations(/** @type {GameId} */ gameId) {
+        /** @type {GameInstallation[]} */ const result = [];
+        const gameDetails = this.#getGameDetails(gameId);
+
+        if (!gameDetails) {
+            return result;
+        }
+        
+        for (const gameInstallation of gameDetails.installations) {
+            result.push(...this.#expandGameInstallation(gameInstallation).filter((expandedInstallation) => {
+                return [
+                    fs.existsSync(expandedInstallation.rootDir),
+                    fs.existsSync(expandedInstallation.modDir),
+                    fs.existsSync(expandedInstallation.configFilePath)
+                ].every(Boolean);
+            }));
+        }
+
+        return result;
+    }
+
+    /** @returns {GameInstallation[]} */
+    #expandGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
+        /** @type {GameInstallation[]} */ const expandedInstallations = [];
+
+        if (gameInstallation.steamId?.length) {
+            for (const steamId of gameInstallation.steamId) {
+                const expandedInstallation = _.cloneDeep(gameInstallation);
+                expandedInstallation.steamId = [steamId];
+                expandedInstallation.rootDir = this.#expandPath(expandedInstallation.rootDir);
+
+                const compatDataRoot = this.#getSteamCompatRootForGameInstallation(expandedInstallation);
+
+                if (compatDataRoot) {
+                    expandedInstallation.modDir = this.#expandSteamCompatRootPath(expandedInstallation.modDir, compatDataRoot);
+                    expandedInstallation.saveFolderPath = this.#expandSteamCompatRootPath(expandedInstallation.saveFolderPath, compatDataRoot);
+
+                    if (expandedInstallation.pluginListPath) {
+                        expandedInstallation.pluginListPath = this.#expandSteamCompatRootPath(expandedInstallation.pluginListPath, compatDataRoot);
+                    }
+
+                    expandedInstallation.configFilePath = this.#expandSteamCompatRootPath(expandedInstallation.configFilePath, compatDataRoot);
+                }
+
+                expandedInstallations.push(expandedInstallation);
+            }
+        } else {
+            expandedInstallations.push(_.cloneDeep(gameInstallation));
+        }
+
+        expandedInstallations.forEach((gameInstallation) => {
+            gameInstallation.rootDir = this.#expandPath(gameInstallation.rootDir);
+            gameInstallation.modDir = this.#expandPath(gameInstallation.modDir);
+    
+            if (!path.isAbsolute(gameInstallation.modDir)) {
+                gameInstallation.modDir = path.join(gameInstallation.rootDir, gameInstallation.modDir);
+            }
+    
+            gameInstallation.saveFolderPath = this.#expandPath(gameInstallation.saveFolderPath);
+    
+            if (!path.isAbsolute(gameInstallation.saveFolderPath)) {
+                gameInstallation.saveFolderPath = path.join(gameInstallation.rootDir, gameInstallation.saveFolderPath);
+            }
+            
+            if (gameInstallation.pluginListPath) {
+                gameInstallation.pluginListPath = this.#expandPath(gameInstallation.pluginListPath);
+    
+                if (!path.isAbsolute(gameInstallation.pluginListPath)) {
+                    gameInstallation.pluginListPath = path.join(gameInstallation.rootDir, gameInstallation.pluginListPath);
+                }
+            }
+    
+            gameInstallation.configFilePath = this.#expandPath(gameInstallation.configFilePath);
+
+            if (!path.isAbsolute(gameInstallation.configFilePath)) {
+                gameInstallation.configFilePath = path.join(gameInstallation.rootDir, gameInstallation.configFilePath);
+            }
+        });
+
+        return expandedInstallations;
     }
 
     /** @returns {string | undefined} */
-    #getGameSteamCompatSteamuserDir(/** @type {GameDetails} */ gameDetails) {
-        const rootDir = this.#getGameSteamCompatRoot(gameDetails);
+    #resolveSteamLibraryDirFromPath(/** @type {string} */ dir) {
+        if (!fs.existsSync(dir)) {
+            return undefined;
+        }
+
+        // TODO - Better way to check if we're in a Steam library folder
+        const compatdata = fs.readdirSync(dir).find(relPath => relPath === "libraryfolders.vdf");
+
+        if (compatdata) {
+            return dir;
+        } else {
+            return this.#resolveSteamLibraryDirFromPath(path.dirname(dir));
+        }
+    }
+
+    /** @returns {string | undefined} */
+    #getSteamCompatRoot(/** @type {string} */ gameRootDir, /** @type {string} */ steamId) {
+        if (!fs.existsSync(gameRootDir)) {
+            return undefined;
+        }
+
+        const steamDir = this.#resolveSteamLibraryDirFromPath(path.dirname(gameRootDir));
+
+        if (!steamDir) {
+            return undefined;
+        }
+
+        return path.join(steamDir, "compatdata", steamId);
+    }
+
+    /** @returns {string | undefined} */
+    #getSteamCompatRootForGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
+        if (!gameInstallation.steamId) {
+            return undefined;
+        }
+
+        if (gameInstallation.steamId.length > 1) {
+            return undefined;
+        }
+
+        return this.#getSteamCompatRoot(gameInstallation.rootDir, gameInstallation.steamId[0]);
+    }
+
+    /** @returns {string | undefined} */
+    #getSteamCompatSteamuserDir(/** @type {string} */ gameRootDir, /** @type {string} */ steamId) {
+        const rootDir = this.#getSteamCompatRoot(gameRootDir, steamId);
 
         if (!rootDir) {
             return undefined;
@@ -3447,20 +3618,8 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    #getUserSteamCompatRoot(/** @type {AppProfile} */ profile) {
-        const appSettings = this.loadSettings();
-        const compatDataRoot = this.#expandPath(appSettings.steamCompatDataRoot || ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT);
-
-        if (!compatDataRoot || !profile.steamGameId) {
-            return undefined;
-        }
-
-        return this.#expandPath(path.join(compatDataRoot, profile.steamGameId));
-    }
-
-    /** @returns {string | undefined} */
-    #getUserSteamCompatSteamuserDir(/** @type {AppProfile} */ profile) {
-        const rootDir = this.#getUserSteamCompatRoot(profile);
+    #getSteamCompatSteamuserDirForGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
+        const rootDir = this.#getSteamCompatRootForGameInstallation(gameInstallation);
 
         if (!rootDir) {
             return undefined;
@@ -3581,7 +3740,7 @@ class ElectronLoader {
     }
 
     /** @returns {string} */
-    #resolveFullProfileDir(/** @type {AppProfile | AppBaseProfile} */ profile, /** @type {string} */ profileDir) {
+    #resolveFullProfileDir(/** @type {AppProfile | AppBaseProfile | AppProfileForm} */ profile, /** @type {string} */ profileDir) {
         profileDir = this.#expandPath(profileDir);
 
         return path.isAbsolute(profileDir)
@@ -3716,10 +3875,10 @@ class ElectronLoader {
     #formatLogArg(arg) {
         if (arg instanceof Error) {
             return arg.toString();
-        } else if (typeof arg === "object") {
+        } else if (arg !== undefined && arg !== null && typeof arg === "object") {
             return JSON.stringify(arg);
         } else {
-            return arg.toString();
+            return arg?.toString();
         }
     }
 }

@@ -1,17 +1,16 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
-import { NgTemplateOutlet, AsyncPipe } from "@angular/common";
-import { AbstractControl, NgForm, NgModel, ValidationErrors, FormsModule } from "@angular/forms";
-import { CdkTrapFocus } from "@angular/cdk/a11y";
+import { AsyncPipe } from "@angular/common";
+import { AbstractControl, NgForm, ValidationErrors, FormsModule, NgModel } from "@angular/forms";
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatIcon } from "@angular/material/icon";
+import { MatIconButton } from "@angular/material/button";
 import { MatTooltip } from "@angular/material/tooltip";
-import { MatFormField, MatLabel, MatHint, MatSuffix, MatPrefix, MatError } from "@angular/material/form-field";
+import { MatFormField, MatLabel, MatHint, MatSuffix } from "@angular/material/form-field";
 import { MatSelect, MatSelectTrigger } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
 import { MatInput } from "@angular/material/input";
 import { MatExpansionPanel, MatExpansionPanelHeader } from "@angular/material/expansion";
-import { MatIconButton } from "@angular/material/button";
 import {
     AsyncState,
     ComponentState,
@@ -33,7 +32,6 @@ import {
     startWith,
     switchMap,
     take,
-    tap,
     withLatestFrom
 } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
@@ -46,15 +44,20 @@ import { GameDatabase } from "../../models/game-database";
 import { GameId } from "../../models/game-id";
 import { DialogManager } from "../../services/dialog-manager";
 import { LangUtils } from "../../util/lang-utils";
-import {
-    DefaultProfilePathFieldEntry,
-    DefaultProfilePathFieldGroup,
-    AppProfileSettingsStandardPathFieldsPipe
-} from "./profile-standard-path-fields.pipe";
+import { AppProfileFieldsPipe } from "./profile-fields.pipe";
 import { AppDialogs } from "../../services/app-dialogs";
 import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
 import { AppGameConfigFilesFoundPipe } from "../../pipes/game-config-files-found.pipe";
 import { AppGameBadgeComponent } from "../game-badge/game-badge.component";
+import { GameInstallation } from "../../models/game-installation";
+import {
+    AppProfileFormFieldEntry,
+    AppProfileFormFieldGroup,
+    AppProfileFormFieldInput,
+    isProfileFormFieldGroup
+} from "../../models/app-profile-form-field";
+import { AppProfileFormFieldComponent } from "../profile-form-field";
+import { AppGameInstallSettingsComponent } from "../game-install-settings";
 
 @Component({
     selector: "app-profile-settings",
@@ -63,13 +66,11 @@ import { AppGameBadgeComponent } from "../game-badge/game-badge.component";
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         AsyncPipe,
-        NgTemplateOutlet,
         FormsModule,
-
-        CdkTrapFocus,
 
         MatCheckbox,
         MatIcon,
+        MatIconButton,
         MatTooltip,
         MatFormField,
         MatLabel,
@@ -81,14 +82,13 @@ import { AppGameBadgeComponent } from "../game-badge/game-badge.component";
         MatSuffix,
         MatExpansionPanel,
         MatExpansionPanelHeader,
-        MatIconButton,
-        MatPrefix,
-        MatError,
         
         AppGameBadgeComponent,
+        AppProfileFormFieldComponent,
+        AppGameInstallSettingsComponent,
         AppSendElectronMsgPipe,
         AppGameConfigFilesFoundPipe,
-        AppProfileSettingsStandardPathFieldsPipe
+        AppProfileFieldsPipe
     ],
     providers: [
         ComponentState.create(AppProfileSettingsComponent),
@@ -97,6 +97,7 @@ import { AppGameBadgeComponent } from "../game-badge/game-badge.component";
 export class AppProfileSettingsComponent extends BaseComponent {
 
     public readonly GameId = GameId;
+    public readonly fieldInput$ = new ManagedSubject<AppProfileFormFieldInput>(this);
     public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile.Form>>(this, {});
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
@@ -125,15 +126,31 @@ export class AppProfileSettingsComponent extends BaseComponent {
     public baseProfileMode = false;
 
     @Input()
-    public remedyMode: (keyof AppProfile) | boolean = false;
+    public remedyMode: keyof AppProfile | keyof GameInstallation | false = false;
 
+    @DeclareState("modLinkModeSupported")
+    protected _modLinkModeSupported = false;
+
+    @DeclareState("modLinkModeChildOnlySupported")
+    protected _modLinkModeChildOnlySupported = false;
+
+    @DeclareState("configLinkModeSupported")
+    protected _configLinkModeSupported = false;
+    
+    @DeclareState("manageSavesSupported")
+    protected _manageSavesSupported = false;
+
+    @DeclareState("profileRootPathValid")
+    protected _profileRootPathValid = false;
+
+    @DeclareState("manageSteamCompatSymlinksSupported")
+    protected _manageSteamCompatSymlinksSupported = false;
+
+    @DeclareState()
     protected gameIds: GameId[] = [];
-    protected modLinkModeSupported = false;
-    protected modLinkModeChildOnlySupported = false;
-    protected configLinkModeSupported = false;
-    protected manageSavesSupported = false;
-    protected profileRootPathValid = false;
-    protected manageSteamCompatSymlinksSupported = false;
+
+    @DeclareState()
+    protected customGameInstaller = GameInstallation.empty();
 
     private readonly validateProfileName = (control: AbstractControl): ValidationErrors | null => {
         return this.appProfileDescs.some(existingProfile => control.value.toLowerCase() === existingProfile.name.toLowerCase())
@@ -154,8 +171,8 @@ export class AppProfileSettingsComponent extends BaseComponent {
         }).pipe(map(supported => supported ? null : { invalidProfileRoot: true }));
     };
 
-    @DeclareState("defaultPaths")
-    private _defaultPaths?: AppProfile.DefaultablePaths;
+    @DeclareState("foundGameInstallations")
+    private _foundGameInstallations: GameInstallation[] = [];
 
     constructor(
         cdRef: ChangeDetectorRef,
@@ -189,13 +206,20 @@ export class AppProfileSettingsComponent extends BaseComponent {
         // Add validators
         stateRef.get("form").pipe(
             filterDefined(),
-            distinctUntilChanged()
+            distinctUntilChanged(),
+            delay(0)
         ).subscribe((form) => {
-            form.controls["name"].addValidators([this.validateProfileName]);
-            form.controls["name"].updateValueAndValidity();
+            const nameControl = form.controls["name"];
+            if (nameControl) {
+                nameControl.addValidators([this.validateProfileName]);
+                nameControl.updateValueAndValidity();
+            }
 
-            form.controls["rootPathOverride"].addAsyncValidators([this.validateProfileRoot]);
-            form.controls["rootPathOverride"].updateValueAndValidity();
+            const rootPathOverrideControl = form.controls["rootPathOverride"];
+            if (rootPathOverrideControl) {
+                rootPathOverrideControl.addAsyncValidators([this.validateProfileRoot]);
+                rootPathOverrideControl.updateValueAndValidity();
+            }
         });
 
         // Disable form is profile is locked
@@ -209,22 +233,22 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "modsPathOverride",
-                destDirs: ["gameModDir", "gameRootDir"],
+                destDirs: ["modDir", "rootDir"],
                 symlink: false,
                 checkBaseProfile: false
             }))
-        ).subscribe(linkSupported => this.modLinkModeChildOnlySupported = !!linkSupported);
+        ).subscribe(linkSupported => this._modLinkModeChildOnlySupported = !!linkSupported);
 
         this.formModel$.pipe(
             filter(formModel => !!formModel.name),
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "modsPathOverride",
-                destDirs: ["gameModDir", "gameRootDir"],
+                destDirs: ["modDir", "rootDir"],
                 symlink: false,
                 checkBaseProfile: true
             }))
-        ).subscribe(linkSupported => this.modLinkModeSupported = !!linkSupported);
+        ).subscribe(linkSupported => this._modLinkModeSupported = !!linkSupported);
 
         // Check if config links are supported
         this.formModel$.pipe(
@@ -232,12 +256,12 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(formModel => ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "configPathOverride",
-                destDirs: ["gameConfigFilePath"],
+                destDirs: ["configFilePath"],
                 symlink: true,
                 symlinkType: "file",
                 checkBaseProfile: true
             }))
-        ).subscribe(linkSupported => this.configLinkModeSupported = !!linkSupported);
+        ).subscribe(linkSupported => this._configLinkModeSupported = !!linkSupported);
 
         // Check if save mgmt is supported
         combineLatest(stateRef.getAll("formModel", "initialProfile")).pipe(
@@ -245,20 +269,27 @@ export class AppProfileSettingsComponent extends BaseComponent {
             switchMap(([formModel, initialProfile]) => initialProfile.deployed ? of(!!initialProfile.manageSaveFiles) : ElectronUtils.invoke("profile:dirLinkSupported", {
                 profile: formModel as AppProfile,
                 srcDir: "savesPathOverride",
-                destDirs: ["gameSaveFolderPath"],
+                destDirs: ["saveFolderPath"],
                 symlink: true,
                 symlinkType: "junction",
                 checkBaseProfile: false
             }))
-        ).subscribe(managedSavesSupported => this.manageSavesSupported = !!managedSavesSupported);
+        ).subscribe(managedSavesSupported => this._manageSavesSupported = !!managedSavesSupported);
 
         // Check if Steam compat symlinks are supported
         this.formModel$.pipe(
-            switchMap(formModel => formModel.steamGameId ? ElectronUtils.invoke("profile:steamCompatSymlinksSupported", {
+            switchMap(formModel => formModel.steamCustomGameId ? ElectronUtils.invoke("profile:steamCompatSymlinksSupported", {
                 profile: formModel as AppProfile
             }) : of(false))
-        ).subscribe(manageSteamCompatSymlinksSupported => this.manageSteamCompatSymlinksSupported = manageSteamCompatSymlinksSupported);
+        ).subscribe(manageSteamCompatSymlinksSupported => this._manageSteamCompatSymlinksSupported = manageSteamCompatSymlinksSupported);
 
+        // Create the customGameInstaller settings from the initial profile, if any
+        stateRef.get("initialProfile").subscribe((initialProfile) => {
+            this.customGameInstaller = initialProfile.gameInstallation
+                ? _.cloneDeep(initialProfile.gameInstallation)
+                : this.customGameInstaller;
+        });
+        
         // Check if profile is a base profile
         combineLatest(stateRef.getAll("initialProfile", "createMode")).pipe(
             filter(([, createMode]) => !createMode)
@@ -279,78 +310,85 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 map(() => form.control.getRawValue()),
                 startWith(form.control.getRawValue())
             )),
-            map(formValue => Object.assign({}, this.initialProfile, formValue)),
+            map(formValue => _.merge({}, this.initialProfile, formValue)),
             distinctUntilChanged((x, y) => LangUtils.isEqual(x, y))
         ).subscribe(formModel => this.formModel$.next(formModel));
 
-        // Get the default profile paths for the current game
+        // Get the found game installations for the current game
         this.formModel$.pipe(
             map((profile) => profile.gameId),
             filter((gameId): gameId is GameId => !!gameId),
             distinctUntilChanged(),
-            switchMap(gameId => ElectronUtils.invoke("app:findBestProfileDefaults", { gameId }))
-        ).subscribe(profileDefaults => this._defaultPaths = profileDefaults);
+            switchMap(gameId => ElectronUtils.invoke("app:findGameInstallations", { gameId }))
+        ).subscribe(gameInstallations => this._foundGameInstallations = gameInstallations);
 
-        // Attempt to apply default profile path values for any empty and clean path controls
-        combineLatest([
-            stateRef.get("defaultPaths"),
-            this.formModel$
-        ]).pipe(
-            distinctUntilChanged((x, y) => LangUtils.isEqual(x, y)),
-            map(([defaultPaths]) => Object.keys(defaultPaths ?? {}) as Array<keyof AppProfile.DefaultablePaths>),
-            delay(0)
-        ).subscribe((defaultPathIds) => defaultPathIds.forEach((pathId) => {
-            const control = this.form.controls[pathId];
-            const suggestedValue = this.defaultPaths![pathId];
-            const initialValue = this.initialProfile[pathId];
-            if (control && control.untouched && !control.dirty && (this.createMode ? !initialValue : !control.value)) {
-                if (!!suggestedValue) {
-                    control.setValue(suggestedValue);
-                } else {
-                    control.reset();
-                }
-            }
-        }));
+        // Generate profile field input object
+        combineLatest([this.formModel$, ...stateRef.getAll(
+            "form",
+            "baseProfileMode",
+            "modLinkModeSupported",
+            "configLinkModeSupported",
+            "remedyMode"
+        )]).pipe(
+            map(([
+                profileModel,
+                form,
+                baseProfileMode,
+                modLinkModeSupported,
+                configLinkModeSupported,
+                autofocusFieldId
+            ]): AppProfileFormFieldInput => ({
+                profileModel,
+                form,
+                baseProfileMode,
+                modLinkModeSupported,
+                configLinkModeSupported,
+                autofocusFieldId: autofocusFieldId ? autofocusFieldId : undefined
+            }))
+        ).subscribe(fieldInput => this.fieldInput$.next(fieldInput));
     }
 
-    public get defaultPaths(): AppProfile.DefaultablePaths | undefined {
-        return this._defaultPaths;
+    public get foundGameInstallations(): GameInstallation[]{
+        return this._foundGameInstallations;
     }
 
     public get copyMode(): boolean {
         return this.createMode && !!this.initialProfile;
     }
 
-    protected isFieldGroup(fieldEntry: DefaultProfilePathFieldEntry): fieldEntry is DefaultProfilePathFieldGroup {
-        return "groupTitle" in fieldEntry;
+    public get modLinkModeSupported(): boolean {
+        return this._modLinkModeSupported;
     }
 
-    protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {
-        return runOnce(ElectronUtils.chooseDirectory(ngModel.value || undefined).pipe(
-            filterDefined(),
-            tap((directory) => ngModel.control.setValue(directory as AppProfile[K]))
-        ));
+    public get configLinkModeSupported(): boolean {
+        return this._configLinkModeSupported;
     }
 
-    protected chooseFile<K extends keyof AppProfile>(
-        ngModel: NgModel,
-        fileTypes: string[]
-    ): Observable<any> {
-        return runOnce(ElectronUtils.chooseFilePath(ngModel.value || undefined, fileTypes).pipe(
-            filterDefined(),
-            tap((filePath) => ngModel.control.setValue(filePath as AppProfile[K]))
-        ));
+    public get modLinkModeChildOnlySupported(): boolean {
+        return this._modLinkModeChildOnlySupported;
+    }
+    
+    public get manageSavesSupported(): boolean {
+        return this._manageSavesSupported;
     }
 
-    protected choosePath<K extends keyof AppProfile>(
-        ngModel: NgModel,
-        fileTypes?: string[]
-    ): Observable<any> {
-        if (!!fileTypes) {
-            return this.chooseFile<K>(ngModel, fileTypes);
-        } else {
-            return this.chooseDirectory<K>(ngModel);
-        }
+    public get profileRootPathValid(): boolean {
+        return this._profileRootPathValid;
+    }
+
+    public get manageSteamCompatSymlinksSupported(): boolean {
+        return this._manageSteamCompatSymlinksSupported;
+    }
+
+    protected isFieldGroup(fieldEntry: AppProfileFormFieldEntry): fieldEntry is AppProfileFormFieldGroup {
+        return isProfileFormFieldGroup(fieldEntry);
+    }
+
+    protected updateCustomGameInstallation(gameInstallation: GameInstallation, model: NgModel): void {
+        this.customGameInstaller = _.merge(this.customGameInstaller, _.cloneDeep(gameInstallation));
+
+        // Set the current installation to the custom installation
+        model.control.setValue(this.customGameInstaller);
     }
 
     protected submitForm(form: NgForm): Observable<unknown> {
@@ -402,9 +440,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
         const gameDetails = this.gameDb[profile.gameId];
     
         // Check if profile-specific config files need to be created
-        if (!this.copyMode && profile.manageConfigFiles && _.size(gameDetails.gameConfigFiles) > 0) {
+        if (!this.copyMode && profile.manageConfigFiles && !!gameDetails.gameConfigFiles?.length) {
             // Check if any profile-specific config files exist
-            return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
+            return forkJoin(gameDetails.gameConfigFiles!.map((configFile) => {
                 return this.profileManager.readConfigFile(profile, configFile, false);
             })).pipe(
                 map(configData => !configData.some(Boolean)),
@@ -417,7 +455,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 switchMap(() => {
                     // Write default config files
                     const gameDetails = this.gameDb[profile.gameId];
-                    return forkJoin(Object.keys(gameDetails.gameConfigFiles!).map((configFile) => {
+                    return forkJoin(gameDetails.gameConfigFiles!.map((configFile) => {
                         return this.profileManager.readConfigFile(profile, configFile, true).pipe(
                             mergeMap(fileData => this.profileManager.updateConfigFile(configFile, fileData))
                         );

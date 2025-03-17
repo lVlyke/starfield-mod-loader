@@ -4,6 +4,7 @@ import { GameId } from "./game-id";
 import { RelativeOrderedMap } from "../util/relative-ordered-map";
 import { GameAction } from "./game-action";
 import { ModSection } from "./mod-section";
+import { GameInstallation } from "./game-installation";
 
 export interface AppBaseProfile {
     name: string;
@@ -24,13 +25,8 @@ export interface AppBaseProfile {
 }
 
 export interface AppProfile extends AppBaseProfile {
-    gameRootDir: string;
-    gameModDir: string;
-    gameBinaryPath: string;
-    gamePluginListPath?: string;
-    gameConfigFilePath?: string;
-    gameSaveFolderPath?: string;
-    steamGameId?: string;
+    gameInstallation: GameInstallation;
+    steamCustomGameId?: string;
     manageExternalPlugins?: boolean;
     manageSaveFiles?: boolean;
     manageSteamCompatSymlinks?: boolean;
@@ -38,13 +34,13 @@ export interface AppProfile extends AppBaseProfile {
     configLinkMode?: boolean;
     externalFilesCache?: AppProfile.ExternalFiles;
     baseProfile?: AppBaseProfile;
+    defaultGameActions: GameAction[];
     customGameActions?: GameAction[];
     activeGameAction?: GameAction;
 }
 
 export type AppProfileModList = AppProfile.ModList;
 export type AppProfileForm = AppProfile.Form;
-export type AppProfileDefaultablePaths = AppProfile.DefaultablePaths;
 export type AppProfileCollectedVerificationResult = AppProfile.CollectedVerificationResult;
 export type AppProfileVerificationResult = AppProfile.VerificationResult;
 export type AppProfileVerificationResults = AppProfile.VerificationResults;
@@ -61,19 +57,6 @@ export namespace AppProfile {
 
     export type Description = Pick<AppBaseProfile, "name" | "gameId" | "deployed" | "rootPathOverride"> & { baseProfile?: string };
     export type Form = Omit<AppProfile, "baseProfile"> & { baseProfile?: string; };
-    export type DefaultablePaths = Pick<AppProfile,
-          "gameRootDir"
-        | "gameModDir"
-        | "gameBinaryPath"
-        | "gamePluginListPath"
-        | "gameConfigFilePath"
-        | "gameSaveFolderPath"
-        | "rootPathOverride"
-        | "modsPathOverride"
-        | "savesPathOverride"
-        | "configPathOverride"
-        | "backupsPathOverride"
-    >;
 
     export interface ExternalFiles {
         gameDirFiles: string[];
@@ -97,7 +80,7 @@ export namespace AppProfile {
         VerificationResult | CollectedVerificationResult
     >;
 
-    export interface CollectedVerificationResult<K extends string | number | symbol = string> extends VerificationResult {
+    export interface CollectedVerificationResult<K extends string | number | symbol = string> {
         results: VerificationResultRecord<K>;
     }
 
@@ -150,7 +133,7 @@ export namespace AppProfile {
     ];
 
     export function isFullProfile(value?: Partial<AppProfile>): value is AppProfile {
-        return !!value && "gameRootDir" in value && "gameModDir" in value;
+        return !!value && "gameInstallation" in value;
     }
 
     export function create(name: string, gameId: GameId): AppProfile;
@@ -159,12 +142,11 @@ export namespace AppProfile {
         return {
             name,
             gameId,
-            gameRootDir: "",
-            gameModDir: "",
-            gameBinaryPath: "",
+            gameInstallation: GameInstallation.empty(),
             mods: [],
             rootMods: [],
             plugins: [],
+            defaultGameActions: [],
             deployed: false
         };
     }

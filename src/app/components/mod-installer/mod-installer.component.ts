@@ -60,6 +60,7 @@ import { AppModImportRequestImagePipe } from "../../pipes/mod-import-request-ima
 import { AppIsDebugPipe } from "../../pipes/is-debug.pipe";
 import { AppResolveDefaultModInstallerPluginPipe } from "./resolve-default-mod-installer-plugin.pipe";
 import { AppResolveDefaultModInstallerPluginsPipe } from "./resolve-default-mod-installer-plugins.pipe";
+import { ModProfileRef } from "../../models/mod-profile-ref";
 
 @Component({
     selector: "app-mod-installer",
@@ -533,7 +534,7 @@ export class AppModInstallerComponent extends BaseComponent {
 
         const profileMods = this.activeProfile!.mods;
         return from(profileMods).pipe(
-            mergeMap(([modName, modEntry]) => this.readModFilePaths(modName).pipe(
+            mergeMap(([modName, modEntry]) => this.readModFilePaths(modName, modEntry).pipe(
                 map(modFilePaths => modFilePaths.some((rawModFilePath) => {
                     const modFilePath = rawModFilePath.replace(/[\\/]/g, this.importRequest.filePathSeparator);
                     if (filePath.toLowerCase() === modFilePath.toLowerCase()) {
@@ -692,11 +693,11 @@ export class AppModInstallerComponent extends BaseComponent {
         })) ?? [];
     }
 
-    private readModFilePaths(modName: string): Observable<string[]> {
+    private readModFilePaths(modName: string, modRef: ModProfileRef): Observable<string[]> {
         if (this._modFilePathCache.has(modName)) {
             return of(this._modFilePathCache.get(modName)!);
         } else {
-            return this.profileManager.readModFilePaths(modName, true).pipe(
+            return this.profileManager.readModFilePaths(modName, modRef, true).pipe(
                 // Cache file path lookups to avoid redundant calls to the filesystem
                 tap(result => this._modFilePathCache.set(modName, result))
             );

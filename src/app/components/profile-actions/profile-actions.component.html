@@ -31,16 +31,18 @@
     <span>
         <ng-container *ngTemplateOutlet="profileDeploymentStatusText; context: { $implicit: true }" />
 
-        <button id="game-action-button-compact"
-                class="mat-elevation-z3"
-                mat-stroked-button
-                matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
-                [matTooltipDisabled]="isProfileDeployed"
-                (click)="profileManager.runGameAction(); $event.stopPropagation()">
-            <mat-icon color="accent">play_circle</mat-icon>
+        @if (!!profile.activeGameAction) {
+            <button id="game-action-button-compact"
+                    class="mat-elevation-z3"
+                    mat-stroked-button
+                    matTooltip="Mods are {{ isProfileDeployed ? 'enabled' : 'disabled'}}"
+                    [matTooltipDisabled]="isProfileDeployed"
+                    (click)="profileManager.runGameAction(); $event.stopPropagation()">
+                <mat-icon color="accent">play_circle</mat-icon>
 
-            {{ (profile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
-        </button>
+                {{ profile.activeGameAction.name }}
+            </button>
+        }
     </span>
 } @else {
     <div id="primary-actions" class="actions primary-actions">
@@ -94,7 +96,7 @@
         </button>
 
         @if (!profile.manageConfigFiles) {
-            @if (gameDetails | appGameConfigFilesFound$ | async) {
+            @if (gameDetails | appGameConfigFilesFound$:profile | async) {
                 <button mat-stroked-button
                         id="game-config-button"
                         class="with-menu"
@@ -116,22 +118,24 @@
     </div>
 
     <div id="game-actions" class="actions">
-        <span id="game-action-button-wrapper">
-            <button id="game-action-button"
-                    class="mat-elevation-z3"
-                    mat-stroked-button
-                    (click)="profileManager.runGameAction()">
-                <mat-icon color="accent">play_circle</mat-icon>
+        @if (!!profile.activeGameAction) {
+            <span id="game-action-button-wrapper">
+                <button id="game-action-button"
+                        class="mat-elevation-z3"
+                        mat-stroked-button
+                        (click)="profileManager.runGameAction()">
+                    <mat-icon color="accent">play_circle</mat-icon>
 
-                {{ (profile.activeGameAction ?? profileManager.LAUNCH_GAME_ACTION).name }}
-            </button>
-            <button id="game-action-menu-button"
-                    class="mat-elevation-z3"
-                    mat-stroked-button
-                    (click)="showGameActionsMenu($event)">
-                <mat-icon>arrow_drop_down</mat-icon>
-            </button>
-        </span>
+                    {{ profile.activeGameAction.name }}
+                </button>
+                <button id="game-action-menu-button"
+                        class="mat-elevation-z3"
+                        mat-stroked-button
+                        (click)="showGameActionsMenu($event)">
+                    <mat-icon>arrow_drop_down</mat-icon>
+                </button>
+            </span>
+        }
     </div>
 }
 
@@ -172,15 +176,13 @@
     <mat-card class="mat-elevation-z3">
         <mat-card-content>
             <mat-action-list>
-                @for (gameConfigFile of gameDetails!.gameConfigFiles | keyvalue; track gameConfigFile.key) {
-                    @if ("app:verifyPathExists" | appSendElectronMsg$:{ path: gameConfigFile.value } | async) {
-                        <button class="game-config-button"
-                                mat-list-item
-                                (click)="profileManager.openGameConfigFile(gameConfigFile.value); gameConfigFileMenuRef?.close()">
-                            <mat-icon matListIcon>data_array</mat-icon>
-                            <span matLine>{{ gameConfigFile.key }}</span>
-                        </button>
-                    }
+                @for (gameConfigFileName of gameDetails!.gameConfigFiles; track gameConfigFileName) {
+                    <button class="game-config-button"
+                            mat-list-item
+                            (click)="profileManager.openProfileConfigFile(gameConfigFileName, true); gameConfigFileMenuRef?.close()">
+                        <mat-icon matListIcon>data_array</mat-icon>
+                        <span matLine>{{ gameConfigFileName }}</span>
+                    </button>
                 }
             </mat-action-list>
         </mat-card-content>
@@ -192,27 +194,33 @@
     <mat-card class="mat-elevation-z3 game-actions-popup">
         <mat-card-content>
             <mat-action-list>
-                @let gameActions = [profileManager.LAUNCH_GAME_ACTION].concat(profile.customGameActions ?? []);
+                <!-- Default actions -->
+                @for (gameAction of profile.defaultGameActions; track $index) {
+                    <button mat-list-item class="game-action" (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
+                        <mat-icon matListIcon color="accent">play_circle</mat-icon>
 
-                @for (gameAction of gameActions; track $index) {
+                        <span class="game-action-name">{{ gameAction.name }}</span>
+                    </button>
+                }
+
+                <!-- Custom actions -->
+                @for (gameAction of profile.customGameActions; track $index) {
                     <button mat-list-item class="game-action" (click)="profileManager.setActiveGameAction(gameAction); gameActionsMenuRef?.close()">
                         <mat-icon matListIcon color="accent">play_circle</mat-icon>
 
                         <span class="game-action-name">{{ gameAction.name }}</span>
 
-                        @if ($index > 0) {
-                            <button mat-icon-button
-                                    matTooltip="Edit"
-                                    (click)="editCustomGameActionByIndex($index - 1, gameAction); gameActionsMenuRef?.close(); $event.stopPropagation()">
-                                <mat-icon color="primary">edit</mat-icon>
-                            </button>
+                        <button mat-icon-button
+                                matTooltip="Edit"
+                                (click)="editCustomGameActionByIndex($index, gameAction); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                            <mat-icon color="primary">edit</mat-icon>
+                        </button>
 
-                            <button mat-icon-button
-                                    matTooltip="Delete"
-                                    (click)="removeCustomGameActionByIndex($index - 1); gameActionsMenuRef?.close(); $event.stopPropagation()">
-                                <mat-icon color="warn">delete</mat-icon>
-                            </button>
-                        }
+                        <button mat-icon-button
+                                matTooltip="Delete"
+                                (click)="removeCustomGameActionByIndex($index); gameActionsMenuRef?.close(); $event.stopPropagation()">
+                            <mat-icon color="warn">delete</mat-icon>
+                        </button>
                     </button>
                 }
 

@@ -21,13 +21,11 @@ export namespace ActiveProfileActions {
 
     export type DeployedAction = BasicAction<AppProfile, "deployed">;
     export type ManageExternalPluginsAction = BasicAction<AppProfile, "manageExternalPlugins">;
-    export type GamePluginListPathAction = BasicAction<AppProfile, "gamePluginListPath">;
     export type BaseProfileAction = BasicAction<AppProfile, "baseProfile">;
     export type CustomGameActionsAction = BasicAction<AppProfile, "customGameActions">;
     export type ActiveGameActionAction = BasicAction<AppProfile, "activeGameAction">;
 
     export const setDeployed = createUpdateAction("deployed");
-    export const setGamePluginListPath = createUpdateAction("gamePluginListPath");
     export const setBaseProfile = createUpdateAction("baseProfile");
     export const manageExternalPlugins = createUpdateAction("manageExternalPlugins");
     export const setActiveGameAction = createUpdateAction("activeGameAction");
@@ -152,6 +150,14 @@ export namespace ActiveProfileActions {
 
         constructor(
             public gameActionIndex: number
+        ) {}
+    }
+
+    export class UpdateDefaultGameActions {
+        public static readonly type = `[activeProfile] update default game actions`;
+
+        constructor(
+            public gameActions: GameAction[]
         ) {}
     }
 

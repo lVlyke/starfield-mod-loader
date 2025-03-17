@@ -12,7 +12,6 @@ import { AppAboutInfoModal, DEPS_INFO_TOKEN } from "../modals/app-about-info";
 import { ElectronUtils } from "../util/electron-utils";
 import { ExternalFile } from "../models/external-file";
 import { AppData } from "../models/app-data";
-import { DialogManager } from "./dialog-manager";
 import { filterDefined, runOnce } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
 import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
@@ -249,7 +248,6 @@ export class AppStateBehaviorManager {
             normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns,
             verifyProfileOnStart: appData.verifyProfileOnStart,
-            steamCompatDataRoot: appData.steamCompatDataRoot,
             logPanelEnabled: appData.logPanelEnabled
         };
     }

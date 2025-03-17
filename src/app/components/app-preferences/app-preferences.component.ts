@@ -5,7 +5,6 @@ import { MatCheckbox } from "@angular/material/checkbox";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
 import { MatFormField, MatLabel } from "@angular/material/form-field";
-import { MatInput } from "@angular/material/input";
 import { MatSelect } from "@angular/material/select";
 import { MatOption } from "@angular/material/core";
 import { ComponentState, ComponentStateRef, DeclareState, ManagedSubject } from "@lithiumjs/angular";
@@ -28,7 +27,6 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
         MatTooltip,
         MatFormField,
         MatLabel,
-        MatInput,
         MatSelect,
         MatOption
     ],

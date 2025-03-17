@@ -37,6 +37,8 @@ import { DialogManager } from "../../services/dialog-manager";
 import { GameDetails } from "../../models/game-details";
 import { DialogAction } from "../../services/dialog-manager.types";
 import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
+import { ProfileManager } from "../../services/profile-manager";
+import { LangUtils } from "../../util/lang-utils";
 
 interface FileTreeNode {
     terminal: boolean;
@@ -146,7 +148,8 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         stateRef: ComponentStateRef<AppModImportOptionsComponent>,
         store: Store,
         dialogManager: DialogManager,
-        appStateMgmt: AppStateBehaviorManager
+        appStateMgmt: AppStateBehaviorManager,
+        profileManager: ProfileManager
     ) {
         super({ cdRef });
 
@@ -241,9 +244,16 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
                 modSubdirRoot
             }]) => gameDetails!.scriptExtenders!.find(scriptExtender => scriptExtender.modPaths.some((seModPath) => {
                 seModPath = this.normalizePath(seModPath, filePathSeparator, modSubdirRoot);
-                return modFilePaths.some(({ filePath }) => {
-                    return this.normalizePath(filePath, filePathSeparator, modSubdirRoot).startsWith(seModPath);
+                const normalizedModPaths = modFilePaths.map(({ filePath }) => {
+                    return this.normalizePath(filePath, filePathSeparator, modSubdirRoot);
                 });
+                
+                // Make sure the current mod isn't itself a script extender
+                const isScriptExtender = normalizedModPaths.some((filePath) => {
+                    return scriptExtender!.binaries.find(binary => filePath.endsWith(this.normalizePath(binary, "/")));
+                });
+
+                return !isScriptExtender && normalizedModPaths.some(filePath => filePath.startsWith(seModPath));
             })))
         ).subscribe(detectedScriptExtender => this._detectedScriptExtender = detectedScriptExtender);
 
@@ -251,18 +261,17 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
         combineLatest(stateRef.getAll("detectedScriptExtender", "activeProfile")).pipe(
             filter(([detectedScriptExtender, activeProfile]) => !!detectedScriptExtender && AppProfile.isFullProfile(activeProfile)),
             take(1),
-            switchMap(([scriptExtender]) => {
-                const gameBinaryPath = this.normalizePath(this.activeProfile!.gameBinaryPath, "/");
-                const usingScriptExtender = scriptExtender!.binaries.find(binary => gameBinaryPath.endsWith(this.normalizePath(binary, "/")));
-
-                if (!usingScriptExtender) {
-                    return dialogManager.createDefault(
-                        `This mod requires the script extender ${scriptExtender!.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`
-                    );
-                } else {
-                    return EMPTY;
-                }
-            })
+            switchMap(([scriptExtender, activeProfile]) => profileManager.isUsingScriptExtender(scriptExtender!, activeProfile!).pipe(
+                switchMap((usingScriptExtender) => {
+                    if (usingScriptExtender) {
+                        return EMPTY;
+                    } else {
+                        return dialogManager.createDefault(
+                            `This mod requires the script extender ${scriptExtender!.name}, but the active profile does not appear to be set up to use it. \n\nAre you sure you want to continue?`
+                        );
+                    }
+                })
+            ))
         ).subscribe((action) => {
             if (action === DialogManager.CANCEL_ACTION) {
                 this.importRequest.importStatus = "CANCELED";
@@ -378,9 +387,7 @@ export class AppModImportOptionsComponent extends BaseComponent implements Contr
     }
 
     private normalizePath(path: string, sep: string, modSubdirRoot?: string): string {
-        return path
-            .toLowerCase()
-            .replace(/[/\\]/g, sep)
+        return LangUtils.normalizeFilePath(path, sep)
             .replace(modSubdirRoot ? `${this.normalizePath(modSubdirRoot, sep)}${sep}` : "", "");
     }
 }

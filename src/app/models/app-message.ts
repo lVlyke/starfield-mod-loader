@@ -11,6 +11,7 @@ import { GamePluginProfileRef } from "./game-plugin-profile-ref";
 import { ModImportRequest, ModImportResult } from "./mod-import-status";
 import { ModProfileRef } from "./mod-profile-ref";
 import { LogEntry } from "../util/logger";
+import { GameInstallation } from "./game-installation";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -176,12 +177,12 @@ export namespace AppMessage {
         result: GameDatabase;
     }
 
-    export interface FindBestProfileDefaults extends Base {
-        id: `${Prefix}:findBestProfileDefaults`;
+    export interface FindGameInstallations extends Base {
+        id: `${Prefix}:findGameInstallations`;
         data: {
             gameId: GameId;
         };
-        result: AppProfile.DefaultablePaths;
+        result: GameInstallation[];
     }
 
     export interface ShowAboutInfo extends Base {
@@ -244,7 +245,7 @@ export namespace AppMessage {
                            | CopyProfileData
                            | ShowPreferences
                            | LoadGameDatabase
-                           | FindBestProfileDefaults
+                           | FindGameInstallations
                            | ShowAboutInfo
                            | ToggleModListColumn
                            | ToggleLogPanel
@@ -337,6 +338,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             modName: string;
+            modRef: ModProfileRef;
             normalizePaths?: boolean;
         };
         result: string[];
@@ -525,7 +527,7 @@ export namespace AppMessage {
         id: `${ProfileMessage.Prefix}:showProfileDirInFileExplorer`;
         data: {
             profile: AppProfile;
-            profileKey: keyof AppProfile;
+            profileKey: keyof AppProfile | keyof GameInstallation;
         };
     }
 
@@ -558,11 +560,12 @@ export namespace AppMessage {
         };
     }
 
-    export interface OpenGameConfigFile extends Base {
-        id: `${ProfileMessage.Prefix}:openGameConfigFile`;
+    export interface ResolveDefaultGameActions extends Base {
+        id: `${ProfileMessage.Prefix}:resolveDefaultGameActions`;
         data: {
-            configPaths: string[];
+            profile: AppProfile;
         };
+        result: GameAction[];
     }
 
     export interface OpenProfileConfigFile extends Base {
@@ -570,6 +573,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             configFileName: string;
+            includeGameFiles?: boolean;
         };
     }
 
@@ -622,7 +626,7 @@ export namespace AppMessage {
         data: {
             profile: AppProfile;
             srcDir: keyof AppProfile;
-            destDirs: Array<keyof AppProfile>;
+            destDirs: Array<keyof AppProfile | keyof GameInstallation>;
             symlink: boolean;
             symlinkType?: "file" | "dir" | "junction";
             checkBaseProfile?: boolean;
@@ -682,7 +686,7 @@ export namespace AppMessage {
                                | ShowProfilePluginBackupsInFileExplorer
                                | ShowProfileConfigBackupsInFileExplorer
                                | RunGameAction
-                               | OpenGameConfigFile
+                               | ResolveDefaultGameActions
                                | OpenProfileConfigFile
                                | DeleteProfileConfigFile
                                | ReadConfigFile
@@ -716,7 +720,7 @@ export namespace AppMessage {
         "app:verifyProfile",
         "app:showPreferences",
         "app:loadGameDatabase",
-        "app:findBestProfileDefaults",
+        "app:findGameInstallations",
         "app:showAboutInfo",
         "app:toggleModListColumn",
         "app:toggleLogPanel",
@@ -759,7 +763,7 @@ export namespace AppMessage {
         "profile:showProfilePluginBackupsInFileExplorer",
         "profile:showProfileConfigBackupsInFileExplorer",
         "profile:runGameAction",
-        "profile:openGameConfigFile",
+        "profile:resolveDefaultGameActions",
         "profile:openProfileConfigFile",
         "profile:deleteProfileConfigFile",
         "profile:readConfigFile",

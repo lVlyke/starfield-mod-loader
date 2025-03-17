@@ -1,4 +1,5 @@
 <form #profileForm="ngForm" id="profile-form" (ngSubmit)="submitForm(profileForm)">
+    <!-- Base Profile Mode -->
     <div>
         <mat-checkbox name="baseProfileMode"
                       [disabled]="!createMode"
@@ -9,6 +10,7 @@
         </mat-checkbox>
     </div>
 
+    <!-- Game ID -->
     <mat-form-field appearance="fill">
         <mat-label>Game</mat-label>
         <mat-select name="gameId"
@@ -28,6 +30,7 @@
         </mat-select>
     </mat-form-field>
 
+    <!-- Profile Name -->
     <mat-form-field appearance="fill">
         <mat-label>Profile Name</mat-label>
         <input #nameModel="ngModel"
@@ -46,6 +49,7 @@
     </mat-form-field>
 
     @if (!baseProfileMode) {
+        <!-- Base Profile -->
         <mat-form-field appearance="fill">
             <mat-label>Base Profile</mat-label>
             <mat-select #baseProfileModel="ngModel"
@@ -68,96 +72,87 @@
                 <mat-checkbox #showAllBaseProfiles>Show all profiles</mat-checkbox>
             </div>
         </mat-form-field>
-    }
 
-    @let stdFieldInput = { formModel, form, baseProfileMode, modLinkModeSupported, configLinkModeSupported };
-    @for (fieldEntry of stdFieldInput | appProfileSettingsStandardPathFields; track fieldEntry.formId) {
-        @if (isFieldGroup(fieldEntry)) {
-            <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                    {{ fieldEntry.groupTitle }}
-                    @if (fieldEntry.hint) {
-                        <mat-icon class="tooltip-icon"
-                                  [matTooltip]="fieldEntry.hint">
-                            help
-                        </mat-icon>
-                    }
-                </mat-expansion-panel-header>
-            
-                @for (fieldInfo of fieldEntry.fields; track fieldInfo.formId) {
-                    <ng-container *ngTemplateOutlet="formFieldTemplate; context: { $implicit: fieldInfo }" />
+        <!-- Game Installation -->
+        @let currentGameInstallation = gameInstallationModel.value;
+        <mat-form-field appearance="fill" [attr.subscript]="false" [attr.hidden]="!foundGameInstallations.length">
+            <mat-label>Game Installation</mat-label>
+            <mat-select #gameInstallationModel="ngModel"
+                        name="gameInstallation"
+                        [ngModel]="(!initialProfile && foundGameInstallations.length > 0) ? foundGameInstallations[0] : customGameInstaller">
+                @for (gameInstallation of foundGameInstallations; track gameInstallation.rootDir) {
+                    <mat-option [value]="gameInstallation">
+                        {{ gameInstallation.rootDir }}
+                        @if (!!gameInstallation.steamId) {
+                            &nbsp;[Steam ID: {{ gameInstallation.steamId[0] }}]
+                        }
+                    </mat-option>
                 }
-            </mat-expansion-panel>
-        } @else {
-            <ng-container *ngTemplateOutlet="formFieldTemplate; context: { $implicit: fieldEntry }" />
-        }
+                
+                <mat-option [value]="customGameInstaller">
+                    {{ initialProfile.gameInstallation?.rootDir ? "Current Installation" : "Custom Installation" }}
+                </mat-option>
+            </mat-select>
 
-        <ng-template #formFieldTemplate let-fieldInfo >
-            <mat-form-field appearance="fill">
-                <mat-label>{{ fieldInfo.title }}</mat-label>
-
-                @if (fieldInfo.linkable) {
-                    <button mat-icon-button 
-                            matPrefix
-                            type="button"
-                            [attr.editable]="fieldInfo.linkFn"
-                            [disabledInteractive]="!fieldInfo.linkFn"
-                            [disabled]="!profileForm.enabled"
-                            [color]="fieldInfo.linked ? 'accent' : null"
-                            (click)="fieldInfo.linkFn ? fieldInfo.linkFn(fieldInfo) : null; $event.stopPropagation()">
-                        <mat-icon>{{ fieldInfo.linked ? "link" : "link_off" }}</mat-icon>
-                    </button>
-                }
-
-                <input #fieldModel="ngModel"
-                    matInput
-                    type="text"
-                    [name]="fieldInfo.formId"
-                    [required]="fieldInfo.requiredFn ? fieldInfo.requiredFn(formModel) : fieldInfo.required"
-                    [ngModel]="$any(initialProfile)[fieldInfo.formId]"
-                    cdkTrapFocus [cdkTrapFocusAutoCapture]="remedyMode === fieldModel.name">
-        
-                    @let defaultPath = $any(defaultPaths)?.[fieldInfo.formId];
-                    @if (!!defaultPath) {
-                        <button mat-icon-button 
-                                matSuffix
-                                type="button"
-                                color="accent"
-                                matTooltip="Reset to Default Value"
-                                [disabled]="!profileForm.enabled"
-                                [attr.hidden]="!fieldInfo.path || null"
-                                (click)="fieldModel.control.setValue(defaultPath); $event.stopPropagation()">
-                            <mat-icon>refresh</mat-icon>
-                        </button>
-                    }
-        
-                <button mat-icon-button 
+            @if (!!currentGameInstallation && currentGameInstallation !== customGameInstaller) {
+                <button mat-icon-button
                         matSuffix
                         type="button"
-                        color="accent"
-                        matTooltip="Choose {{ fieldInfo.fileTypes ? 'File' : 'Directory' }}"
+                        color="primary"
                         [disabled]="!profileForm.enabled"
-                        [attr.hidden]="!fieldInfo.path || null"
-                        (click)="choosePath(fieldModel, fieldInfo.fileTypes); $event.stopPropagation()">
-                    <mat-icon>folder</mat-icon>
+                        (click)="updateCustomGameInstallation(currentGameInstallation, gameInstallationModel); $event.stopPropagation()">
+                    <mat-icon>edit</mat-icon>
                 </button>
+            }
+        </mat-form-field>
 
-                @if (fieldInfo.hint) {
-                    <mat-icon matSuffix
-                              [matTooltip]="fieldInfo.hint">
-                        help
-                    </mat-icon>
-                }
+        <!-- Game Installation Settings -->
+        @if (!!currentGameInstallation) {
+            <mat-expansion-panel [expanded]="createMode && currentGameInstallation === customGameInstaller">
+                <mat-expansion-panel-header>
+                    Game Installation Settings
+                </mat-expansion-panel-header>
 
-                @if (fieldModel.errors?.["invalidProfileRoot"]) {
-                    <mat-error>
-                        Invalid directory
-                    </mat-error>
-                }
-            </mat-form-field>
-        </ng-template>
+                <app-game-install-settings [custom]="currentGameInstallation === customGameInstaller"
+                                           [disabled]="!profileForm.enabled"
+                                           [value]="currentGameInstallation"
+                                           (valueChange)="gameInstallationModel.control.setValue($event)" />
+            </mat-expansion-panel>
+        }
     }
 
+    <!-- Profile form fields -->
+    <div class="profile-fields">
+        @for (fieldEntry of fieldInput$ | async | appProfileFields; track fieldEntry.formId) {
+            @if (isFieldGroup(fieldEntry)) {
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        {{ fieldEntry.groupTitle }}
+                        @if (fieldEntry.hint) {
+                            <mat-icon class="tooltip-icon"
+                                      [matTooltip]="fieldEntry.hint">
+                                help
+                            </mat-icon>
+                        }
+                    </mat-expansion-panel-header>
+                
+                    @for (childField of fieldEntry.fields; track childField.formId) {
+                        <app-profile-form-field [field]="childField"
+                                                [disabled]="!profileForm.enabled"
+                                                [name]="childField.formId.toString()"
+                                                [ngModel]="initialProfile[childField.formId]" />
+                    }
+                </mat-expansion-panel>
+            } @else {
+                <app-profile-form-field [field]="fieldEntry"
+                                        [disabled]="!profileForm.enabled"
+                                        [name]="fieldEntry.formId.toString()"
+                                        [ngModel]="initialProfile[fieldEntry.formId]" />
+            }
+        }
+    </div>
+
+    <!-- Mod Link Mode -->
     @if (!baseProfileMode) {
         <div class="checkbox-field">
             <mat-checkbox name="modLinkMode"
@@ -186,6 +181,7 @@
         </div>
     }
 
+    <!-- Config Link Mode -->
     @if (!baseProfileMode && formModel.manageConfigFiles) {
         <div class="checkbox-field">
             <mat-checkbox name="configLinkMode"
@@ -197,6 +193,7 @@
         </div>
     }
 
+    <!-- Config Management -->
     <div class="checkbox-field">
         <mat-checkbox name="manageConfigFiles"
                       [disabled]="!profileForm.enabled"
@@ -206,6 +203,7 @@
         </mat-checkbox>
     </div>
 
+    <!-- Save Manegement -->
     @if (!baseProfileMode) {
         <div class="checkbox-field">
             <mat-checkbox name="manageSaveFiles"
@@ -217,6 +215,7 @@
         </div>
     }
 
+    <!-- Steam Compat Symlink Mode -->
     @if (!baseProfileMode && manageSteamCompatSymlinksSupported) {
         <div class="checkbox-field">
             <mat-checkbox name="manageSteamCompatSymlinks"
@@ -228,11 +227,12 @@
         </div>
     }
 
+    <!-- Archive Invalidation -->
     @if (!baseProfileMode) {
         @let gameDetails = gameDb[formModel.gameId!];
         @if (gameDetails?.archiveInvalidation) {
             <div class="checkbox-field">
-                <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$ | async))"
+                <mat-checkbox [disabled]="!profileForm.enabled || createMode || !(formModel.manageConfigFiles || (gameDetails | appGameConfigFilesFound$:formModel | async))"
                               [checked]="'profile:checkArchiveInvalidationEnabled' | appSendElectronMsg$:{ profile: $any(formModel) } | async"
                               (change)="profileManager.setArchiveInvalidationEnabled($event.checked)">
                     Archive Invalidation

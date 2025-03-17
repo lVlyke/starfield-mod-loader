@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, EventEmitter, Output } from "@angular/core";
-import { AsyncPipe, KeyValuePipe } from "@angular/common";
+import { AsyncPipe } from "@angular/common";
 import { AbstractControl, FormsModule } from "@angular/forms";
 import { MatFormField } from "@angular/material/form-field";
 import { MatSelect, MatSelectTrigger } from "@angular/material/select";
@@ -30,7 +30,6 @@ import { AppProfileConfigFilePipe } from "../../pipes/profile-config-file.pipe";
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         AsyncPipe,
-        KeyValuePipe,
         FormsModule,
 
         MatFormField,
@@ -63,7 +62,7 @@ export class AppProfileConfigEditorComponent extends BaseComponent {
     protected gameDetails?: GameDetails;
 
     @DeclareState()
-    protected gameConfigFiles?: Record<string, string[]>;
+    protected gameConfigFiles: string[] = [];
 
     @DeclareState("lastUpdateDate")
     private _lastUpdateDate = new Date();
@@ -82,7 +81,7 @@ export class AppProfileConfigEditorComponent extends BaseComponent {
 
         combineLatest(stateRef.getAll("profile", "gameDb")).subscribe(([profile, gameDb]) => {
             this.gameDetails = profile ? gameDb[profile.gameId] : gameDb[GameId.UNKNOWN];
-            this.gameConfigFiles = this.gameDetails.gameConfigFiles;
+            this.gameConfigFiles = this.gameDetails.gameConfigFiles ?? [];
         });
     }
 

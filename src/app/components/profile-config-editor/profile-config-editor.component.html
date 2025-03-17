@@ -6,7 +6,7 @@
     <!-- File selector -->
     <mat-form-field [attr.subscript]="false">
         <mat-select #activeConfigFileModel="ngModel"
-                    [ngModel]="(gameConfigFiles | keyvalue)[0].key"
+                    [ngModel]="gameConfigFiles[0]"
                     (ngModelChange)="configFileDataModel.reset()">
             <mat-select-trigger>
                 <span class="config-file-name" [attr.new-file]="profileConfigData === undefined">
@@ -25,9 +25,9 @@
                 }
             </mat-select-trigger>
             
-            @for (configFile of gameConfigFiles | keyvalue; track configFile.key) {
-                <mat-option [value]="configFile.key">
-                    {{ configFile.key }}
+            @for (configFile of gameConfigFiles; track configFile) {
+                <mat-option [value]="configFile">
+                    {{ configFile }}
                 </mat-option>
             }
         </mat-select>

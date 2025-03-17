@@ -10,6 +10,7 @@ import { LangUtils } from "../../util/lang-utils";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
+import { GameInstallation } from "../../models/game-installation";
 
 @Component({
     templateUrl: "./profile-verification-results.modal.html",
@@ -24,7 +25,7 @@ import { AppStateBehaviorManager } from "../../services/app-state-behavior-manag
 })
 export class AppProfileVerificationResultsModal extends BaseComponent {
 
-    private static readonly PROFILE_VERIFICATION_ERROR_DESCS: Record<keyof AppProfile, string> = {
+    private static readonly PROFILE_VERIFICATION_ERROR_DESCS: Record<keyof AppProfile | keyof GameInstallation, string> = {
         name: "Invalid profile name",
         gameId: "Invalid Game ID",
         mods: "Invalid or missing mod files",
@@ -37,13 +38,14 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         backupsPathOverride: "Invalid Profile Backups directory",
         deployed: "Invalid deployment state",
         locked: "Invalid locked state",
-        gameRootDir: "Invalid Game Root directory",
-        gameModDir: "Invalid Game Data directory",
-        gameBinaryPath: "Invalid Game Executable path",
-        gamePluginListPath: "Invalid Plugin List path",
-        gameConfigFilePath: "Invalid Config File path",
-        gameSaveFolderPath: "Invalid Save Folder path",
-        steamGameId: "Invalid Steam Game ID",
+        gameInstallation: "Invalid Game Installation",
+        steamId: "Invalid Steam Game ID",
+        rootDir: "Invalid Game Root directory",
+        modDir: "Invalid Game Data directory",
+        pluginListPath: "Invalid Plugin List path",
+        configFilePath: "Invalid Config File path",
+        saveFolderPath: "Invalid Save Folder path",
+        steamCustomGameId: "Invalid Steam Game ID",
         manageExternalPlugins: "Invalid external plugin management state",
         manageConfigFiles: "Invalid Config File Management state",
         manageSaveFiles: "Invalid Save File Management state",
@@ -52,6 +54,7 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         configLinkMode: "Invalid Config Link Mode state",
         externalFilesCache: "Invalid external files",
         baseProfile: "Invalid Base Profile",
+        defaultGameActions: "Invalid default game actions",
         customGameActions: "Invalid custom game actions",
         activeGameAction: "Invalid active game action",
         rootModSections: "Invalid root mod section",
@@ -81,21 +84,18 @@ export class AppProfileVerificationResultsModal extends BaseComponent {
         this.errors = this.collectErrors(verificationResults);
     }
 
-    private collectErrors<K extends string>(results: AppProfile.VerificationResultRecord<K>, logOnly: boolean = false): string[] {
+    private collectErrors<K extends string>(results: AppProfile.VerificationResultRecord<K>): string[] {
         return LangUtils.entries(results).reduce<string[]>((errors, [propertyKey, verificationResult]) => {
             if (!AppProfileVerificationResultsModal.BLACKLISTED_ERROR_KEYS.includes(propertyKey)) {
-                const errorText = this.mapVerificationResultToError(propertyKey, verificationResult);
+                if ("results" in verificationResult) {
+                    errors.push(...this.collectErrors(verificationResult.results));
+                } else {
+                    const errorText = this.mapVerificationResultToError(propertyKey, verificationResult);
 
-                if (errorText && !errors.includes(errorText)) {
-                    log.error(`Profile verification error:`, `"${propertyKey}"`, errorText);
-
-                    if (!logOnly) {
+                    if (errorText && !errors.includes(errorText)) {
+                        log.error(`Profile verification error:`, `"${propertyKey}"`, errorText);
                         errors.push(errorText);
                     }
-                }
-
-                if ("results" in verificationResult) {
-                    errors.push(...this.collectErrors(verificationResult.results, true));
                 }
             }
 
