@@ -199,7 +199,7 @@ export class AppModsOverviewPage extends BasePage {
     }
 
     protected updateConfigFile(fileName: string, data: string): Observable<unknown> {
-        return runOnce(this.profileManager.updateConfigFile(fileName, data).pipe(
+        return runOnce(this.profileManager.updateConfigFile(this.activeProfile!, fileName, data).pipe(
             tap(() => this.configFileUpdate$.next(new Date()))
         ));
     }
