@@ -22,6 +22,7 @@ import {
 import { Store } from "@ngxs/store";
 import { combineLatest, EMPTY, forkJoin, Observable, of } from "rxjs";
 import {
+    catchError,
     defaultIfEmpty,
     delay,
     distinctUntilChanged,
@@ -420,6 +421,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
                 if (formModel.name === activeProfile?.name && activeProfile?.deployed) {
                     wasDeployed = true;
                     return this.profileManager.updateActiveModDeployment(false).pipe(
+                        catchError(() => EMPTY),
                         map(() => formModel)
                     )
                 } else {

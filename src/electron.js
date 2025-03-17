@@ -448,10 +448,10 @@ class ElectronLoader {
             const gamePluginListPathResult = "gameInstallation" in profile && profile.gameInstallation.pluginListPath
                 ? this.verifyProfilePathExists(path.dirname(profile.gameInstallation.pluginListPath))
                 : VERIFY_SUCCESS;
-            const gameConfigFilePathResult = "gameInstallation" in profile
+            const gameConfigFilePathResult = "gameInstallation" in profile && profile.gameInstallation.configFilePath
                 ? this.verifyProfilePathExists(profile.gameInstallation.configFilePath)
                 : VERIFY_SUCCESS;
-            const gameSaveFolderPathResult = "gameInstallation" in profile
+            const gameSaveFolderPathResult = "gameInstallation" in profile && profile.gameInstallation.saveFolderPath
                 ? this.verifyProfilePathExists(profile.gameInstallation.saveFolderPath)
                 : VERIFY_SUCCESS;
             const rootPathOverrideResult = profile.rootPathOverride
@@ -3565,6 +3565,8 @@ class ElectronLoader {
 
     /** @returns {string | undefined} */
     #resolveSteamLibraryDirFromPath(/** @type {string} */ dir) {
+        dir = this.#expandPath(dir);
+        
         if (!fs.existsSync(dir)) {
             return undefined;
         }
@@ -3581,6 +3583,8 @@ class ElectronLoader {
 
     /** @returns {string | undefined} */
     #getSteamCompatRoot(/** @type {string} */ gameRootDir, /** @type {string} */ steamId) {
+        gameRootDir = this.#expandPath(gameRootDir);
+
         if (!fs.existsSync(gameRootDir)) {
             return undefined;
         }
