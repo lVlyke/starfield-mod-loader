@@ -2475,6 +2475,7 @@ class ElectronLoader {
                         if (extFilesList?.includes(modFile)) {
                             // Backup original external file to temp directory for deploy and override
                             fs.moveSync(destFilePath, path.join(extFilesBackupDir, modFile));
+                            _.remove(extFilesList, extFile => extFile === modFile);
                         } else {
                             // Don't override deployed files
                             shouldCopy = false;
