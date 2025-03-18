@@ -75,7 +75,7 @@
 
         <!-- Game Installation -->
         @let currentGameInstallation = gameInstallationModel.value;
-        <mat-form-field appearance="fill" [attr.subscript]="false" [attr.hidden]="!foundGameInstallations.length">
+        <mat-form-field appearance="fill" [attr.subscript]="false" [attr.app-hidden]="!foundGameInstallations.length">
             <mat-label>Game Installation</mat-label>
             <mat-select #gameInstallationModel="ngModel"
                         name="gameInstallation"
@@ -216,9 +216,10 @@
     }
 
     <!-- Steam Compat Symlink Mode -->
-    @if (!baseProfileMode && manageSteamCompatSymlinksSupported) {
+    @if (!baseProfileMode) {
         <div class="checkbox-field">
             <mat-checkbox name="manageSteamCompatSymlinks"
+                          [attr.app-hidden]="!manageSteamCompatSymlinksSupported"
                           [disabled]="!profileForm.enabled"
                           [ngModel]="manageSteamCompatSymlinksSupported ? initialProfile.manageSteamCompatSymlinks : false">
                 Manage Steam Compat Symlinks

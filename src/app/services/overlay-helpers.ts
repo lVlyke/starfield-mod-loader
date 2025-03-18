@@ -270,7 +270,7 @@ export class OverlayHelpers {
         }
 
         // When the overlay is closed, remove it from the stack
-        helpersRef.onClose$.subscribe(() => _.remove(this.overlayStack, helpersRef));
+        helpersRef.onClose$.subscribe(() => _.remove(this.overlayStack, overlayRef => overlayRef === helpersRef));
 
         return helpersRef;
     }

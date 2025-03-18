@@ -31,7 +31,7 @@
             color="accent"
             matTooltip="Choose {{ field.fileTypes ? 'File' : 'Directory' }}"
             [disabled]="disabled || field.readonly"
-            [attr.hidden]="!field.path || null"
+            [attr.app-hidden]="!field.path || null"
             (click)="choosePath(fieldModel, field.fileTypes); $event.stopPropagation()">
         <mat-icon>folder</mat-icon>
     </button>
