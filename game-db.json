@@ -202,6 +202,106 @@
             "SkyrimPrefs.ini"
         ]
     },
+    "fallout_3": {
+        "title": "Fallout 3",
+        "bkgColor": "#10120b",
+        "fgColor": "#d6f0be",
+        "installations": [
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 3",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 3",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 3 goty",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 3 goty",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "rootDir": "%PROGRAMFILES(X86)%\\Bethesda Softworks\\Fallout 3",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Fallout 3\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout3\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout3",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout3\\Saves"
+            },
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Fallout 3",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Fallout3/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout3",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout3/Saves"
+            },
+            {
+                "steamId": ["22300", "22370"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Fallout 3 goty",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Fallout3/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout3",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout3/Saves"
+            }
+        ],
+        "gameBinary": ["Fallout3.exe", "fose_loader.exe"],
+        "pluginListType": "Gamebryo",
+        "pluginFormats": ["esm", "esp"],
+        "saveFormats": ["fos"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Fallout3.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": true,
+        "scriptExtenders": [
+            {
+                "name": "FOSE",
+                "binaries": ["fose_loader.exe"],
+                "modPaths": ["FOSE"]
+            }
+        ],
+        "gameConfigFiles": [
+            "Fallout.ini",
+            "FalloutCustom.ini",
+            "FalloutPrefs.ini"
+        ],
+        "resources": {
+            "mods": {
+                "fallout_3/Invalidation.bsa": "Invalidation.bsa"
+            }
+        },
+        "archiveInvalidation": {
+            "FalloutPrefs.ini": "; The following section has been added automatically by Starfield Mod Loader. Place any additional changes after this section.\r\n[Archive]\r\nSArchiveList=Invalidation.bsa, Fallout - Textures.bsa, Fallout - Textures2.bsa, Fallout - Meshes.bsa, Fallout - Voices1.bsa, Fallout - Sound.bsa,  Fallout - Misc.bsa\r\n\r\n"
+        }
+    },
     "fallout_4": {
         "title": "Fallout 4",
         "bkgColor": "#007300",
