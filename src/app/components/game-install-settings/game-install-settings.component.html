@@ -1,4 +1,12 @@
 <form #gameInstallationForm="ngForm" id="game-installation-form">
+    @for (fieldEntry of profileSettings.fieldInput$ | async | appGameInstallFields:custom; track fieldEntry.formId) {
+        <app-profile-form-field [field]="fieldEntry"
+                                [disabled]="disabled"
+                                [name]="fieldEntry.formId.toString()"
+                                [(ngModel)]="value[fieldEntry.formId]"
+                                (ngModelChange)="valueChange$.emit(value)" />
+    }
+
     @if (!!value.steamId?.length || custom) {
         <mat-form-field>
             <mat-label>Steam ID</mat-label>
@@ -8,13 +16,5 @@
                 [ngModelOptions]="{ standalone: true }"
                 (ngModelChange)="value.steamId = [$event]; valueChange$.emit(value)">
         </mat-form-field>
-    }
-
-    @for (fieldEntry of profileSettings.fieldInput$ | async | appGameInstallFields:custom; track fieldEntry.formId) {
-        <app-profile-form-field [field]="fieldEntry"
-                                [disabled]="disabled"
-                                [name]="fieldEntry.formId.toString()"
-                                [(ngModel)]="value[fieldEntry.formId]"
-                                (ngModelChange)="valueChange$.emit(value)" />
     }
 </form>

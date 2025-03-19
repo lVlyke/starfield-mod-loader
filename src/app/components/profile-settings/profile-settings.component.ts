@@ -154,11 +154,11 @@ export class AppProfileSettingsComponent extends BaseComponent {
     @DeclareState("currentGameDetails")
     protected _currentGameDetails: GameDetails = GameDetails.empty();
 
-    @DeclareState()
-    protected gameIds: GameId[] = [];
+    @DeclareState("customGameInstaller")
+    protected _customGameInstaller: GameInstallation = GameInstallation.empty();
 
     @DeclareState()
-    protected customGameInstaller = GameInstallation.empty();
+    protected gameIds: GameId[] = [];
 
     private readonly validateProfileName = (control: AbstractControl): ValidationErrors | null => {
         return this.appProfileDescs.some(existingProfile => control.value.toLowerCase() === existingProfile.name.toLowerCase())
@@ -298,9 +298,9 @@ export class AppProfileSettingsComponent extends BaseComponent {
 
         // Create the customGameInstaller settings from the initial profile, if any
         stateRef.get("initialProfile").subscribe((initialProfile) => {
-            this.customGameInstaller = initialProfile.gameInstallation
+            this._customGameInstaller = initialProfile.gameInstallation
                 ? _.cloneDeep(initialProfile.gameInstallation)
-                : this.customGameInstaller;
+                : this._customGameInstaller;
         });
         
         // Check if profile is a base profile
@@ -334,6 +334,29 @@ export class AppProfileSettingsComponent extends BaseComponent {
             distinctUntilChanged(),
             switchMap(gameId => ElectronUtils.invoke("app:findGameInstallations", { gameId }))
         ).subscribe(gameInstallations => this._foundGameInstallations = gameInstallations);
+
+        // Attempt to fill in custom game installation details when provided with a game root directory
+        combineLatest([this.formModel$, stateRef.get("customGameInstaller")]).pipe(
+            filter(([formModel, customGameInstaller]) => !!formModel.gameId && !!customGameInstaller.rootDir),
+            map(([formModel, customGameInstaller]): [GameId, string] => [formModel.gameId!, customGameInstaller.rootDir!]),
+            distinctUntilChanged((x, y) => LangUtils.isEqual(x, y)),
+            switchMap(([gameId, rootDir]) => ElectronUtils.invoke("app:findGameInstallationsByRootDir", { gameId, rootDir })),
+            filter(foundGameInstallations => foundGameInstallations.length > 0),
+            map(foundGameInstallations => foundGameInstallations[0])
+        ).subscribe((foundGameInstallation) => {
+            this._customGameInstaller = Object.entries(foundGameInstallation).reduce((customGameInstaller, [
+                installPropKey,
+                installPropValue
+            ]) => {
+                if (!customGameInstaller[installPropKey as keyof GameInstallation]) {
+                    customGameInstaller[installPropKey as keyof GameInstallation] = installPropValue as any;
+                }
+
+                return customGameInstaller;
+            }, this._customGameInstaller);
+
+            this.form.control.updateValueAndValidity();
+        });
 
         // Generate profile field input object
         combineLatest([this.formModel$, ...stateRef.getAll(
@@ -396,15 +419,19 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return this._currentGameDetails;
     }
 
+    public get customGameInstaller(): GameInstallation {
+        return this._customGameInstaller;
+    }
+
     protected isFieldGroup(fieldEntry: AppProfileFormFieldEntry): fieldEntry is AppProfileFormFieldGroup {
         return isProfileFormFieldGroup(fieldEntry);
     }
 
     protected updateCustomGameInstallation(gameInstallation: GameInstallation, model: NgModel): void {
-        this.customGameInstaller = _.merge(this.customGameInstaller, _.cloneDeep(gameInstallation));
+        this._customGameInstaller = _.merge(this._customGameInstaller, _.cloneDeep(gameInstallation));
 
         // Set the current installation to the custom installation
-        model.control.setValue(this.customGameInstaller);
+        model.control.setValue(this._customGameInstaller);
     }
 
     protected submitForm(form: NgForm): Observable<unknown> {

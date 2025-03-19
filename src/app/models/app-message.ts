@@ -185,6 +185,15 @@ export namespace AppMessage {
         result: GameInstallation[];
     }
 
+    export interface FindGameInstallationsByRootDir extends Base {
+        id: `${Prefix}:findGameInstallationsByRootDir`;
+        data: {
+            gameId: GameId;
+            rootDir: string;
+        };
+        result: GameInstallation[];
+    }
+
     export interface ShowAboutInfo extends Base {
         id: `${Prefix}:showAboutInfo`;
         data: {
@@ -246,6 +255,7 @@ export namespace AppMessage {
                            | ShowPreferences
                            | LoadGameDatabase
                            | FindGameInstallations
+                           | FindGameInstallationsByRootDir
                            | ShowAboutInfo
                            | ToggleModListColumn
                            | ToggleLogPanel
@@ -721,6 +731,7 @@ export namespace AppMessage {
         "app:showPreferences",
         "app:loadGameDatabase",
         "app:findGameInstallations",
+        "app:findGameInstallationsByRootDir",
         "app:showAboutInfo",
         "app:toggleModListColumn",
         "app:toggleLogPanel",

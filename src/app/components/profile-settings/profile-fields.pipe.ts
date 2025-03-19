@@ -16,7 +16,12 @@ function PROFILE_OVERRIDE_FIELDS({}: AppProfileFormFieldInput): Readonly<AppProf
 function STANDARD_FIELDS({
     profileModel
 }: AppProfileFormFieldInput): Readonly<AppProfileFormFieldEntry[]> {
-    return [
+    let steamId: string | undefined;
+    if (profileModel.gameInstallation?.steamId?.length) {
+        steamId = profileModel.gameInstallation.steamId[0];
+    }
+
+    return !!steamId ? [
         {
             formId: "steamCustomGameId",
             title: "Custom Steam Game ID",
@@ -24,7 +29,7 @@ function STANDARD_FIELDS({
             required: !!profileModel.manageSteamCompatSymlinks,
             hint: "The ID of a custom Steam game entry (i.e. for script extenders)."
         }
-    ];
+    ] : [];
 }
 
 @Pipe({ name: "appProfileFields" })

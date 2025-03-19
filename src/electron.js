@@ -561,6 +561,16 @@ class ElectronLoader {
             return this.#findAvailableGameInstallations(gameId);
         });
 
+        ipcMain.handle("app:findGameInstallationsByRootDir", /** @returns { Promise<GameInstallation[]> } */ async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:findGameInstallationsByRootDir">} */ {
+                gameId,
+                rootDir
+            }
+        ) => {
+            return this.#findAvailableGameInstallationsByRootDir(gameId, rootDir);
+        });
+
         ipcMain.handle("app:checkLinkSupported", (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"app:checkLinkSupported">} */ { targetPath, destPaths, symlink, symlinkType }
@@ -1013,12 +1023,12 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:steamCompatSymlinksSupported">} */ { profile }
         ) => {
-            if (!profile.gameInstallation?.steamId || !profile.steamCustomGameId) {
+            if (!profile.gameInstallation?.steamId?.length || !profile.steamCustomGameId) {
                 return false;
             }
 
-            const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDirForGameInstallation(profile.gameInstallation);
-            const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation.rootDir, profile.steamCustomGameId);
+            const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation);
+            const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation, profile.steamCustomGameId);
 
             if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
                 return false;
@@ -3222,14 +3232,12 @@ class ElectronLoader {
 
     /** @returns {Promise<string[]>} */
     async writeSteamCompatSymlinks(/** @type {AppProfile} */ profile) {
-        const gameDetails = this.#getGameDetails(profile.gameId);
-
-        if (!profile.gameInstallation.steamId || !profile.steamCustomGameId) {
+        if (!profile.gameInstallation.steamId?.length || !profile.steamCustomGameId) {
             return [];
         }
 
-        const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDirForGameInstallation(profile.gameInstallation);
-        const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation.rootDir, profile.steamCustomGameId);
+        const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation);
+        const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation, profile.steamCustomGameId);
 
         if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
             return [];
@@ -3239,7 +3247,7 @@ class ElectronLoader {
             return [];
         }
 
-        const customCompatRoot = this.#getSteamCompatRoot(profile.gameInstallation.rootDir, profile.steamCustomGameId);
+        const customCompatRoot = this.#getSteamCompatRoot(profile.gameInstallation, profile.steamCustomGameId);
         if (!customCompatRoot) {
             return [];
         }
@@ -3402,8 +3410,8 @@ class ElectronLoader {
             // Wait for all files to be removed
             await Promise.all(undeployJobs);
 
-            const customSteamCompatRoot = !!profile.steamCustomGameId
-                ? this.#getSteamCompatRoot(profile.gameInstallation.rootDir, profile.steamCustomGameId)
+            const customSteamCompatRoot = !!profile.steamCustomGameId && !!profile.gameInstallation.steamId?.length
+                ? this.#getSteamCompatRoot(profile.gameInstallation, profile.steamCustomGameId)
                 : undefined;
 
             const extFilesBackupDirs = _.uniq([
@@ -3558,6 +3566,14 @@ class ElectronLoader {
         return dir;
     }
 
+    #isValidGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
+        return [
+            fs.existsSync(gameInstallation.rootDir),
+            fs.existsSync(gameInstallation.modDir),
+            fs.existsSync(gameInstallation.configFilePath)
+        ].every(Boolean);
+    }
+
     /** @returns {GameInstallation[]} */
     #findAvailableGameInstallations(/** @type {GameId} */ gameId) {
         /** @type {GameInstallation[]} */ const result = [];
@@ -3567,13 +3583,35 @@ class ElectronLoader {
             return result;
         }
         
-        for (const gameInstallation of gameDetails.installations) {
-            result.push(...this.#expandGameInstallation(gameInstallation).filter((expandedInstallation) => {
-                return [
-                    fs.existsSync(expandedInstallation.rootDir),
-                    fs.existsSync(expandedInstallation.modDir),
-                    fs.existsSync(expandedInstallation.configFilePath)
-                ].every(Boolean);
+        for (const defaultGameInstallation of gameDetails.installations) {
+            result.push(...this.#expandGameInstallation(defaultGameInstallation).filter((expandedInstallation) => {
+                return this.#isValidGameInstallation(expandedInstallation);
+            }));
+        }
+
+        return result;
+    }
+
+    /** @returns {GameInstallation[]} */
+    #findAvailableGameInstallationsByRootDir(/** @type {GameId} */ gameId, /** @type {string} */ rootDir) {
+        /** @type {GameInstallation[]} */ const result = [];
+        const gameDetails = this.#getGameDetails(gameId);
+
+        if (!gameDetails) {
+            return result;
+        }
+
+        rootDir = this.#expandPath(rootDir);
+        if (!fs.existsSync(rootDir)) {
+            return result;
+        }
+
+        for (const defaultGameInstallation of gameDetails.installations) {
+            const customGameInstallation = _.cloneDeep(defaultGameInstallation);
+            customGameInstallation.rootDir = rootDir;
+
+            result.push(...this.#expandGameInstallation(customGameInstallation).filter((expandedInstallation) => {
+                return this.#isValidGameInstallation(expandedInstallation);
             }));
         }
 
@@ -3590,7 +3628,7 @@ class ElectronLoader {
                 expandedInstallation.steamId = [steamId];
                 expandedInstallation.rootDir = this.#expandPath(expandedInstallation.rootDir);
 
-                const compatDataRoot = this.#getSteamCompatRootForGameInstallation(expandedInstallation);
+                const compatDataRoot = this.#getSteamCompatRoot(expandedInstallation);
 
                 if (compatDataRoot) {
                     expandedInstallation.modDir = this.#expandSteamCompatRootPath(expandedInstallation.modDir, compatDataRoot);
@@ -3642,7 +3680,7 @@ class ElectronLoader {
     }
 
     /** @returns {string | undefined} */
-    #resolveSteamLibraryDirFromPath(/** @type {string} */ dir) {
+    #resolveSteamLibraryDirFromPath(/** @type {string} */ dir,  /** @type {string} */ steamId) {
         dir = this.#expandPath(dir);
         
         if (!fs.existsSync(dir)) {
@@ -3650,59 +3688,51 @@ class ElectronLoader {
         }
 
         // TODO - Better way to check if we're in a Steam library folder
-        const compatdata = fs.readdirSync(dir).find(relPath => relPath === "libraryfolders.vdf");
+        const compatdata = fs.readdirSync(dir).find(relPath => relPath === `appmanifest_${steamId}.acf`);
 
         if (compatdata) {
             return dir;
         } else {
-            return this.#resolveSteamLibraryDirFromPath(path.dirname(dir));
+            const nextDir = path.dirname(dir);
+            if (nextDir === dir) {
+                return undefined;
+            }
+
+            return this.#resolveSteamLibraryDirFromPath(nextDir, steamId);
         }
     }
 
     /** @returns {string | undefined} */
-    #getSteamCompatRoot(/** @type {string} */ gameRootDir, /** @type {string} */ steamId) {
-        gameRootDir = this.#expandPath(gameRootDir);
+    #getSteamCompatRoot(
+        /** @type {GameInstallation} */ gameInstallation,
+        /** @type {string | undefined} */ customSteamId
+    ) {
+        const gameRootDir = this.#expandPath(gameInstallation.rootDir);
 
         if (!fs.existsSync(gameRootDir)) {
             return undefined;
         }
 
-        const steamDir = this.#resolveSteamLibraryDirFromPath(path.dirname(gameRootDir));
+        if (!gameInstallation.steamId?.length) {
+            return undefined;
+        }
+
+        const gameSteamId = gameInstallation.steamId[0];
+        const steamDir = this.#resolveSteamLibraryDirFromPath(path.dirname(gameRootDir), gameSteamId);
 
         if (!steamDir) {
             return undefined;
         }
 
-        return path.join(steamDir, "compatdata", steamId);
+        return path.join(steamDir, "compatdata", customSteamId ?? gameSteamId);
     }
 
     /** @returns {string | undefined} */
-    #getSteamCompatRootForGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
-        if (!gameInstallation.steamId) {
-            return undefined;
-        }
-
-        if (gameInstallation.steamId.length > 1) {
-            return undefined;
-        }
-
-        return this.#getSteamCompatRoot(gameInstallation.rootDir, gameInstallation.steamId[0]);
-    }
-
-    /** @returns {string | undefined} */
-    #getSteamCompatSteamuserDir(/** @type {string} */ gameRootDir, /** @type {string} */ steamId) {
-        const rootDir = this.#getSteamCompatRoot(gameRootDir, steamId);
-
-        if (!rootDir) {
-            return undefined;
-        }
-
-        return this.#expandPath(path.join(rootDir, ElectronLoader.STEAM_COMPAT_STEAMUSER_DIR));
-    }
-
-    /** @returns {string | undefined} */
-    #getSteamCompatSteamuserDirForGameInstallation(/** @type {GameInstallation} */ gameInstallation) {
-        const rootDir = this.#getSteamCompatRootForGameInstallation(gameInstallation);
+    #getSteamCompatSteamuserDir(
+        /** @type {GameInstallation} */ gameInstallation,
+        /** @type {string | undefined} */ customSteamId
+    ) {
+        const rootDir = this.#getSteamCompatRoot(gameInstallation, customSteamId);
 
         if (!rootDir) {
             return undefined;
