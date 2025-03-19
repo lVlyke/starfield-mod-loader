@@ -94,6 +94,11 @@ class ElectronLoader {
         "license": `file://${process.cwd()}/LICENSE`,
         "homepage": "https://github.com/lVlyke/starfield-mod-loader"
     };
+
+    #CLI_COMMAND_EXECUTORS = {
+        "-l": async (...args) => this.directLaunchProfileByName(args[0], args[1]),
+        "--launch": async (...args) => this.directLaunchProfileByName(args[0], args[1]),
+    }
     
     /** @type {BrowserWindow} */ mainWindow;
     /** @type {Menu} */ menu;
@@ -116,14 +121,17 @@ class ElectronLoader {
         // This method will be called when Electron has finished
         // initialization and is ready to create browser windows.
         // Some APIs can only be used after this event occurs.
-        app.whenReady().then(() => {
-            this.initWindow();
+        app.whenReady().then(async () => {
+            // Check for any launch commands
+            await this.#checkCliCommands();
+
+            this.#initWindow();
 
             app.on('activate', () => {
                 // On macOS it's common to re-create a window in the app when the
                 // dock icon is clicked and there are no other windows open.
                 if (BrowserWindow.getAllWindows().length === 0) {
-                    this.initWindow();
+                    this.#initWindow();
                 }
             });
 
@@ -942,16 +950,7 @@ class ElectronLoader {
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"profile:runGameAction">} */ { profile, gameAction }
         ) => {
-            const gameDetails = this.#getGameDetails(profile.gameId);
-            // Substitute variables for profile
-            const gameActionCmd = _.template(gameAction.actionScript)({ ...profile, gameDetails });
-            
-            // Run the action
-            try {
-                exec(gameActionCmd, { cwd: profile.gameInstallation.rootDir });
-            } catch(error) {
-                throw new Error(error.toString());
-            }
+            this.runGameAction(profile, gameAction);
         });
 
         ipcMain.handle("profile:resolveDefaultGameActions", async (
@@ -1081,7 +1080,7 @@ class ElectronLoader {
         });
     }
 
-    initWindow() {
+    #initWindow() {
         // Create the browser window
         this.mainWindow = new BrowserWindow({
             icon: ElectronLoader.APP_ICON_IMG,
@@ -1112,6 +1111,22 @@ class ElectronLoader {
             shell.openExternal(url);
             return { action: "deny" };
         });
+    }
+
+    async #checkCliCommands() {
+        // Check if any known commands were issued
+        const cliEntries = Object.entries(this.#CLI_COMMAND_EXECUTORS);
+        for (const [cliArg, cliExecutor] of cliEntries) {
+            const argIndex = process.argv.indexOf(cliArg);
+
+            if (argIndex !== -1) {
+                const result = await cliExecutor(...process.argv.slice(argIndex + 1));
+
+                if (!result) {
+                    log.error("Failed to run CLI command", cliArg);
+                }
+            }
+        }
     }
 
     loadApp() {
@@ -2917,6 +2932,68 @@ class ElectronLoader {
 
         const profileModDirs = fs.readdirSync(profileModsDir);
         return profileModDirs.map(modName => [modName, { enabled: true }]);
+    }
+
+    /** @returns {boolean} */
+    runGameAction(
+        /** @type {AppProfile} */ profile,
+        /** @type {GameAction} */ gameAction
+    ) {
+        const gameDetails = this.#getGameDetails(profile.gameId);
+        // Substitute variables for profile
+        const gameActionCmd = _.template(gameAction.actionScript)({ ...profile, gameDetails });
+        
+        // Run the action
+        try {
+            exec(gameActionCmd, { cwd: profile.gameInstallation.rootDir });
+        } catch(error) {
+            log.error(error);
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @returns {Promise<boolean>} */
+    async directLaunchProfileByName(
+        /** @type {string} */ profileName,
+        /** @type {string | undefined} */ actionName 
+    ) {
+        const profile = this.loadProfile(profileName);
+        if (!profile) {
+            return false;
+        }
+
+        if (!("gameInstallation" in profile)) {
+            return false;
+        }
+
+        /**@type {GameAction | undefined} */ let gameAction;
+        if (actionName !== undefined) {
+            gameAction = profile.customGameActions?.find((action) => action.name === actionName)
+                      ?? profile.defaultGameActions.find((action) => action.name === actionName);
+        } else {
+            gameAction = profile.activeGameAction ?? profile.defaultGameActions[0];
+        }
+
+        if (!gameAction) {
+            return false;
+        }
+
+        if (!profile.deployed) {
+            const appSettings = this.loadSettings();
+
+            try {
+                await this.deployProfile(profile, appSettings.pluginsEnabled, appSettings.normalizePathCasing);
+            } catch (err) {
+                log.error("Failed to launch profile", profileName, err);
+                return false;
+            }
+
+            this.saveProfile(profile);
+        }
+
+        return this.runGameAction(profile, gameAction);
     }
 
     /** @returns {Promise<string[]>} */
