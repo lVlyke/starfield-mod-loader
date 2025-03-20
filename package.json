@@ -12,6 +12,7 @@
     "app:build-debug": "npm run app:build-dist-debug && npm run prepare-packages",
     "app:build-release": "npm run app:build-dist && npm run prepare-packages",
     "app:build-release:all": "npm run app:build-dist:all && npm run prepare-packages",
+    "game-db:generate-schema": "ts-json-schema-generator --path ./src/app/models/game-database.ts --type GameDatabase > game-db.schema.json",
     "ng": "./node_modules/.bin/ng",
     "build": "node ./scripts/build.js",
     "build:release": "npm run build -- --release",
@@ -78,6 +79,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "license-checker-rseidelsohn": "^4.4.2",
+    "ts-json-schema-generator": "^2.3.0",
     "typescript": "~5.5.4"
   },
   "browser": {

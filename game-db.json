@@ -1,13 +1,24 @@
 {
+    "$schema": "./game-db.schema.json",
     "$none": {
         "title": "None",
         "bkgColor": "#bbbbbb",
-        "fgColor": "#ffffff"
+        "fgColor": "#ffffff",
+        "installations": [],
+        "gameBinary": [],
+        "pluginFormats": [],
+        "saveFormats": [],
+        "requireExternalPlugins": true
     },
     "$unknown": {
         "title": "??????",
         "bkgColor": "#ff0000",
-        "fgColor": "#ffffff"
+        "fgColor": "#ffffff",
+        "installations": [],
+        "gameBinary": [],
+        "pluginFormats": [],
+        "saveFormats": [],
+        "requireExternalPlugins": true
     },
     "elder_scrolls_oblivion": {
         "title": "Elder Scrolls: Oblivion",

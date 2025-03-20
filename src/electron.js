@@ -1409,8 +1409,9 @@ class ElectronLoader {
         }
 
         const dbSrc = fs.readFileSync(ElectronLoader.GAME_DB_FILE);
-
-        return JSON.parse(dbSrc.toString("utf8"));
+        const result = JSON.parse(dbSrc.toString("utf8"));
+        delete result.$schema;
+        return result;
     }
 
     /** @returns {string} */

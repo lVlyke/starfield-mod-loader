@@ -1,0 +1,193 @@
+{
+  "$ref": "#/definitions/GameDatabase",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "GameDatabase": {
+      "additionalProperties": {
+        "$ref": "#/definitions/GameDetails"
+      },
+      "type": "object"
+    },
+    "GameDetails": {
+      "additionalProperties": false,
+      "properties": {
+        "archiveInvalidation": {
+          "$ref": "#/definitions/GameDetails.ArchiveInvalidationConfig"
+        },
+        "bkgColor": {
+          "type": "string"
+        },
+        "fgColor": {
+          "type": "string"
+        },
+        "gameBinary": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "gameConfigFiles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "installations": {
+          "items": {
+            "$ref": "#/definitions/GameInstallation"
+          },
+          "type": "array"
+        },
+        "pinnedPlugins": {
+          "items": {
+            "$ref": "#/definitions/GameDetails.PinnedPlugin"
+          },
+          "type": "array"
+        },
+        "pluginFormats": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "pluginListType": {
+          "$ref": "#/definitions/GamePluginListType"
+        },
+        "requireExternalPlugins": {
+          "type": "boolean"
+        },
+        "resources": {
+          "$ref": "#/definitions/GameDetails.Resources"
+        },
+        "saveFormats": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "scriptExtenders": {
+          "items": {
+            "$ref": "#/definitions/GameDetails.ScriptExtender"
+          },
+          "type": "array"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "installations",
+        "gameBinary",
+        "pluginFormats",
+        "saveFormats",
+        "requireExternalPlugins"
+      ],
+      "type": "object"
+    },
+    "GameDetails.ArchiveInvalidationConfig": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "GameDetails.PinnedPlugin": {
+      "additionalProperties": false,
+      "properties": {
+        "plugin": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "plugin"
+      ],
+      "type": "object"
+    },
+    "GameDetails.Resources": {
+      "additionalProperties": false,
+      "properties": {
+        "mods": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "mods"
+      ],
+      "type": "object"
+    },
+    "GameDetails.ScriptExtender": {
+      "additionalProperties": false,
+      "properties": {
+        "binaries": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "modPaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "binaries",
+        "modPaths"
+      ],
+      "type": "object"
+    },
+    "GameInstallation": {
+      "additionalProperties": false,
+      "properties": {
+        "configFilePath": {
+          "type": "string"
+        },
+        "modDir": {
+          "type": "string"
+        },
+        "pluginListPath": {
+          "type": "string"
+        },
+        "rootDir": {
+          "type": "string"
+        },
+        "saveFolderPath": {
+          "type": "string"
+        },
+        "steamId": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "rootDir",
+        "modDir",
+        "configFilePath",
+        "saveFolderPath"
+      ],
+      "type": "object"
+    },
+    "GamePluginListType": {
+      "enum": [
+        "Default",
+        "CreationEngine",
+        "Gamebryo",
+        "NetImmerse"
+      ],
+      "type": "string"
+    }
+  }
+}
