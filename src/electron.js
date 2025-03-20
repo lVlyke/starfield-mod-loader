@@ -1124,16 +1124,30 @@ class ElectronLoader {
     }
 
     async #checkCliCommands() {
+        const cliArgNames = Object.keys(this.#CLI_COMMAND_EXECUTORS);
+
         // Check if any known commands were issued
-        const cliEntries = Object.entries(this.#CLI_COMMAND_EXECUTORS);
-        for (const [cliArg, cliExecutor] of cliEntries) {
-            const argIndex = process.argv.indexOf(cliArg);
+        for (let argi = 1; argi < process.argv.length; ++argi) {
+            const argToken = process.argv[argi].toLowerCase();
 
-            if (argIndex !== -1) {
-                const result = await cliExecutor(...process.argv.slice(argIndex + 1));
+            if (cliArgNames.includes(argToken)) {
+                const cliExecutor = this.#CLI_COMMAND_EXECUTORS[argToken];
+                const startArgi = argi;
 
+                while (++argi < process.argv.length) {
+                    const nextToken = process.argv[argi];
+
+                    if (cliArgNames.includes(nextToken.toLowerCase())) {
+                        break;
+                    }
+                }
+
+                const params = process.argv.slice(startArgi + 1, argi);
+
+                console.log(argToken, ...params);
+                const result = await cliExecutor(...params);
                 if (!result) {
-                    log.error("Failed to run CLI command", cliArg);
+                    log.error("Failed to run CLI command", argToken, ...params);
                 }
             }
         }
@@ -1605,6 +1619,16 @@ class ElectronLoader {
             if ("steamGameId" in profile) {
                 profile.steamCustomGameId = profile.steamGameId;
                 delete profile.steamGameId;
+
+                // Restore the steamId for this profile to preserve symlink compat management
+                if (profile.manageSteamCompatSymlinks) {
+                    const gameDetails = this.#getGameDetails(profile.gameId);
+                    if (!!gameDetails) {
+                        profile.gameInstallation.steamId = gameDetails.installations
+                            .map(installation => installation.steamId)
+                            .find(Boolean);
+                    }
+                }
             }
 
             if ("gameBinaryPath" in profile) {
