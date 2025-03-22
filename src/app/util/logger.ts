@@ -79,12 +79,16 @@ class Log {
     }
 
     private formatLogArg(arg: any): string {
-        if (arg instanceof Error) {
+        if (arg === undefined) {
+            return "undefined";
+        } else if (arg === null) {
+            return "null";
+        } else if (arg instanceof Error) {
             return arg.toString();
-        } else if (typeof arg === "object") {
+        } else if (arg !== undefined && arg !== null && typeof arg === "object") {
             return JSON.stringify(arg);
         } else {
-            return arg.toString();
+            return arg?.toString();
         }
     }
 }
