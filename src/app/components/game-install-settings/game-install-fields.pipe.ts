@@ -31,10 +31,10 @@ function GAME_INSTALLATION_FIELDS({
             path: true,
             readonly: !custom,
             required: true,
-            linkable: true,
-            linked: profileModel.modLinkMode,
+            linkable: !!profileModel,
+            linked: profileModel?.modLinkMode,
             linkFn: modLinkModeSupported ? () => {
-                form.controls["modLinkMode"].setValue(!profileModel.modLinkMode);
+                form.controls["modLinkMode"].setValue(!profileModel!.modLinkMode);
             } : undefined
         },
         {
@@ -43,30 +43,22 @@ function GAME_INSTALLATION_FIELDS({
             path: true,
             readonly: !custom,
             required: true,
-            linkable: true,
-            linked: profileModel.modLinkMode,
+            linkable: !!profileModel,
+            linked: profileModel?.modLinkMode,
             linkFn: modLinkModeSupported ? () => {
-                form.controls["modLinkMode"].setValue(!profileModel.modLinkMode);
+                form.controls["modLinkMode"].setValue(!profileModel!.modLinkMode);
             } : undefined
         },
-        ...!!GameDetails.hasPluginListPath(gameDetails) ? [{ 
-            formId: "pluginListPath",
-            title: "Game Plugin List Path",
-            fileTypes: ["txt"],
-            path: true,
-            readonly: !custom,
-            required: true
-        } as GameInstallFormField] : [],
         {
             formId: "configFilePath",
             title: "Game Config Files Directory",
             path: true, 
             readonly: !custom,
-            required: !!profileModel.manageConfigFiles,
-            linkable: profileModel.manageConfigFiles,
-            linked: profileModel.configLinkMode,
+            required: !!profileModel?.manageConfigFiles,
+            linkable: profileModel?.manageConfigFiles,
+            linked: profileModel?.configLinkMode,
             linkFn: configLinkModeSupported ? () => {
-                form.controls["configLinkMode"].setValue(!profileModel.configLinkMode);
+                form.controls["configLinkMode"].setValue(!profileModel!.configLinkMode);
             } : undefined
         },
         {
@@ -74,10 +66,18 @@ function GAME_INSTALLATION_FIELDS({
             title: "Game Saves Directory",
             path: true,
             readonly: !custom,
-            required: !!profileModel.manageSaveFiles,
-            linkable: profileModel.manageSaveFiles,
+            required: !!profileModel?.manageSaveFiles,
+            linkable: profileModel?.manageSaveFiles,
             linked: true
-        }
+        },
+        ...(!!GameDetails.hasPluginListPath(gameDetails) || !profileModel) ? [{ 
+            formId: "pluginListPath",
+            title: "Game Plugin List Path",
+            fileTypes: ["txt"],
+            path: true,
+            readonly: !custom,
+            required: !!profileModel
+        } as GameInstallFormField] : [],
     ];
 }
 

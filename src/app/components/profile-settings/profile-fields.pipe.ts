@@ -17,7 +17,7 @@ function STANDARD_FIELDS({
     profileModel
 }: AppProfileFormFieldInput): Readonly<AppProfileFormFieldEntry[]> {
     let steamId: string | undefined;
-    if (profileModel.gameInstallation?.steamId?.length) {
+    if (profileModel?.gameInstallation?.steamId?.length) {
         steamId = profileModel.gameInstallation.steamId[0];
     }
 
@@ -26,7 +26,7 @@ function STANDARD_FIELDS({
             formId: "steamCustomGameId",
             title: "Custom Steam Game ID",
             path: false,
-            required: !!profileModel.manageSteamCompatSymlinks,
+            required: !!profileModel?.manageSteamCompatSymlinks,
             hint: "The ID of a custom Steam game entry (i.e. for script extenders)."
         }
     ] : [];

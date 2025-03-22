@@ -74,12 +74,11 @@
         </mat-form-field>
 
         <!-- Game Installation -->
-        @let currentGameInstallation = gameInstallationModel.value;
+        @let currentGameInstallation = gameInstallationSelect.value;
         <mat-form-field appearance="fill" [attr.subscript]="false" [attr.app-hidden]="!foundGameInstallations.length">
             <mat-label>Game Installation</mat-label>
-            <mat-select #gameInstallationModel="ngModel"
-                        name="gameInstallation"
-                        [ngModel]="(createMode && !copyMode && foundGameInstallations.length > 0) ? foundGameInstallations[0] : customGameInstaller">
+            <mat-select #gameInstallationSelect
+                        [value]="(createMode && !copyMode && foundGameInstallations.length > 0) ? foundGameInstallations[0] : customGameInstaller">
                 @for (gameInstallation of foundGameInstallations; track gameInstallation.rootDir) {
                     <mat-option [value]="gameInstallation">
                         {{ gameInstallation.rootDir }}
@@ -100,7 +99,7 @@
                         type="button"
                         color="primary"
                         [disabled]="!profileForm.enabled"
-                        (click)="updateCustomGameInstallation(currentGameInstallation, gameInstallationModel); $event.stopPropagation()">
+                        (click)="updateCustomGameInstallation(currentGameInstallation, gameInstallationSelect); $event.stopPropagation()">
                     <mat-icon>edit</mat-icon>
                 </button>
             }
@@ -113,10 +112,11 @@
                     Game Installation Settings
                 </mat-expansion-panel-header>
 
-                <app-game-install-settings [custom]="currentGameInstallation === customGameInstaller"
+                <app-game-install-settings name="gameInstallation"
+                                           [fieldInput]="fieldInput$ | async"
+                                           [custom]="currentGameInstallation === customGameInstaller"
                                            [disabled]="!profileForm.enabled"
-                                           [value]="currentGameInstallation"
-                                           (valueChange)="gameInstallationModel.control.setValue($event)" />
+                                           [ngModel]="currentGameInstallation" />
             </mat-expansion-panel>
         }
     }

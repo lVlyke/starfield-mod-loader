@@ -77,6 +77,8 @@
       },
       "required": [
         "title",
+        "bkgColor",
+        "fgColor",
         "installations",
         "gameBinary",
         "pluginFormats",

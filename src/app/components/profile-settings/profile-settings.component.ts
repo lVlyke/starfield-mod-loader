@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild } from "@angular/core";
 import { AsyncPipe } from "@angular/common";
-import { AbstractControl, NgForm, ValidationErrors, FormsModule, NgModel } from "@angular/forms";
+import { AbstractControl, NgForm, ValidationErrors, FormsModule } from "@angular/forms";
 import { MatCheckbox } from "@angular/material/checkbox";
 import { MatIcon } from "@angular/material/icon";
 import { MatIconButton } from "@angular/material/button";
@@ -99,7 +99,7 @@ import { GameDetails } from "../../models/game-details";
 export class AppProfileSettingsComponent extends BaseComponent {
 
     public readonly GameId = GameId;
-    public readonly fieldInput$ = new ManagedSubject<AppProfileFormFieldInput>(this);
+    public readonly fieldInput$ = new ManagedBehaviorSubject<AppProfileFormFieldInput | null>(this, null);
     public readonly formModel$ = new ManagedBehaviorSubject<Partial<AppProfile.Form>>(this, {});
     public readonly onFormSubmit$ = new ManagedSubject<AppProfile>(this);
     public readonly onFormStatusChange$ = new ManagedSubject<any>(this);
@@ -155,7 +155,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
     protected _currentGameDetails: GameDetails = GameDetails.empty();
 
     @DeclareState("customGameInstaller")
-    protected _customGameInstaller: GameInstallation = GameInstallation.empty();
+    protected _customGameInstaller!: GameInstallation;
 
     @DeclareState()
     protected gameIds: GameId[] = [];
@@ -427,11 +427,11 @@ export class AppProfileSettingsComponent extends BaseComponent {
         return isProfileFormFieldGroup(fieldEntry);
     }
 
-    protected updateCustomGameInstallation(gameInstallation: GameInstallation, model: NgModel): void {
+    protected updateCustomGameInstallation(gameInstallation: GameInstallation, gameInstallationSelect: MatSelect): void {
         this._customGameInstaller = _.merge(this._customGameInstaller, _.cloneDeep(gameInstallation));
 
         // Set the current installation to the custom installation
-        model.control.setValue(this._customGameInstaller);
+        gameInstallationSelect.value = this._customGameInstaller;
     }
 
     protected submitForm(form: NgForm): Observable<unknown> {

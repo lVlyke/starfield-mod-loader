@@ -1,5 +1,14 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, Input, ViewChild, forwardRef, Output } from "@angular/core";
-import { NgModel, FormsModule, NG_VALUE_ACCESSOR, ControlValueAccessor } from "@angular/forms";
+import {
+    NgModel,
+    FormsModule,
+    NG_VALUE_ACCESSOR,
+    ControlValueAccessor,
+    NG_VALIDATORS,
+    Validator,
+    FormControl,
+    ValidationErrors
+} from "@angular/forms";
 import { CdkTrapFocus } from "@angular/cdk/a11y";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
@@ -8,7 +17,7 @@ import { MatInput } from "@angular/material/input";
 import { MatIconButton } from "@angular/material/button";
 import { ComponentState, ComponentStateRef, DeclareState } from "@lithiumjs/angular";
 import { Observable } from "rxjs";
-import { tap } from "rxjs/operators";
+import { skip, tap } from "rxjs/operators";
 import { BaseComponent } from "../../core/base-component";
 import { AppProfile } from "../../models/app-profile";
 import { ElectronUtils } from "../../util/electron-utils";
@@ -41,16 +50,21 @@ import { AppProfileFormField } from "../../models/app-profile-form-field";
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => AppProfileFormFieldComponent),
             multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => AppProfileFormFieldComponent),
+            multi: true
         }
     ]
 })
-export class AppProfileFormFieldComponent<T> extends BaseComponent implements ControlValueAccessor {
+export class AppProfileFormFieldComponent<T> extends BaseComponent implements ControlValueAccessor, Validator {
 
     @Output("valueChange")
     public readonly valueChange$;
 
     @ViewChild("fieldModel", { read: NgModel, static: true })
-    public readonly fieldModel?: NgModel;
+    public readonly fieldModel!: NgModel;
 
     @Input()
     public field!: AppProfileFormField<T>;
@@ -79,7 +93,15 @@ export class AppProfileFormFieldComponent<T> extends BaseComponent implements Co
     }
 
     public registerOnTouched(fn: any): void {
-        // TODO
+        this.valueChange$.pipe(
+            skip(1)
+        ).subscribe(fn);
+    }
+
+    public validate(control: FormControl): ValidationErrors | null {
+        return (this.field.required && (control.value === "" || control.value === null || control.value === undefined))
+            ? { invalid: true }
+            : null;
     }
 
     protected chooseDirectory<K extends keyof AppProfile>(ngModel: NgModel): Observable<any> {

@@ -34,7 +34,7 @@ export type AppProfileFormFieldEntry<
 export interface AppProfileFormFieldInput {
     gameDetails: GameDetails;
     baseProfileMode: boolean;
-    profileModel: Partial<AppProfile.Form>;
+    profileModel?: Partial<AppProfile.Form>;
     form: NgForm;
     modLinkModeSupported: boolean;
     configLinkModeSupported: boolean;

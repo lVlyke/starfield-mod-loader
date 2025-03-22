@@ -3,13 +3,13 @@ import type { GameInstallation } from "./game-installation";
 
 export interface GameDetails {
     title: string;
+    bkgColor: string;
+    fgColor: string;
     installations: GameInstallation[];
     gameBinary: string[];
     pluginFormats: string[];
     saveFormats: string[];
     requireExternalPlugins: boolean;
-    bkgColor?: string;
-    fgColor?: string;
     pluginListType?: GamePluginListType;
     pinnedPlugins?: GameDetails.PinnedPlugin[];
     gameConfigFiles?: string[];
@@ -36,9 +36,11 @@ export namespace GameDetails {
         mods: Record<string, string>;
     }
 
-    export function empty(): GameDetails {
+    export function empty(title: string = ""): GameDetails {
         return {
-            title: "",
+            title,
+            bkgColor: "",
+            fgColor: "",
             installations: [],
             pluginFormats: [],
             saveFormats: [],
