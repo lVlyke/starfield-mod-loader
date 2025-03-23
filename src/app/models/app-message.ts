@@ -334,6 +334,13 @@ export namespace AppMessage {
         result?: ModImportResult;
     }
 
+    export interface AddModSection extends Base {
+        id: `${ProfileMessage.Prefix}:addModSection`;
+        data: {
+            root: boolean;
+        };
+    }
+
     export interface DeleteProfileMod extends Base {
         id: `${ProfileMessage.Prefix}:deleteMod`;
         data: {
@@ -667,12 +674,18 @@ export namespace AppMessage {
         };
         result?: string;
     }
+
+    export interface ToggleLockState extends Base {
+        id: `${ProfileMessage.Prefix}:toggleLockState`;
+    }
+
     export type ProfileMessage = ResolveProfilePath
                                | MoveProfileFolder
                                | ProfileSettings
                                | BeginModAdd
                                | BeginModExternalImport
                                | CompleteModImport
+                               | AddModSection
                                | DeleteProfileMod
                                | RenameProfileMod
                                | ReadProfileModFilePaths
@@ -712,7 +725,8 @@ export namespace AppMessage {
                                | DeleteSaveFile
                                | ProfileDirLinkSupported
                                | SteamCompatSymlinksSupported
-                               | ResolveGameBinaryVersion;
+                               | ResolveGameBinaryVersion
+                               | ToggleLockState;
 
     // Message record:
 
@@ -752,6 +766,7 @@ export namespace AppMessage {
         "profile:beginModAdd",
         "profile:beginModExternalImport",
         "profile:completeModImport",
+        "profile:addModSection",
         "profile:deleteMod",
         "profile:renameMod",
         "profile:readModFilePaths",
@@ -791,6 +806,7 @@ export namespace AppMessage {
         "profile:deleteSaveFile",
         "profile:dirLinkSupported",
         "profile:steamCompatSymlinksSupported",
-        "profile:resolveGameBinaryVersion"
+        "profile:resolveGameBinaryVersion",
+        "profile:toggleLockState"
     ];
 }

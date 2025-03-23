@@ -184,6 +184,18 @@ class ElectronLoader {
                 }
             });
 
+            // Sync profile lock state
+            const lockProfilePanelItem = this.menu.getMenuItemById("lock-profile");
+            const unlockProfilePanelItem = this.menu.getMenuItemById("unlock-profile");
+            if (lockProfilePanelItem) {
+                lockProfilePanelItem.visible = !appState.activeProfile?.locked;
+            }
+
+            if (unlockProfilePanelItem) {
+                unlockProfilePanelItem.visible = !!appState.activeProfile?.locked;
+            }
+            
+
             // Sync log panel visibility state
             const toggleLogPanelItem = this.menu.getMenuItemById("show-log-panel");
             if (toggleLogPanelItem) {
@@ -1268,6 +1280,16 @@ class ElectronLoader {
                         click: () => this.mainWindow.webContents.send("app:deleteProfile")
                     },
                     {
+                        id: "lock-profile",
+                        label: "Lock Profile",
+                        click: () => this.mainWindow.webContents.send("profile:toggleLockState")
+                    },
+                    {
+                        id: "unlock-profile",
+                        label: "Unlock Profile",
+                        click: () => this.mainWindow.webContents.send("profile:toggleLockState")
+                    },
+                    {
                         type: "separator"
                     },
                     {
@@ -1283,13 +1305,21 @@ class ElectronLoader {
                                 click: () => this.mainWindow.webContents.send("profile:beginModExternalImport")
                             },
                             {
+                                label: "Add Mod Section",
+                                click: () => this.mainWindow.webContents.send("profile:addModSection")
+                            },
+                            {
                                 label: "Add Root Mod",
                                 click: () => this.mainWindow.webContents.send("profile:beginModAdd", { root: true })
                             },
                             {
                                 label: "Import Root Mod",
                                 click: () => this.mainWindow.webContents.send("profile:beginModExternalImport", { root: true })
-                            }
+                            },
+                            {
+                                label: "Add Root Mod Section",
+                                click: () => this.mainWindow.webContents.send("profile:addModSection", { root: true })
+                            },
                         ]
                     },
                     {

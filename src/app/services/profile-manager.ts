@@ -140,6 +140,24 @@ export class ProfileManager {
         ).subscribe();
 
         messageHandler.messages$.pipe(
+            filter((message): message is AppMessage.AddModSection => message.id === "profile:addModSection"),
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(([{ data }]) => this.addModSectionFromUser(data?.root).pipe(
+                catchError((err) => (log.error("Failed to add mod section: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
+            filter(message => message.id === "profile:toggleLockState"),
+            withLatestFrom(this.activeProfile$),
+            filter(([, activeProfile]) => !!activeProfile),
+            switchMap(() => this.toggleLockActiveProfile().pipe(
+                catchError((err) => (log.error("Failed to toggle profile lock state: ", err), EMPTY))
+            ))
+        ).subscribe();
+
+        messageHandler.messages$.pipe(
             filter(message => message.id === "profile:settings"),
             withLatestFrom(this.activeProfile$),
             filter(([, activeProfile]) => !!activeProfile),
