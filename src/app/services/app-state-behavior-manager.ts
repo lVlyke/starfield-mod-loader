@@ -248,6 +248,7 @@ export class AppStateBehaviorManager {
             normalizePathCasing: appData.normalizePathCasing,
             modListColumns: appData.modListColumns,
             verifyProfileOnStart: appData.verifyProfileOnStart,
+            steamCompatDataRoot: appData.steamCompatDataRoot,
             logPanelEnabled: appData.logPanelEnabled
         };
     }

@@ -25,6 +25,9 @@ Releases can be found here:
 Starfield Mod Loader currently supports the following games:
 
 * **Elder Scrolls IV: Oblivion**
+* **Elder Scrolls V: Skyrim LE**
+* **Elder Scrolls V: Skyrim SE**
+* **Fallout 3**
 * **Fallout 4**
 * **Fallout: New Vegas**
 * **Starfield**
@@ -40,31 +43,36 @@ To install Starfield Mod Loader, simply download the latest release from the [re
 > **Quick Links:**
 > * **Profiles**
 >   * [**Create a profile**](#create-a-profile)
->   * [**Config file management**](#configini-file-management)
->   * [**Save file management**](#save-file-management)
+>   * [**Manage config files**](#manage-configini-files)
+>   * [**Manage save files**](#manage-save-files)
 >   * [**Link mode**](#link-mode)
 >   * [**Archive invalidation**](#archive-invalidation)
 >   * [**Base profile**](#base-profile)
 >   * [**Profile path overrides**](#profile-path-overrides)
 >   * [**Steam compat symlinks (Linux)**](#linux-steam-compat-symlinks)
+>   * [**Profile locking**](#profile-locking)
 > * [**Base profiles**](#base-profiles)
 > * **Mods**
 >   * [**Adding mods**](#add-some-mods)
 >   * [**FOMOD installers**](#fomod-installers)
 >   * [**Root mods**](#root-mods)
 >   * [**Managing mods**](#managing-your-mods)
+>   * [**Mod section dividers**](#mod-section-dividers)
 >   * [**Activating mods**](#activate-your-mods)
->     * [**Path case normalization (Linux)**](#normalizePathCase)
+>   * [**Backup/restore mod order**](#backuprestore-mod-order)
 > * **Plugins**
 >   * [**Managing plugins**](#game-plugins)
 >   * [**Plugin type promotion**](#plugin-type-promotion)
 >   * [**External plugin files**](#external-plugins)
 >   * [**Backup/restore load order**](#backuprestore-plugin-order)
 > * [**Config file management**](#config-file-management)
+>   * [**Backup/restore config files**](#backuprestore-config-files)
+> * [**Save file management**](#save-file-management)
 > * [**App settings**](#app-settings)
 >   * [**Mod file path case normalization (Linux)**](#normalize-mod-file-path)
 > * [**Launching games**](#launch-the-game)
 >   * [**Custom actions**](#custom-actions)
+>   * [**Launch profile from CLI**](#launch-profile-from-cli)
 > * [**Troubleshooting**](#troubleshooting)
 
 **Note:** This guide refers specifically to Starfield in some places, but most of the information also applies to other games.
@@ -81,27 +89,33 @@ sResourceDataDirsFinal=
 
 To add and manage mods you must first create a profile. Upon first launching the app you will be shown a form to create a new profile.
 
-The **Game Root Directory** path should be set to the game's installation directory. By default this will be `C:\Program Files (x86)\Steam\steamapps\common\Starfield` for Steam or `C:\XboxGames\Starfield\Content` for UWP/Game Pass, but this may vary depending on where you chose to install the game.
+Select which game you want to create the profile for. Then give your profile a unique name.
 
-The **Game Data Directory** path should be set to the `Data` folder in either your `Documents/My Games/Starfield` folder or the game's installation folder (required for SFSE mods).
+Select a **Game Installation** that the profile will use to deploy to. Any detected game installations will be listed automatically. If no installations are detected, or you want to define your own, select the **Custom Installation** option and define the required paths.
 
-**Note:** If you are using the game's `Data` folder, make sure you rename or delete `Documents/My Games/Starfield/Data` if it exists, otherwise your mods will not be detected by the game.
+The **Game Root Directory** is the game's installation directory.
 
-The **Game Executable** path should point to `Starfield.exe` (or `sfse_loader.exe` if using SFSE), which should be in the game base directory from the prior step. **Note:** You may get an error from Windows Explorer when selecting the UWP version of `Starfield.exe` that says "You don't have permission to open this file". If this happens, simply copy the path of the file and manually paste it into the input field without using the file explorer.
+The **Game Data Directory** is the directory mod files are deployed to. This is usually the `Data` folder inside the **Game Root Directory**.
 
-The **Game Plugin List Path** is the location of the `plugins.txt` file for the game. For Starfield, this is located at `<User_Directory>/AppData/Local/Starfield/plugins.txt`.
+The **Game Config Files Directory** is the directory where the game's config files are located. For Bethesda games, this is located at `<User_Directory>/Documents/My Games/<GameName>`.
 
-### Config/INI file management
+The **Game Saves Directory** is the directory where the game's save files are located. For Bethesda games, this is located at `<User_Directory>/Documents/My Games/<GameName>/Saves`.
 
-If the **Manage Config/INI Files** option is enabled, new config files will be created for the profile. When enabled, you must also define the **Game Config Files Directory**. For Starfield, this is located at `<User_Directory>/Documents/My Games/Starfield` by default, but may be different depending on your OS settings.
+The **Game Plugin List Path** is the location of the `plugins.txt` file for the game. For Bethesda games, this is located at `<User_Directory>/AppData/Local/<GameName>/plugins.txt`.
 
-Upon first enabling the option you will be prompted to copy the existing config files from the **Game Config Files Directory** to the profile's config files.
+**Steam ID** is the Steam ID for the game. This is only applicable if you're using a Steam version of the game. This is only required if you plan on enabling [Steam Compat Symlinks](#linux-steam-compat-symlinks) for Linux.
+
+### Manage Config/INI files
+
+If the **Manage Config/INI Files** option is enabled, new config files will be created for the profile. When enabled, you must also define the **Game Config Files Directory**.
+
+Upon first enabling the option, you will be prompted to copy the existing config files from the **Game Config Files Directory** to the profile's config files.
 
 **NOTE:** When activating mods, the profile's config files will be copied to the **Game Config Files Directory**. If any existing config files are in the **Game Config Files Directory** when mods are activated, they will be moved to a `.sml.bak` folder during activation. The files moved to `.sml.bak` will be restored back to their original location upon deactivating mods.
 
-### Save file management
+### Manage save files
 
-If the **Manage Save Files** option is enabled, any created save games while this profile is deployed will be tied only to that profile. When enabled, you must also define the **Game Saves Directory**. For Starfield, this is located at `<User_Directory>/Documents/My Games/Starfield/Saves` by default, but may be different depending on your OS settings.
+If the **Manage Save Files** option is enabled, any created save games while this profile is deployed will be tied only to that profile. When enabled, you must also define the **Game Saves Directory**.
 
 ### Link mode
 
@@ -160,6 +174,10 @@ Starfield Mod Loader can automate this behavior by enabling **Manage Steam Compa
 You will first need to figure out the new virtual C drive directory for the script extender, which will normally be located in `~/.local/share/Steam/steamapps/compatdata`. You will see a number of directories in here with numerical IDs. One of these directories corresponds to the game ID that Steam assigned to the script extender. To determine which game ID is the correct one, you can look at the folder's "Date modified" timestamp to figure out which virtual drive directories were created recently. Assuming you added the script extender to Steam recently, the directory should have a Date modified field that matches when it was added to Steam.
 
 Once you have found the custom game ID, enter it as the **Custom Steam Game ID** for the profile. The necessary symlinks will now be created automatically when the profile is deployed.
+
+### Profile locking
+
+Profiles can be locked/unlocked by clicking the "Lock Profile" button at the top of the mod list. When a profile is locked you will not be able to change any settings or edit mods for that profile.
 
 ### Creating additional profiles
 
@@ -223,6 +241,14 @@ You can right click individual mods to bring up additional options, such as rena
 
 **Tip:** You can customize which columns of the mods list are visible under the **View > Mod List Columns** section of the app menu bar.
 
+## Mod section dividers
+
+You can create section dividers in your mod list to better keep mods organized. To add a new section divider click the **+** icon and select **Add Mod Section** or **Add Root Mod Section** depending on which list you want to add a section to. You can customize the name and icon of each section divider.
+
+You can rename or delete a section divider by right clicking the section and selecting the desired option. All mods in a section can also be enabled or disabled.
+
+Mods can be easily moved between sections or to the top/bottom of a section by right clicking a mod and opening the **Section** sub-menu.
+
 ### External files
 
 Existing game files and other files that have been manually copied to the **Mod Base Directory** outside of your profile will show up in the UI as **External files**. When activating mods for a profile that overwrite external files, the original external files will be moved to a folder called `.sml.bak` while mods are activated. The files in the `.sml.bak` folder will be restored back to their original location upon deactivating mods.
@@ -243,13 +269,23 @@ External game plugin management is optional for some games and is required for o
 
 ### Backup/restore plugin order
 
-You can backup and restore the plugin load order using the buttons at the top right of the plugins list. Pressing the "Restore Plugin Backup" button will show a list of all available plugin order backups that can be restored. You can also export the plugin order in a plugins.txt-compatible format using the "Export Plugins List" button.
+You can backup and restore the plugin load order using the buttons at the top right of the plugins list. Selecting the "Create Plugin Backup" option will allow you to create a new plugin order backup. Selecting the "Restore Plugin Backup" option will show a list of all available plugin order backups that can be restored. You can also export the plugin order in a plugins.txt-compatible format using the "Export Plugins List" button.
+
+Note that any plugins in a backup that are not currently in the active plugin list will not be re-added.
 
 ## Config file management
 
-If you enabled the **Manage Config/INI Files** option for your profile, you will be able to select the "Config" option from the dropdown at the top of the Plugins list. From this section you can edit your profile-specific config/INI files.
+If you have enabled the **Manage Config/INI Files** option for your profile, you will be able to select the "Config" option from the dropdown at the top of the Plugins list. From this section you can edit your profile-specific config/INI files.
 
 If profile-managed config/INI files are disabled, you will see an option in the "Actions" section to view external config files if any are found.
+
+### Backup/restore config files
+
+You can backup and restore the current config file values using the buttons at the top right of the Config file management section. Selecting the "Create Config Backup" option will allow you to create a new config file backup. Selecting the "Restore Config Backup" option will show a list of all available config file backups that can be restored.
+
+## Save file management
+
+If you have enabled the **Manage Save Files** option for your profile, you will be able to select the "Saves" option from the dropdown at the top of the Plugins list. From this section you can manage your profile-specific save files.
 
 ## Activate your mods
 
@@ -257,7 +293,13 @@ To enable mods in the game you must first deploy the profile. Press the **Activa
 
 Mods will now remain active until you press the **Deactivate Mods** button, even if you close the app or restart your PC.
 
-**IMPORTANT NOTE:** If Link Mode is disabled for the profile and you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the **Refresh Files** button after, otherwise your changes will not be applied.
+**IMPORTANT NOTE:** If Link Mode is not enabled for the profile and you update any of the profile's mod files externally (i.e. in a text editor) while mods are deployed, make sure to press the **Refresh Files** button after, otherwise your changes will not be applied.
+
+### Backup/restore mod order
+
+You can backup and restore the mod load order using the "Backup" button at the top of the mod list. Selecting the "Create Mod Order Backup" option will allow you to create a new mod order backup. Selecting the "Restore Mod Order" option will show a list of all available mod order backups that can be restored.
+
+Note that any mods in a backup that are not currently added to the profile will not be re-added.
 
 ## App settings
 
@@ -293,11 +335,41 @@ You can either click the **Start Game** button or simply launch the game directl
 
 Additional actions can be added by clicking the dropdown arrow to the right of the **Start Game** button and clicking **New Action**. Set the **Name** for your action and the **Action** to perform. **Action** can be a program or script along with any needed options. You can now select this action by clicking the dropdown arrow.
 
+### Launch profile from CLI
+
+You can activate and launch a profile directly from the CLI by using the `--launch` argument. For example, if you want to activate the profile named "My Profile" and launch the game, you can specify the following:
+
+```starfield-mod-loader.exe --launch "My Profile"```
+
+You can also optionally specify the game action to run:
+
+```starfield-mod-loader.exe --launch "My Profile" "Custom Action Name"```
+
+This will activate the given profile and invoke the given action (or the currently active action if one isn't specified).
+
 # Troubleshooting
 
 ## Common issues
 
-### My mods are not loading
+### Symlinks are not enabled <a name="symlinks"></a>
+
+If you get a warning about symlinks not being enabled when creating or editing a profile, you need to enable symlink permissions.
+
+To enable symlinks in Windows, you can either A) enable Windows Developer Mode by going the Windows "Settings" app, select "For developers", and then enable "Developer Mode", or B) run Starfield Mod Loader as administrator (not recommended). Once enabled, Starfield Mod Loader should now be able to use symlinks.
+
+### The app sits on the "Verifying Profile..." loading screen for a long time during startup
+
+This can happen when very large profiles are activated. If profile verification is taking too long, you can disable verification on app startup via the menu bar under **File > Preferences**.
+
+### **(Linux)** Some mods are not loading/strange behavior when loading some mods
+
+This can be fixed by enabling **Normalize mod file path** for the app. See [this section](#normalize-mod-file-path) for more information.
+
+### **(Linux)** Mods are not loading when using a script extender like SFSE
+
+This can be fixed by enabling **Manage Steam Compat Symlinks** for the profile. See [this section](#linux-steam-compat-symlinks) for more information.
+
+### (Starfield) My mods are not loading
 
 First, make sure you have added the following lines to your `StarfieldCustom.ini` file:
 
@@ -321,27 +393,11 @@ bEnableMessageOfTheDay=0
 sPhotoModeFolder=Photos
 ```
 
-### Symlinks are not enabled <a name="symlinks"></a>
-
-If you get a warning about symlinks not being enabled when creating or editing a profile, you need to enable symlink permissions.
-
-To enable symlinks in Windows, you can either A) enable Windows Developer Mode by going the Windows "Settings" app, select "For developers", and then enable "Developer Mode", or B) run Starfield Mod Loader as administrator (not recommended). Once enabled, Starfield Mod Loader should now be able to use symlinks.
-
-### The app sits on the "Verifying Profile..." loading screen for a long time during startup
-
-This can happen when very large profiles are activated. If profile verification is taking too long, you can disable verification on app startup via the menu bar under **File > Preferences**.
-
-### **(Linux)** Some mods are not loading/strange behavior when loading some mods
-
-This can be fixed by enabling **Normalize mod file path** for the app. See [this section](#normalize-mod-file-path) for more information.
-
-### **(Linux)** Mods are not loading when using a script extender like SFSE
-
-This can be fixed by enabling **Manage Steam Compat Symlinks** for the profile. See [this section](#linux-steam-compat-symlinks) for more information.
-
 ## Report an issue
 
 If you run into a problem, please check the [issues page](https://github.com/lVlyke/starfield-mod-loader/issues) to see if your question has been answered or create a new issue if you have a bug to report.
+
+If you have a suggestion for a new feature or a new game to support, feel free to open an issue for your request.
 
 # Devs - Building and testing
 

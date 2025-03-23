@@ -6,5 +6,6 @@ export interface AppSettingsUserCfg {
     normalizePathCasing: boolean;
     modListColumns?: string[];
     verifyProfileOnStart: boolean;
+    steamCompatDataRoot?: string;
     logPanelEnabled?: boolean;
 }

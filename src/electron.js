@@ -57,6 +57,7 @@ const BUILD_DATE_FILE = `${__dirname}/lastbuild.txt`;
 
 class ElectronLoader {
 
+    static /** @type {string} */ STEAM_DEFAULT_COMPAT_DATA_ROOT = "~/.local/share/Steam/steamapps/compatdata";
     static /** @type {string} */ STEAM_COMPAT_STEAMUSER_DIR = "pfx/drive_c/users/steamuser";
     static /** @type {string} */ APP_SETTINGS_FILE = "settings.json";
     static /** @type {string} */ APP_PROFILES_DIR = "profiles";
@@ -1028,7 +1029,7 @@ class ElectronLoader {
             }
 
             const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation);
-            const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation, profile.steamCustomGameId);
+            const customCompatSteamuserDir = this.#getCoreSteamCompatSteamuserDir(profile.steamCustomGameId);
 
             if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
                 return false;
@@ -1508,10 +1509,18 @@ class ElectronLoader {
         /** @type { keyof AppProfile | keyof GameInstallation } */ pathKey
     ) {
         switch (pathKey) {
-            case "modDir": return "gameInstallation" in profile ? profile.gameInstallation.modDir : undefined;
-            case "rootDir": return "gameInstallation" in profile ? profile.gameInstallation.rootDir: undefined;
-            case "configFilePath": return "gameInstallation" in profile ? profile.gameInstallation.configFilePath : undefined;
-            case "saveFolderPath": return "gameInstallation" in profile ? profile.gameInstallation.saveFolderPath : undefined;
+            case "modDir": return "gameInstallation" in profile && !!profile.gameInstallation
+                ? profile.gameInstallation.modDir
+                : undefined;
+            case "rootDir": return "gameInstallation" in profile && !!profile.gameInstallation
+                ? profile.gameInstallation.rootDir
+                : undefined;
+            case "configFilePath": return "gameInstallation" in profile && !!profile.gameInstallation
+                ? profile.gameInstallation.configFilePath
+                : undefined;
+            case "saveFolderPath": return "gameInstallation" in profile && !!profile.gameInstallation
+                ? profile.gameInstallation.saveFolderPath
+                : undefined;
             case "rootPathOverride": return this.getProfileDir(profile);
             case "modsPathOverride": return this.getProfileModsDir(profile);
             case "savesPathOverride": return this.getProfileSaveDir(profile);
@@ -3262,7 +3271,7 @@ class ElectronLoader {
         }
 
         const gameCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation);
-        const customCompatSteamuserDir = this.#getSteamCompatSteamuserDir(profile.gameInstallation, profile.steamCustomGameId);
+        const customCompatSteamuserDir = this.#getCoreSteamCompatSteamuserDir(profile.steamCustomGameId);
 
         if (!gameCompatSteamuserDir || !customCompatSteamuserDir || !fs.existsSync(gameCompatSteamuserDir) || !fs.existsSync(customCompatSteamuserDir)) {
             return [];
@@ -3272,7 +3281,7 @@ class ElectronLoader {
             return [];
         }
 
-        const customCompatRoot = this.#getSteamCompatRoot(profile.gameInstallation, profile.steamCustomGameId);
+        const customCompatRoot = this.#getCoreSteamCompatRoot(profile.steamCustomGameId);
         if (!customCompatRoot) {
             return [];
         }
@@ -3436,7 +3445,7 @@ class ElectronLoader {
             await Promise.all(undeployJobs);
 
             const customSteamCompatRoot = !!profile.steamCustomGameId && !!profile.gameInstallation.steamId?.length
-                ? this.#getSteamCompatRoot(profile.gameInstallation, profile.steamCustomGameId)
+                ? this.#getCoreSteamCompatRoot(profile.steamCustomGameId)
                 : undefined;
 
             const extFilesBackupDirs = _.uniq([
@@ -3729,8 +3738,7 @@ class ElectronLoader {
 
     /** @returns {string | undefined} */
     #getSteamCompatRoot(
-        /** @type {GameInstallation} */ gameInstallation,
-        /** @type {string | undefined} */ customSteamId
+        /** @type {GameInstallation} */ gameInstallation
     ) {
         const gameRootDir = this.#expandPath(gameInstallation.rootDir);
 
@@ -3749,15 +3757,41 @@ class ElectronLoader {
             return undefined;
         }
 
-        return path.join(steamDir, "compatdata", customSteamId ?? gameSteamId);
+        return path.join(steamDir, "compatdata", gameSteamId);
     }
 
     /** @returns {string | undefined} */
     #getSteamCompatSteamuserDir(
-        /** @type {GameInstallation} */ gameInstallation,
-        /** @type {string | undefined} */ customSteamId
+        /** @type {GameInstallation} */ gameInstallation
     ) {
-        const rootDir = this.#getSteamCompatRoot(gameInstallation, customSteamId);
+        const rootDir = this.#getSteamCompatRoot(gameInstallation);
+
+        if (!rootDir) {
+            return undefined;
+        }
+
+        return this.#expandPath(path.join(rootDir, ElectronLoader.STEAM_COMPAT_STEAMUSER_DIR));
+    }
+
+    /** @returns {string | undefined} */
+    #getCoreSteamCompatRoot(
+        /** @type {string} */ steamId
+    ) {
+        const appSettings = this.loadSettings();
+        const compatDataRoot = appSettings.steamCompatDataRoot || ElectronLoader.STEAM_DEFAULT_COMPAT_DATA_ROOT;
+        
+        if (!compatDataRoot) {
+            return undefined;
+        }
+
+        return this.#expandPath(path.join(compatDataRoot, steamId));
+    }
+
+    /** @returns {string | undefined} */
+    #getCoreSteamCompatSteamuserDir(
+        /** @type {string} */ steamId
+    ) {
+        const rootDir = this.#getCoreSteamCompatRoot(steamId);
 
         if (!rootDir) {
             return undefined;

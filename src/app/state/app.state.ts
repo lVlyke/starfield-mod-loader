@@ -104,6 +104,10 @@ export class AppState {
             state.verifyProfileOnStart = settings.verifyProfileOnStart
         }
 
+        if (settings.steamCompatDataRoot !== undefined) {
+            state.steamCompatDataRoot = settings.steamCompatDataRoot;
+        }
+
         if (settings.logPanelEnabled !== undefined) {
             state.logPanelEnabled = settings.logPanelEnabled;
         }
