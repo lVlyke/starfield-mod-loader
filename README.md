@@ -27,8 +27,10 @@ Starfield Mod Loader currently supports the following games:
 * **Elder Scrolls IV: Oblivion**
 * **Elder Scrolls V: Skyrim LE**
 * **Elder Scrolls V: Skyrim SE**
+* **Elder Scrolls V: Skyrim VR**
 * **Fallout 3**
 * **Fallout 4**
+* **Fallout 4 VR**
 * **Fallout: New Vegas**
 * **Starfield**
 
@@ -189,7 +191,7 @@ You can create additional profiles at any time by pressing the **Create Profile*
 
 Base profiles are a special kind of profile that can be extended by other profiles. Mods and plugins in a base profile are added and managed as normal, but cannot directly be deployed. Instead, other profiles can extend a base profile and will automatically inherit mods, plugins, and config files from the base profile.
 
-This allows for defining a common set of mods that can be used and extended by other profiles. One way this can be useful is for easily deploying a common set of mods between multiple PCs while also allowing for adding mods or config settings that may only be used on certain machines, such as high-res texture packs or specific compatability patches only needed for some devices.
+This allows for defining a common set of mods that can be used and extended by other profiles. One way this can be useful is for easily deploying a common set of mods between multiple PCs while also allowing for adding mods or config settings that may only be used on certain machines, such as high-res texture packs or specific compatability patches only needed for some devices. This can also be used to sync mods between different versions of games, such as Skyrim SE and Skyrim VR.
 
 Game directories are not defined for base profiles, allowing extending profiles to point to different game installation locations as needed.
 

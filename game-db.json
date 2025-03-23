@@ -213,6 +213,82 @@
             "SkyrimPrefs.ini"
         ]
     },
+    "elder_scrolls_skyrim_vr": {
+        "title": "Elder Scrolls: Skyrim VR",
+        "bkgColor": "#222222",
+        "fgColor": "#ffffff",
+        "installations": [
+            {
+                "steamId": ["611670"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\SkyrimVR",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR\\Saves"
+            },
+            {
+                "steamId": ["611670"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\SkyrimVR",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\SkyrimVR\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Skyrim VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Skyrim VR\\Saves"
+            },
+            {
+                "steamId": ["611670"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/SkyrimVR",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Skyrim VR/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim VR",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Skyrim VR/Saves"
+            }
+        ],
+        "gameBinary": [
+            "SkyrimVR.exe",
+            "sksevr_loader.exe"
+        ],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": [
+            "esm",
+            "esl",
+            "esp"
+        ],
+        "saveFormats": ["ess"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Skyrim.esm",
+                "required": true
+            },
+            {
+                "plugin": "SkyrimVR.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": false,
+        "scriptExtenders": [
+            {
+                "name": "SKSEVR",
+                "binaries": [
+                    "sksevr_loader.exe"
+                ],
+                "modPaths": [
+                    "SKSE"
+                ]
+            }
+        ],
+        "gameConfigFiles": [
+            "Skyrim.ini",
+            "SkyrimCustom.ini",
+            "SkyrimPrefs.ini"
+        ]
+    },    
     "fallout_3": {
         "title": "Fallout 3",
         "bkgColor": "#10120b",
@@ -374,6 +450,82 @@
             "Fallout4Prefs.ini"
         ]
     },
+    "fallout_4_vr": {
+        "title": "Fallout 4 VR",
+        "bkgColor": "#007300",
+        "fgColor": "#ffffff",
+        "installations": [
+            {
+                "steamId": ["611660"],
+                "rootDir": "%PROGRAMFILES%\\Steam\\steamapps\\common\\Fallout 4 VR",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR\\Saves"
+            },
+            {
+                "steamId": ["611660"],
+                "rootDir": "%PROGRAMFILES(X86)%\\Steam\\steamapps\\common\\Fallout 4 VR",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR\\Saves"
+            },
+            {
+                "rootDir": "C:\\XboxGames\\Fallout 4 VR\\Content",
+                "modDir": "Data",
+                "pluginListPath": "%LOCALAPPDATA%\\Fallout4VR\\plugins.txt",
+                "configFilePath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR",
+                "saveFolderPath": "%USERPROFILE%\\Documents\\My Games\\Fallout4VR\\Saves"
+            },
+            {
+                "steamId": ["611660"],
+                "rootDir": "~/.local/share/Steam/steamapps/common/Fallout 4 VR",
+                "modDir": "Data",
+                "pluginListPath": "$/pfx/drive_c/users/steamuser/AppData/Local/Fallout4VR/plugins.txt",
+                "configFilePath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4VR",
+                "saveFolderPath": "$/pfx/drive_c/users/steamuser/Documents/My Games/Fallout4VR/Saves"
+            }
+        ],
+        "gameBinary": [
+            "Fallout4VR.exe",
+            "f4sevr_loader.exe"
+        ],
+        "pluginListType": "CreationEngine",
+        "pluginFormats": [
+            "esm",
+            "esl",
+            "esp"
+        ],
+        "saveFormats": ["fos"],
+        "pinnedPlugins": [
+            {
+                "plugin": "Fallout4.esm",
+                "required": true
+            },
+            {
+                "plugin": "Fallout4_VR.esm",
+                "required": true
+            }
+        ],
+        "requireExternalPlugins": false,
+        "scriptExtenders": [
+            {
+                "name": "F4SEVR",
+                "binaries": [
+                    "f4sevr_loader.exe"
+                ],
+                "modPaths": [
+                    "F4SE"
+                ]
+            }
+        ],
+        "gameConfigFiles": [
+            "Fallout4.ini",
+            "Fallout4Custom.ini",
+            "Fallout4Prefs.ini"
+        ]
+    },    
     "fallout_new_vegas": {
         "title": "Fallout: New Vegas",
         "bkgColor": "#ae260e",
