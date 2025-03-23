@@ -5,15 +5,15 @@ import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 
 export namespace AppActions {
 
-    function createBasicAction(property: keyof AppData, action: string): BasicAction.Constructor<AppData, keyof AppData> {
-        return BasicAction.create<AppData, keyof AppData>(
+    function createBasicAction<K extends keyof AppData>(property: K, action: string): BasicAction.Constructor<AppData, K> {
+        return BasicAction.create<AppData, K>(
             "app",
             action,
             property
         );
     }
 
-    function createUpdateAction(property: keyof AppData): BasicAction.Constructor<AppData, keyof AppData> {
+    function createUpdateAction<K extends keyof AppData>(property: K): BasicAction.Constructor<AppData, K> {
         return createBasicAction(property, "update");
     }
 

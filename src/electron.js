@@ -555,6 +555,20 @@ class ElectronLoader {
             };
         });
 
+        ipcMain.handle("app:queryWarnings", async (
+            _event,
+            /** @type {import("./app/models/app-message").AppMessageData<"app:queryWarnings">} */ {}
+        ) => {
+            const settings = this.loadSettings();
+            const symlinksDisabled = !this.#checkLinkSupported(".", ["."], true, "file");
+            const normalizePathCaseRecommended = !settings.normalizePathCasing && process.platform !== "win32";
+
+            return {
+                symlinksDisabled,
+                normalizePathCaseRecommended
+            };
+        });
+
         ipcMain.handle("app:findGameInstallations", /** @returns { Promise<GameInstallation[]> } */ async (
             _event,
             /** @type {import("./app/models/app-message").AppMessageData<"app:findGameInstallations">} */ { gameId }

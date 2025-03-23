@@ -12,6 +12,7 @@ import { ModImportRequest, ModImportResult } from "./mod-import-status";
 import { ModProfileRef } from "./mod-profile-ref";
 import { LogEntry } from "../util/logger";
 import { GameInstallation } from "./game-installation";
+import { AppWarnings } from "./app-warnings";
 
 export type AppMessage
     = AppMessage.AppMessage
@@ -234,6 +235,12 @@ export namespace AppMessage {
         result: string | undefined;
     }
 
+    export interface QueryWarnings extends Base {
+        id: `${Prefix}:queryWarnings`;
+        data: {};
+        result: AppWarnings;
+    }
+
     export type AppMessage = Log
                            | SyncUiState
                            | ChooseDirectory
@@ -260,7 +267,8 @@ export namespace AppMessage {
                            | ToggleModListColumn
                            | ToggleLogPanel
                            | CheckLinkSupported
-                           | ResolveResourceUrl;
+                           | ResolveResourceUrl
+                           | QueryWarnings;
 
     // Profile messages:
 
@@ -659,7 +667,6 @@ export namespace AppMessage {
         };
         result?: string;
     }
-
     export type ProfileMessage = ResolveProfilePath
                                | MoveProfileFolder
                                | ProfileSettings
@@ -737,6 +744,7 @@ export namespace AppMessage {
         "app:toggleLogPanel",
         "app:checkLinkSupported",
         "app:resolveResourceUrl",
+        "app:queryWarnings",
 
         "profile:resolvePath",
         "profile:moveFolder",

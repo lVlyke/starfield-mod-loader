@@ -45,6 +45,7 @@ import { AppLogComponent } from "../../components/app-log/app-log.component";
 import { AppSendElectronMsgPipe } from "../../pipes/send-electron-msg.pipe";
 import { AppIsFullProfilePipe } from "../../pipes/is-full-profile.pipe";
 import { AppProfileBackupListComponent } from "../../components/profile-backup-list";
+import { AppStateBehaviorManager } from "../../services/app-state-behavior-manager";
 
 @Component({
     selector: "app-mods-overview-page",
@@ -192,6 +193,7 @@ export class AppModsOverviewPage extends BasePage {
         cdRef: ChangeDetectorRef,
         stateRef: ComponentStateRef<AppModsOverviewPage>,
         store: Store,
+        appManager: AppStateBehaviorManager,
         protected readonly profileManager: ProfileManager,
         private readonly overlayHelpers: OverlayHelpers,
         private readonly dialogs: AppDialogs
@@ -247,6 +249,11 @@ export class AppModsOverviewPage extends BasePage {
             skip(1),
             filter(dataAction => !dataAction && !!this.profileActionsPanel),
         ).subscribe(() => this.profileActionsPanel.expanded = true);
+
+        // Show any app warnings
+        this.afterViewInit$.pipe(
+            switchMap(() => appManager.showAppWarnings())
+        ).subscribe();
     }
 
     public get activeDataAction(): AppModsOverviewPage.DataAction | undefined {

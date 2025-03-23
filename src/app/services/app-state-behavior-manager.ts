@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngxs/store";
-import { EMPTY, Observable, of, throwError } from "rxjs";
-import { catchError, distinctUntilChanged, filter, map, skip, switchMap, take } from "rxjs/operators";
+import { EMPTY, from, Observable, of, throwError } from "rxjs";
+import { catchError, concatMap, distinctUntilChanged, filter, map, skip, switchMap, take, toArray } from "rxjs/operators";
 import { AppMessage, AppMessageData } from "../models/app-message";
 import { AppActions, AppState } from "../state";
 import { AppMessageHandler } from "./app-message-handler";
@@ -12,7 +12,7 @@ import { AppAboutInfoModal, DEPS_INFO_TOKEN } from "../modals/app-about-info";
 import { ElectronUtils } from "../util/electron-utils";
 import { ExternalFile } from "../models/external-file";
 import { AppData } from "../models/app-data";
-import { filterDefined, runOnce } from "../core/operators";
+import { filterDefined, filterTrue, runOnce } from "../core/operators";
 import { LangUtils } from "../util/lang-utils";
 import { AppSettingsUserCfg } from "../models/app-settings-user-cfg";
 import { GameDatabase } from "../models/game-database";
@@ -20,6 +20,7 @@ import { AppResource } from "../models/app-resource";
 import { AppPreferencesModal } from "../modals/app-preferences";
 import { log } from "../util/logger";
 import { AppDialogs } from "./app-dialogs";
+import { AppWarnings } from "../models/app-warnings";
 
 @Injectable({ providedIn: "root" })
 export class AppStateBehaviorManager {
@@ -188,6 +189,38 @@ export class AppStateBehaviorManager {
                     const errorText = "Unable to open game database file.";
                     this.dialogs.showNotice(errorText).subscribe();
                     return throwError(() => errorText);
+                }
+            })
+        ));
+    }
+
+    public showAppWarnings(): Observable<unknown> {
+        return runOnce(ElectronUtils.invoke("app:queryWarnings", {}).pipe(
+            switchMap((appWarnings) => {
+                const warnings: Array<keyof AppWarnings> = [];
+
+                Object.entries(appWarnings).forEach(([warningId, warningState]) => {
+                    if (warningState) {
+                        warnings.push(warningId as keyof AppWarnings);
+                    }
+                });
+
+                if (warnings.length > 0) {
+                    return from(warnings).pipe(
+                        concatMap((warning) => {
+                            switch (warning) {
+                                case "symlinksDisabled": return this.dialogs.showSymlinkWarningDialog();
+                                case "normalizePathCaseRecommended": return this.dialogs.showNormalizePathCaseRecommendedDialog().pipe(
+                                    filterTrue(),
+                                    switchMap(() => this.store.dispatch(new AppActions.setNormalizePathCasing(true)))
+                                )
+                                default: return of(undefined);
+                            }
+                        }),
+                        toArray()
+                    );
+                } else {
+                    return EMPTY;
                 }
             })
         ));
