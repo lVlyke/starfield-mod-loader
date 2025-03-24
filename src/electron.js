@@ -2779,19 +2779,44 @@ class ElectronLoader {
     async findProfileExternalPluginFiles(/** @type {AppProfile} */ profile) {
         const gameDetails = this.#getGameDetails(profile.gameId);
         const gameModDir = this.#expandPath(profile.gameInstallation.modDir);
-        let externalFiles = await this.findProfileExternalFilesInDir(profile, gameModDir, false);
 
-        externalFiles = externalFiles.filter((modFile) => {
-            // Make sure this is a mod file
-            return gameDetails?.pluginFormats.includes(_.last(modFile.split("."))?.toLowerCase() ?? "");
-        });
+        return (await this.findProfileExternalFilesInDir(profile, gameModDir, false))
+                .filter((modFile) => {
+                    // Make sure this is a mod file
+                    return gameDetails?.pluginFormats.includes(_.last(modFile.split("."))?.toLowerCase() ?? "");
+                })
+                .sort((externalPluginA, externalPluginB) => {
+                    const externalPlugins = [externalPluginA, externalPluginB];
+                    const pinnedIndex = externalPlugins.map((externalPlugin) => {
+                        const pinnedIndex = gameDetails?.pinnedPlugins?.findIndex(({ plugin }) => {
+                            return externalPlugin.toLowerCase() === plugin.toLowerCase();
+                        });
 
-        externalFiles = _.sortBy(externalFiles, (externalPlugin) => {
-            // Retrieve external plugin order using plugin file's "last modified" timestamp
-            return fs.statSync(path.join(gameModDir, externalPlugin)).mtime;
-        });
+                        return pinnedIndex === -1 ? undefined : pinnedIndex;
+                    });
 
-        return externalFiles;
+                    // Determine if any of the plugins are pinned and if so, use the pinned order
+                    if (pinnedIndex[0] !== undefined && pinnedIndex[1] !== undefined) {
+                        return pinnedIndex[0] - pinnedIndex[1];
+                    } else if (pinnedIndex[0] !== undefined) {
+                        return -1;
+                    } else if (pinnedIndex[1] !== undefined) {
+                        return 1;
+                    } else {
+                        // Order plugin by file's "last modified" timestamp
+                        const fileTime = externalPlugins.map((externalPlugin) => {
+                            return fs.statSync(path.join(gameModDir, externalPlugin)).mtime;
+                        });
+
+                        if (fileTime[0] < fileTime[1]) {
+                            return -1;
+                        } else if (fileTime[0] > fileTime[1]) {
+                            return 1;
+                        }
+                    }
+
+                    return 0;
+                });
     }
 
     /** @returns {string[]} */
