@@ -289,7 +289,7 @@ export class AppProfileSettingsComponent extends BaseComponent {
         stateRef.get("initialProfile").subscribe((initialProfile) => {
             this._customGameInstaller = initialProfile.gameInstallation
                 ? _.cloneDeep(initialProfile.gameInstallation)
-                : this._customGameInstaller;
+                : this._customGameInstaller ?? GameInstallation.empty();
         });
         
         // Check if profile is a base profile

@@ -2827,6 +2827,10 @@ class ElectronLoader {
         /** @type {boolean | undefined} */ normalizePaths
     ) {
         const modDirPath = this.getProfileModDir(profile, modName, modRef);
+        if (!fs.existsSync(modDirPath)) {
+            return [];
+        }
+
         let files = fs.readdirSync(modDirPath, { encoding: "utf-8", recursive: true });
 
         if (normalizePaths) {

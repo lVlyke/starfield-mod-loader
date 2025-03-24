@@ -742,7 +742,7 @@ export class ProfileManager {
                             destProfile: newProfile
                         }).pipe(
                             tap(() => loadingIndicator.close()),
-                            switchMap(() => this.verifyActiveProfile({ showSuccessMessage: false })),
+                            switchMap(() => this.setActiveProfile(newProfile, true)),
                             map(() => newProfile)
                         );
                     } else {
@@ -804,7 +804,9 @@ export class ProfileManager {
 
         return runOnce(modContextMenuRef.component.instance.onFormSubmit$.pipe(
             switchMap((newProfile) => {
-                if (options.createMode) {
+                if (options.copyMode) {
+                    return of(newProfile);
+                } else if (options.createMode) {
                     return this.setActiveProfile(newProfile, options.verifyProfile !== false);
                 } else if (options.verifyProfile) {
                     return this.verifyActiveProfile().pipe(map(() => newProfile));
