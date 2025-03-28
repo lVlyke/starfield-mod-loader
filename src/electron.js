@@ -1262,7 +1262,7 @@ class ElectronLoader {
                     {
                         id: "import-profile",
                         label: "Import Profile",
-                        click: () => this.mainWindow.webContents.send("app:importProfile")
+                        click: () => this.mainWindow.webContents.send("app:importProfile", { directImport: false })
                     },
                     {
                         id: "copy-profile",
