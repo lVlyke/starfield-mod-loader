@@ -3,7 +3,7 @@
   "author": "Mychal Thompson <mychal.r.thompson@gmail.com>",
   "repository": "https://github.com/lVlyke/starfield-mod-loader",
   "license": "GPL-3.0",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "main": "electron.js",
   "scripts": {
     "app:build-dist-debug": "npm run build && npm run package",
@@ -24,7 +24,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "start": "npm run serve",
-    "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^31.3.1 && unset npm_config_platform"
+    "electron-win32-install": "npm remove electron && npm install && export npm_config_platform=win32 && npm install --save-dev electron@^35.0.0 && unset npm_config_platform"
   },
   "private": true,
   "dependencies": {

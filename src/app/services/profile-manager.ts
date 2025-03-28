@@ -324,7 +324,7 @@ export class ProfileManager {
                 event.stopPropagation();
             }),
             withLatestFrom(this.activeProfile$),
-            filter(([, activeProfile]) => !!activeProfile),
+            filter(([, activeProfile]) => !!activeProfile && !activeProfile.locked),
             switchMap(([event, activeProfile]) => from(event.dataTransfer!.files).pipe(
                 concatMap((file) => this.addModFromUser(activeProfile!, {
                     modPath: ElectronUtils.getFilePath(file),
